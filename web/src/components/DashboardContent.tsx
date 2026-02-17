@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { signOut } from '@/app/actions/auth';
+import type { BrandProfile, BrandVoice, EmailGeneration } from '@/lib/db/types';
 
 type TabType = 'new-email' | 'brand' | 'history' | 'user';
 
@@ -11,6 +12,33 @@ export default function DashboardContent() {
   const [activeTab, setActiveTab] = useState<TabType>('new-email');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [emailInput, setEmailInput] = useState('');
+  
+  // Brand profile state
+  const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
+  const [brandLoading, setBrandLoading] = useState(false);
+  const [brandSaving, setBrandSaving] = useState(false);
+  const [brandMessage, setBrandMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [brandForm, setBrandForm] = useState({
+    brand_name: '',
+    industry: '',
+    brand_voice: 'professional' as BrandVoice,
+    primary_color: '#5c5cf0',
+    secondary_color: '',
+    brand_description: '',
+    website_url: '',
+    logo_url: ''
+  });
+  const [analyzingWebsite, setAnalyzingWebsite] = useState(false);
+
+  // Email generation state
+  const [generating, setGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generatedEmail, setGeneratedEmail] = useState<EmailGeneration | null>(null);
+  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
+
+  // History state
+  const [emailHistory, setEmailHistory] = useState<EmailGeneration[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     // Retrieve and clear the pending prompt from localStorage
@@ -21,7 +49,202 @@ export default function DashboardContent() {
       setEmailInput(prompt); // Pre-fill the textarea
       localStorage.removeItem('pendingEmailPrompt');
     }
+    
+    // Load brand profile and user stats
+    loadBrandProfile();
+    loadUserStats();
   }, []);
+
+  const loadUserStats = async () => {
+    try {
+      const res = await fetch('/api/user/stats');
+      if (res.ok) {
+        const data = await res.json();
+        setCreditsRemaining(data.credits_remaining);
+      }
+    } catch (error) {
+      console.error('Error loading user stats:', error);
+    }
+  };
+
+  const loadEmailHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await fetch('/api/email-generations');
+      if (res.ok) {
+        const data = await res.json();
+        setEmailHistory(data.generations || []);
+      }
+    } catch (error) {
+      console.error('Error loading email history:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const loadBrandProfile = async () => {
+    setBrandLoading(true);
+    try {
+      const res = await fetch('/api/brand-profiles');
+      if (res.ok) {
+        const data = await res.json();
+        // Get the default brand profile or the first one
+        const profile = data.profiles?.find((p: BrandProfile) => p.is_default) || data.profiles?.[0];
+        if (profile) {
+          setBrandProfile(profile);
+          setBrandForm({
+            brand_name: profile.brand_name,
+            industry: profile.industry || '',
+            brand_voice: profile.brand_voice,
+            primary_color: profile.primary_color,
+            secondary_color: profile.secondary_color || '',
+            brand_description: profile.brand_description || '',
+            website_url: profile.website_url || '',
+            logo_url: profile.logo_url || ''
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error loading brand profile:', error);
+    } finally {
+      setBrandLoading(false);
+    }
+  };
+
+  const analyzeBrandWebsite = async () => {
+    if (!brandForm.website_url.trim()) {
+      setBrandMessage({ type: 'error', text: 'Please enter a website URL first' });
+      setTimeout(() => setBrandMessage(null), 3000);
+      return;
+    }
+
+    setAnalyzingWebsite(true);
+    setBrandMessage(null);
+
+    try {
+      const res = await fetch('/api/analyze-brand', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          websiteUrl: brandForm.website_url
+        })
+      });
+
+      if (res.ok) {
+        const { data } = await res.json();
+        
+        // Auto-fill the form with analyzed data
+        setBrandForm({
+          ...brandForm,
+          brand_name: data.brandName || brandForm.brand_name,
+          industry: data.industry || brandForm.industry,
+          brand_voice: data.brandVoice || brandForm.brand_voice,
+          primary_color: data.primaryColor || brandForm.primary_color,
+          secondary_color: data.secondaryColor || brandForm.secondary_color,
+          brand_description: data.brandDescription || brandForm.brand_description,
+          logo_url: data.logoUrl || brandForm.logo_url
+        });
+
+        setBrandMessage({ type: 'success', text: 'Brand details extracted successfully!' });
+        setTimeout(() => setBrandMessage(null), 5000);
+      } else {
+        const error = await res.json();
+        setBrandMessage({ type: 'error', text: error.error || 'Failed to analyze website' });
+        setTimeout(() => setBrandMessage(null), 5000);
+      }
+    } catch (error) {
+      console.error('Error analyzing website:', error);
+      setBrandMessage({ type: 'error', text: 'An error occurred while analyzing the website' });
+      setTimeout(() => setBrandMessage(null), 5000);
+    } finally {
+      setAnalyzingWebsite(false);
+    }
+  };
+
+  const saveBrandProfile = async () => {
+    setBrandSaving(true);
+    setBrandMessage(null);
+    
+    try {
+      const url = brandProfile 
+        ? `/api/brand-profiles/${brandProfile.id}` 
+        : '/api/brand-profiles';
+      
+      const method = brandProfile ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...brandForm,
+          is_default: true
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setBrandProfile(data.profile);
+        setBrandMessage({ type: 'success', text: 'Brand profile saved successfully!' });
+        setTimeout(() => setBrandMessage(null), 3000);
+      } else {
+        const error = await res.json();
+        setBrandMessage({ type: 'error', text: error.error || 'Failed to save brand profile' });
+      }
+    } catch (error) {
+      console.error('Error saving brand profile:', error);
+      setBrandMessage({ type: 'error', text: 'An error occurred while saving' });
+    } finally {
+      setBrandSaving(false);
+    }
+  };
+
+  const handleGenerateEmail = async () => {
+    if (!emailInput.trim()) {
+      setGenerationError('Please enter a prompt');
+      return;
+    }
+
+    if (creditsRemaining !== null && creditsRemaining < 1) {
+      setGenerationError('Insufficient credits. Please upgrade your plan.');
+      return;
+    }
+
+    setGenerating(true);
+    setGenerationError(null);
+    setGeneratedEmail(null);
+
+    try {
+      const res = await fetch('/api/generate-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: emailInput.trim() })
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setGenerationError(data.error || 'Failed to generate email');
+        return;
+      }
+
+      // Success
+      setGeneratedEmail(data.generation);
+      setCreditsRemaining(data.creditsRemaining);
+      setEmailInput(''); // Clear input
+      
+      // Reload history to show new email
+      loadEmailHistory();
+      
+      // Redirect to email editor page
+      window.location.href = `/dashboard/email/${data.generation.id}`;
+      
+    } catch (error) {
+      console.error('Error generating email:', error);
+      setGenerationError('An error occurred while generating email');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   const handleDismiss = () => {
     setShowPrompt(false);
@@ -31,6 +254,11 @@ export default function DashboardContent() {
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
     setSidebarOpen(false); // Close sidebar on mobile after selection
+    
+    // Load history when switching to history tab
+    if (tab === 'history' && emailHistory.length === 0) {
+      loadEmailHistory();
+    }
   };
 
   return (
@@ -200,15 +428,34 @@ export default function DashboardContent() {
                           <span className="text-[#00ffff]">AI-powered</span>
                         </span>
                         <span className="text-white/30">·</span>
-                        <span className="hidden xs:inline">Export to HTML & TSX</span>
-                        <span className="xs:hidden">HTML & TSX</span>
+                        <span className="hidden xs:inline">
+                          {creditsRemaining !== null ? `${creditsRemaining} credits left` : 'Loading...'}
+                        </span>
                       </div>
-                      <button className="w-full sm:w-auto rounded-full bg-white px-5 sm:px-6 py-2.5 text-sm font-medium text-black transition-all duration-300 hover:shadow-2xl hover:shadow-white/30 hover:-translate-y-1 hover:scale-105 active:scale-100">
-                        Generate Email
+                      <button 
+                        onClick={handleGenerateEmail}
+                        disabled={generating || !emailInput.trim() || (creditsRemaining !== null && creditsRemaining < 1)}
+                        className="w-full sm:w-auto rounded-full bg-white px-5 sm:px-6 py-2.5 text-sm font-medium text-black transition-all duration-300 hover:shadow-2xl hover:shadow-white/30 hover:-translate-y-1 hover:scale-105 active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:scale-100"
+                      >
+                        {generating ? 'Generating...' : 'Generate Email'}
                       </button>
                     </div>
                   </div>
                 </div>
+
+                {/* Error Message */}
+                {generationError && (
+                  <div className="max-w-4xl mx-auto mt-4 p-4 rounded-lg border border-red-500/30 bg-red-500/10 text-red-400">
+                    {generationError}
+                  </div>
+                )}
+
+                {/* Success Message */}
+                {generatedEmail && !generating && (
+                  <div className="max-w-4xl mx-auto mt-4 p-4 rounded-lg border border-green-500/30 bg-green-500/10 text-green-400">
+                    Email generated successfully! Check the History tab to view it.
+                  </div>
+                )}
 
                 <div className="flex flex-wrap items-center gap-2 justify-center mt-6">
                   <span className="text-xs sm:text-sm text-white/60 w-full sm:w-auto text-center">Try:</span>
@@ -280,76 +527,151 @@ export default function DashboardContent() {
                 <p className="text-sm sm:text-base text-white/60">Customize your brand identity for AI-generated emails</p>
               </div>
 
-              <div className="max-w-2xl space-y-6">
-                {/* Brand Name */}
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Brand Name</label>
-                  <input
-                    type="text"
-                    placeholder="Your Company Name"
-                    className="w-full px-4 py-3 rounded-lg bg-black border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
-                  />
+              {brandLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ffff]"></div>
                 </div>
+              ) : (
+                <div className="max-w-2xl space-y-6">
+                  {/* Success/Error Message */}
+                  {brandMessage && (
+                    <div className={`p-4 rounded-lg border ${
+                      brandMessage.type === 'success' 
+                        ? 'bg-green-500/10 border-green-500/30 text-green-400' 
+                        : 'bg-red-500/10 border-red-500/30 text-red-400'
+                    }`}>
+                      {brandMessage.text}
+                    </div>
+                  )}
 
-                {/* Industry */}
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Industry</label>
-                  <select className="w-full px-4 py-3 rounded-lg bg-black border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#00ffff]">
-                    <option value="">Select industry</option>
-                    <option>Technology</option>
-                    <option>E-commerce</option>
-                    <option>Education</option>
-                    <option>Healthcare</option>
-                    <option>Finance</option>
-                    <option>Other</option>
-                  </select>
-                </div>
-
-                {/* Brand Voice */}
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Brand Voice</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {['Professional', 'Friendly', 'Casual', 'Formal'].map((voice) => (
+                  {/* Website URL with Auto-fill */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Website URL</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        placeholder="https://yourcompany.com"
+                        value={brandForm.website_url}
+                        onChange={(e) => setBrandForm({ ...brandForm, website_url: e.target.value })}
+                        className="flex-1 px-4 py-3 rounded-lg bg-black border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                      />
                       <button
-                        key={voice}
-                        className="px-4 py-2 rounded-lg border border-white/20 text-sm text-white/70 hover:border-[#00ffff] hover:text-white hover:bg-white/5 transition-all"
+                        type="button"
+                        onClick={analyzeBrandWebsite}
+                        disabled={analyzingWebsite || !brandForm.website_url.trim()}
+                        className="px-4 py-3 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
                       >
-                        {voice}
+                        {analyzingWebsite ? (
+                          <>
+                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Analyzing...
+                          </>
+                        ) : (
+                          <>
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            Auto-fill
+                          </>
+                        )}
                       </button>
-                    ))}
+                    </div>
+                    <p className="mt-1 text-xs text-white/40">We'll automatically extract your brand colors, logo, and voice</p>
                   </div>
-                </div>
 
-                {/* Brand Colors */}
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Primary Color</label>
-                  <div className="flex gap-3">
-                    <input
-                      type="color"
-                      defaultValue="#00ffff"
-                      className="w-12 h-12 rounded-lg cursor-pointer"
-                    />
+                  {/* Brand Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Brand Name *</label>
                     <input
                       type="text"
-                      defaultValue="#00ffff"
-                      className="flex-1 px-4 py-3 rounded-lg bg-black border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                      placeholder="Your Company Name"
+                      value={brandForm.brand_name}
+                      onChange={(e) => setBrandForm({ ...brandForm, brand_name: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg bg-black border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
                     />
                   </div>
-                </div>
 
-                {/* Brand Description */}
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Brand Description</label>
-                  <textarea
-                    placeholder="Describe your brand, products, and target audience..."
-                    className="w-full h-32 px-4 py-3 rounded-lg bg-black border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] resize-none"
-                  />
-                </div>
+                  {/* Industry */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Industry</label>
+                    <select 
+                      value={brandForm.industry}
+                      onChange={(e) => setBrandForm({ ...brandForm, industry: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg bg-black border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                    >
+                      <option value="">Select industry</option>
+                      <option value="Technology">Technology</option>
+                      <option value="E-commerce">E-commerce</option>
+                      <option value="Education">Education</option>
+                      <option value="Healthcare">Healthcare</option>
+                      <option value="Finance">Finance</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
 
-                <button className="px-6 py-3 rounded-full bg-white text-black font-medium hover:shadow-xl hover:shadow-white/30 transition-all hover:-translate-y-0.5">
-                  Save Brand Profile
-                </button>
-              </div>
+                  {/* Brand Voice */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Brand Voice</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {(['professional', 'friendly', 'casual', 'formal'] as BrandVoice[]).map((voice) => (
+                        <button
+                          key={voice}
+                          type="button"
+                          onClick={() => setBrandForm({ ...brandForm, brand_voice: voice })}
+                          className={`px-4 py-2 rounded-lg border text-sm transition-all ${
+                            brandForm.brand_voice === voice
+                              ? 'border-[#00ffff] bg-[#00ffff]/10 text-white'
+                              : 'border-white/20 text-white/70 hover:border-[#00ffff] hover:text-white hover:bg-white/5'
+                          }`}
+                        >
+                          {voice.charAt(0).toUpperCase() + voice.slice(1)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Brand Colors */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Primary Color</label>
+                    <div className="flex gap-3">
+                      <input
+                        type="color"
+                        value={brandForm.primary_color}
+                        onChange={(e) => setBrandForm({ ...brandForm, primary_color: e.target.value })}
+                        className="w-12 h-12 rounded-lg cursor-pointer"
+                      />
+                      <input
+                        type="text"
+                        value={brandForm.primary_color}
+                        onChange={(e) => setBrandForm({ ...brandForm, primary_color: e.target.value })}
+                        className="flex-1 px-4 py-3 rounded-lg bg-black border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Brand Description */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Brand Description</label>
+                    <textarea
+                      placeholder="Describe your brand, products, and target audience..."
+                      value={brandForm.brand_description}
+                      onChange={(e) => setBrandForm({ ...brandForm, brand_description: e.target.value })}
+                      className="w-full h-32 px-4 py-3 rounded-lg bg-black border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] resize-none"
+                    />
+                  </div>
+
+                  <button 
+                    onClick={saveBrandProfile}
+                    disabled={brandSaving || !brandForm.brand_name}
+                    className="px-6 py-3 rounded-full bg-white text-black font-medium hover:shadow-xl hover:shadow-white/30 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                  >
+                    {brandSaving ? 'Saving...' : 'Save Brand Profile'}
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -360,22 +682,104 @@ export default function DashboardContent() {
                 <p className="text-sm sm:text-base text-white/60">View and manage your generated emails</p>
               </div>
 
-              {/* Empty state */}
-              <div className="p-12 rounded-xl border border-white/10 bg-white/5 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+              {historyLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ffff]"></div>
                 </div>
-                <h2 className="text-xl font-bold mb-2 text-white">No emails yet</h2>
-                <p className="text-white/60 mb-6">Your generated emails will appear here</p>
-                <button
-                  onClick={() => handleTabChange('new-email')}
-                  className="px-6 py-3 rounded-full bg-white text-black font-medium hover:shadow-xl hover:shadow-white/30 transition-all hover:-translate-y-0.5"
-                >
-                  Create Your First Email
-                </button>
-              </div>
+              ) : emailHistory.length === 0 ? (
+                /* Empty state */
+                <div className="p-12 rounded-xl border border-white/10 bg-white/5 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
+                    <svg className="w-8 h-8 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-xl font-bold mb-2 text-white">No emails yet</h2>
+                  <p className="text-white/60 mb-6">Your generated emails will appear here</p>
+                  <button
+                    onClick={() => handleTabChange('new-email')}
+                    className="px-6 py-3 rounded-full bg-white text-black font-medium hover:shadow-xl hover:shadow-white/30 transition-all hover:-translate-y-0.5"
+                  >
+                    Create Your First Email
+                  </button>
+                </div>
+              ) : (
+                /* Email grid with previews */
+                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {emailHistory.map((email) => {
+                    const content = email.content_json as any;
+                    const firstSection = content?.sections?.[0];
+                    
+                    return (
+                      <div
+                        key={email.id}
+                        onClick={() => window.location.href = `/dashboard/email/${email.id}`}
+                        className="group cursor-pointer rounded-xl border border-white/10 bg-white/5 overflow-hidden hover:border-[#00ffff]/50 hover:shadow-lg hover:shadow-[#00ffff]/20 transition-all"
+                      >
+                        {/* Preview thumbnail */}
+                        <div className="relative aspect-video bg-gradient-to-br from-white/10 to-white/5 overflow-hidden">
+                          <div className="absolute inset-0 p-6 flex flex-col justify-center items-center text-center">
+                            {firstSection?.heading ? (
+                              <h3 className="text-white text-lg font-bold line-clamp-2 mb-2">
+                                {firstSection.heading}
+                              </h3>
+                            ) : (
+                              <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mb-2">
+                                <svg className="w-6 h-6 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                              </div>
+                            )}
+                            {firstSection?.subheading && (
+                              <p className="text-white/60 text-sm line-clamp-2">
+                                {firstSection.subheading}
+                              </p>
+                            )}
+                          </div>
+                          
+                          {/* Status badge */}
+                          <div className="absolute top-2 right-2">
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              email.status === 'completed' 
+                                ? 'bg-green-500/90 text-white' 
+                                : email.status === 'failed'
+                                ? 'bg-red-500/90 text-white'
+                                : 'bg-yellow-500/90 text-white'
+                            }`}>
+                              {email.status}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Email info */}
+                        <div className="p-4">
+                          <h3 className="text-white font-semibold mb-1 truncate group-hover:text-[#00ffff] transition-colors">
+                            {email.subject_line || 'Untitled Email'}
+                          </h3>
+                          {email.preview_text && (
+                            <p className="text-sm text-white/60 mb-3 line-clamp-2">
+                              {email.preview_text}
+                            </p>
+                          )}
+                          <div className="flex items-center justify-between text-xs text-white/40">
+                            <span>
+                              {new Date(email.created_at).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </span>
+                            {email.email_type && (
+                              <span className="capitalize px-2 py-0.5 rounded bg-white/5">
+                                {email.email_type}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
@@ -419,14 +823,14 @@ export default function DashboardContent() {
                 {/* Session Section */}
                 <div className="p-6 rounded-xl border border-white/10 bg-white/5">
                   <h3 className="text-lg font-semibold text-white mb-4">Session</h3>
-                  <form action={signOut}>
-                    <button
-                      type="submit"
-                      className="px-6 py-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
-                    >
-                      Sign Out
-                    </button>
-                  </form>
+                  <button
+                    onClick={async () => {
+                      await signOut();
+                    }}
+                    className="px-6 py-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
+                  >
+                    Sign Out
+                  </button>
                 </div>
 
                 {/* Danger Zone */}
