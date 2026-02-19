@@ -15,7 +15,6 @@ import {
   Link,
   Img,
   Hr,
-  Font,
 } from '@react-email/components';
 import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
 import type { BrandProfile } from '@/lib/db/types';
@@ -26,6 +25,8 @@ import type { BrandProfile } from '@/lib/db/types';
 
 interface StyleConfig {
   fontFamily: string;
+  headingFontFamily: string;
+  googleFontsUrl: string;
   bodyBg: string;
   bodyColor: string;
   headingWeight: string;
@@ -43,7 +44,9 @@ interface StyleConfig {
 
 const styleConfigs: Record<string, StyleConfig> = {
   minimalist: {
-    fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif",
+    fontFamily: "'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif",
+    headingFontFamily: "'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif",
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&display=swap",
     bodyBg: '#f9f9f9',
     bodyColor: '#1a1a1a',
     headingWeight: '500',
@@ -59,7 +62,9 @@ const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#ffffff', borderRadius: '4px', padding: '24px', border: '1px solid #f0f0f0' },
   },
   editorial: {
-    fontFamily: "'Georgia', 'Times New Roman', serif",
+    fontFamily: "'Lora', Georgia, 'Times New Roman', serif",
+    headingFontFamily: "'Playfair Display', Georgia, 'Times New Roman', serif",
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lora:ital,wght@0,400;0,600;1,400&display=swap",
     bodyBg: '#fefefe',
     bodyColor: '#1a1a1a',
     headingWeight: '700',
@@ -75,7 +80,9 @@ const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#f5f5f5', padding: '20px', borderLeft: '3px solid #1a1a1a' },
   },
   retro: {
-    fontFamily: "'Georgia', 'Courier New', monospace",
+    fontFamily: "'Nunito', Georgia, sans-serif",
+    headingFontFamily: "'DM Serif Display', Georgia, 'Times New Roman', serif",
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Nunito:wght@400;700&display=swap",
     bodyBg: '#fdf6e3',
     bodyColor: '#3b2a1a',
     headingWeight: '700',
@@ -91,7 +98,9 @@ const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#fffbf0', borderRadius: '12px', padding: '24px', border: '2px solid #c8a96e' },
   },
   brutalist: {
-    fontFamily: "'Arial Black', 'Helvetica', Arial, sans-serif",
+    fontFamily: "'Space Grotesk', 'Arial Black', Helvetica, sans-serif",
+    headingFontFamily: "'Space Grotesk', 'Arial Black', Helvetica, sans-serif",
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap",
     bodyBg: '#ffffff',
     bodyColor: '#000000',
     headingWeight: '900',
@@ -107,7 +116,9 @@ const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#ffffff', padding: '24px', border: '3px solid #000000', boxShadow: '6px 6px 0px #000000' },
   },
   cyberpunk: {
-    fontFamily: "'Courier New', 'Courier', monospace",
+    fontFamily: "'Share Tech Mono', 'Courier New', monospace",
+    headingFontFamily: "'Orbitron', 'Courier New', monospace",
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap",
     bodyBg: '#0a0a0f',
     bodyColor: '#e0e0ff',
     headingWeight: '700',
@@ -123,7 +134,9 @@ const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#0f0f1a', padding: '20px', border: '1px solid #00ffff', borderRadius: '2px' },
   },
   handwritten: {
-    fontFamily: "'Georgia', 'Palatino', serif",
+    fontFamily: "'Nunito', Georgia, serif",
+    headingFontFamily: "'Caveat', Georgia, serif",
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Nunito:wght@400;600&display=swap",
     bodyBg: '#fdfaf5',
     bodyColor: '#2c2c2c',
     headingWeight: '600',
@@ -139,7 +152,9 @@ const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#fffef9', padding: '24px', borderRadius: '8px', border: '1px dashed #d4c5a9' },
   },
   bauhaus: {
-    fontFamily: "'Arial', 'Helvetica', sans-serif",
+    fontFamily: "'Work Sans', Arial, Helvetica, sans-serif",
+    headingFontFamily: "'Bebas Neue', Arial, Helvetica, sans-serif",
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;700&display=swap",
     bodyBg: '#ffffff',
     bodyColor: '#000000',
     headingWeight: '900',
@@ -176,7 +191,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
       ? React.createElement(Heading, {
           as: 'h1',
           style: {
-            fontFamily: config.fontFamily,
+            fontFamily: config.headingFontFamily,
             fontSize: '36px',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
@@ -208,7 +223,7 @@ function renderContent(section: EmailSection, config: StyleConfig): React.ReactE
       ? React.createElement(Heading, {
           as: 'h2',
           style: {
-            fontFamily: config.fontFamily,
+            fontFamily: config.headingFontFamily,
             fontSize: '24px',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
@@ -295,7 +310,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
       ? React.createElement(Heading, {
           as: 'h2',
           style: {
-            fontFamily: config.fontFamily,
+            fontFamily: config.headingFontFamily,
             fontSize: '24px',
             fontWeight: config.headingWeight,
             color: config.bodyColor,
@@ -350,7 +365,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
       ? React.createElement(Heading, {
           as: 'h2',
           style: {
-            fontFamily: config.fontFamily,
+            fontFamily: config.headingFontFamily,
             fontSize: '24px',
             fontWeight: config.headingWeight,
             color: config.bodyColor,
@@ -363,6 +378,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
       ...plans.map((plan, i) =>
         React.createElement(Column, {
           key: i,
+          className: 'em-col',
           style: {
             padding: '16px',
             textAlign: 'center' as const,
@@ -419,6 +435,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
           plan.buttonText
             ? React.createElement(Button, {
                 href: '#',
+                className: 'em-btn',
                 style: {
                   display: 'block',
                   marginTop: '16px',
@@ -448,7 +465,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
       ? React.createElement(Heading, {
           as: 'h2',
           style: {
-            fontFamily: config.fontFamily,
+            fontFamily: config.headingFontFamily,
             fontSize: '24px',
             fontWeight: config.headingWeight,
             color: config.bodyColor,
@@ -461,6 +478,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
       ...stats.map((stat, i) =>
         React.createElement(Column, {
           key: i,
+          className: 'em-col',
           style: { textAlign: 'center' as const, padding: '12px' }
         },
           stat.icon
@@ -502,7 +520,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
       ? React.createElement(Heading, {
           as: 'h2',
           style: {
-            fontFamily: config.fontFamily,
+            fontFamily: config.headingFontFamily,
             fontSize: '24px',
             fontWeight: config.headingWeight,
             color: config.bodyColor,
@@ -514,6 +532,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
       ...images.slice(0, perRow).map((img, i) =>
         React.createElement(Column, {
           key: i,
+          className: 'em-col',
           style: { padding: '4px' }
         },
           React.createElement(Img, {
@@ -558,7 +577,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
         ? React.createElement(Heading, {
             as: 'h2',
             style: {
-              fontFamily: config.fontFamily,
+              fontFamily: config.headingFontFamily,
               fontSize: '22px',
               fontWeight: config.headingWeight,
               color: primaryColor,
@@ -580,6 +599,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
       section.buttonText
         ? React.createElement(Button, {
             href: section.buttonUrl || '#',
+            className: 'em-btn',
             style: {
               padding: config.buttonPadding,
               backgroundColor: primaryColor,
@@ -604,7 +624,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
       ? React.createElement(Heading, {
           as: 'h2',
           style: {
-            fontFamily: config.fontFamily,
+            fontFamily: config.headingFontFamily,
             fontSize: '26px',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
@@ -627,6 +647,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
     section.buttonText
       ? React.createElement(Button, {
           href: section.buttonUrl || '#',
+          className: 'em-btn',
           style: {
             padding: config.buttonPadding,
             backgroundColor: primaryColor,
@@ -705,6 +726,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
   const isLeft = section.imagePosition !== 'right';
 
   const imageCol = React.createElement(Column, {
+    className: 'em-col',
     style: {
       width: '45%',
       verticalAlign: 'middle' as const,
@@ -721,13 +743,14 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
   );
 
   const textCol = React.createElement(Column, {
+    className: 'em-col',
     style: { width: '55%', verticalAlign: 'middle' as const }
   },
     section.heading
       ? React.createElement(Heading, {
           as: 'h2',
           style: {
-            fontFamily: config.fontFamily,
+            fontFamily: config.headingFontFamily,
             fontSize: '22px',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
@@ -750,6 +773,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
     section.buttonText
       ? React.createElement(Button, {
           href: section.buttonUrl || '#',
+          className: 'em-btn',
           style: {
             padding: config.buttonPadding,
             backgroundColor: primaryColor,
@@ -862,6 +886,7 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
       ...links.map((link, i) =>
         React.createElement(Column, {
           key: i,
+          className: 'em-col',
           style: { textAlign: 'center' as const, padding: '0 8px' }
         },
           React.createElement(Link, {
@@ -889,7 +914,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
       ? React.createElement(Heading, {
           as: 'h2',
           style: {
-            fontFamily: config.fontFamily,
+            fontFamily: config.headingFontFamily,
             fontSize: '24px',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
@@ -903,6 +928,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
       ...colItems.map((col, i) =>
         React.createElement(Column, {
           key: i,
+          className: 'em-col',
           style: { verticalAlign: 'top', padding: '0 8px' }
         },
           React.createElement('div', {
@@ -947,6 +973,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
             col.buttonText
               ? React.createElement(Button, {
                   href: col.buttonUrl || '#',
+                  className: 'em-btn',
                   style: {
                     padding: '8px 16px',
                     backgroundColor: primaryColor,
@@ -1035,16 +1062,24 @@ export async function generateEmailHtml(
   const emailElement = React.createElement(
     Html, { lang: 'en' },
     React.createElement(Head, null,
-      React.createElement(Font, {
-        fontFamily: 'Inter',
-        fallbackFontFamily: 'Arial',
-        webFont: {
-          url: 'https://fonts.gstatic.com/s/inter/v13/UcC73FwrK3iLTeHuS_fvQtMwCp50KnMa1ZL7W0Q5nw.woff2',
-          format: 'woff2',
-        },
-        fontWeight: 400,
-        fontStyle: 'normal',
-      })
+      React.createElement('meta', {
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1.0',
+      }),
+      React.createElement('link', {
+        href: config.googleFontsUrl,
+        rel: 'stylesheet',
+      }),
+      React.createElement('style', null,
+        '@media only screen and (max-width:620px){' +
+        '.em-wrap{width:100%!important;padding:0 20px!important;border-left:none!important;border-right:none!important;border-radius:0!important;box-sizing:border-box!important}' +
+        '.em-col{display:block!important;width:100%!important;max-width:100%!important;padding-left:0!important;padding-right:0!important;box-sizing:border-box!important;margin-bottom:12px!important}' +
+        'h1{font-size:26px!important;line-height:1.25!important}' +
+        'h2{font-size:20px!important;line-height:1.3!important}' +
+        'img{max-width:100%!important;height:auto!important}' +
+        '.em-btn{display:block!important;width:100%!important;text-align:center!important;box-sizing:border-box!important}' +
+        '}'
+      )
     ),
     React.createElement(Preview, null, email.previewText),
     React.createElement(Body, {
@@ -1056,6 +1091,7 @@ export async function generateEmailHtml(
       }
     },
       React.createElement(Container, {
+        className: 'em-wrap',
         style: {
           maxWidth: '600px',
           margin: '0 auto',
