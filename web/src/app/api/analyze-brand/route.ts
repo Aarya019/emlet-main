@@ -38,27 +38,33 @@ export async function POST(request: NextRequest) {
     }
 
     // Clean the URL (remove protocol if present)
-    const domain = websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    const domain = websiteUrl.replace(/^https?:\/\//, '').replace(/\/$/, '').split('/')[0];
+    // Remove www. prefix
+    const cleanDomain = domain.replace(/^www\./, '');
 
-    console.log('Analyzing brand for domain:', domain);
+    console.log('Analyzing brand for domain:', cleanDomain);
 
-    // Step 1: Get logo from Clearbit (free, no auth)
-    const logoUrl = `https://logo.clearbit.com/${domain}`;
+    // Step 1: Get logo/favicon using Google's service (free, reliable)
+    // This works for most websites and returns their favicon/logo
+    const logoUrl = `https://t0.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=http://${cleanDomain}&size=256`;
 
-    // Step 2: Call Jina AI Reader to get clean website content
+    // Step 2: Extract colors directly from the website HTML/CSS
+    const colors = await extractColorsFromWebsite(websiteUrl);
+
+    // Step 3: Call Jina AI Reader to get clean website content for text analysis
     const websiteContent = await fetchWebsiteContent(websiteUrl);
 
-    // Step 3: Use Gemini to analyze everything from content
-    const geminiAnalysis = await analyzeBrandWithGemini(websiteContent, domain);
+    // Step 4: Use Gemini to analyze brand information from content
+    const geminiAnalysis = await analyzeBrandWithGemini(websiteContent, cleanDomain);
 
     // Combine all data
     const result: BrandAnalysisResult = {
-      brandName: geminiAnalysis.brandName || extractDomainName(domain),
+      brandName: geminiAnalysis.brandName || extractDomainName(cleanDomain),
       industry: geminiAnalysis.industry,
       brandVoice: geminiAnalysis.brandVoice,
-      primaryColor: geminiAnalysis.primaryColor || '#5c5cf0',
-      secondaryColor: geminiAnalysis.secondaryColor,
-      logoUrl: logoUrl,
+      primaryColor: colors.primaryColor || geminiAnalysis.primaryColor || '#5c5cf0',
+      secondaryColor: colors.secondaryColor || geminiAnalysis.secondaryColor,
+      logoUrl: logoUrl, // Google's favicon service - works for virtually all websites
       brandDescription: geminiAnalysis.description,
     };
 
@@ -75,6 +81,67 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Extract colors directly from website HTML/CSS
+ */
+async function extractColorsFromWebsite(url: string): Promise<{ primaryColor?: string; secondaryColor?: string }> {
+  try {
+    // Ensure URL has protocol
+    const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+    
+    const response = await fetch(fullUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+    });
+
+    if (!response.ok) {
+      return {};
+    }
+
+    const html = await response.text();
+    
+    // Extract hex colors from the HTML/CSS
+    const colorRegex = /#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})\b/g;
+    const colors = html.match(colorRegex) || [];
+    
+    // Normalize and count color occurrences
+    const colorCounts = new Map<string, number>();
+    colors.forEach(color => {
+      const normalized = color.toLowerCase();
+      // Expand 3-digit hex to 6-digit
+      const full = normalized.length === 4 
+        ? `#${normalized[1]}${normalized[1]}${normalized[2]}${normalized[2]}${normalized[3]}${normalized[3]}`
+        : normalized;
+      
+      // Filter out very light (nearly white) and very dark (nearly black) colors
+      const r = parseInt(full.slice(1, 3), 16);
+      const g = parseInt(full.slice(3, 5), 16);
+      const b = parseInt(full.slice(5, 7), 16);
+      
+      // Skip if too light (avg > 240) or too dark (avg < 20)
+      const avg = (r + g + b) / 3;
+      if (avg > 240 || avg < 20) return;
+      
+      colorCounts.set(full, (colorCounts.get(full) || 0) + 1);
+    });
+
+    // Sort by frequency and get top colors
+    const sortedColors = Array.from(colorCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([color]) => color);
+
+    // Return most frequent colors
+    return {
+      primaryColor: sortedColors[0],
+      secondaryColor: sortedColors[1],
+    };
+  } catch (error) {
+    console.warn('Color extraction failed:', error);
+    return {};
   }
 }
 
@@ -113,7 +180,7 @@ async function analyzeBrandWithGemini(
   domain: string
 ): Promise<{ 
   brandName: string;
-  brandVoice: string; 
+  brandVoice: 'professional' | 'friendly' | 'casual' | 'formal'; 
   industry: string; 
   description: string;
   primaryColor: string;
@@ -158,9 +225,21 @@ Return ONLY valid JSON, no markdown formatting or explanations.`;
 
     const analysis = JSON.parse(jsonMatch[0]);
     
+    // Map brand voice to valid database values
+    const brandVoiceText = (analysis.brandVoice || '').toLowerCase();
+    let mappedBrandVoice: 'professional' | 'friendly' | 'casual' | 'formal' = 'professional';
+    
+    if (brandVoiceText.includes('friendly') || brandVoiceText.includes('warm')) {
+      mappedBrandVoice = 'friendly';
+    } else if (brandVoiceText.includes('casual') || brandVoiceText.includes('playful') || brandVoiceText.includes('relaxed')) {
+      mappedBrandVoice = 'casual';
+    } else if (brandVoiceText.includes('formal') || brandVoiceText.includes('serious') || brandVoiceText.includes('corporate')) {
+      mappedBrandVoice = 'formal';
+    }
+    
     return {
       brandName: analysis.brandName || extractDomainName(domain),
-      brandVoice: analysis.brandVoice || 'Professional and engaging',
+      brandVoice: mappedBrandVoice,
       industry: analysis.industry || 'Not specified',
       description: analysis.description || 'Brand description not available',
       primaryColor: analysis.primaryColor || '#5c5cf0',
@@ -170,7 +249,7 @@ Return ONLY valid JSON, no markdown formatting or explanations.`;
     console.warn('Gemini analysis failed:', error);
     return {
       brandName: extractDomainName(domain),
-      brandVoice: 'Professional and engaging',
+      brandVoice: 'professional',
       industry: 'Not specified',
       description: 'Brand description not available',
       primaryColor: '#5c5cf0',

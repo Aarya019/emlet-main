@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { signOut } from '@/app/actions/auth';
-import type { BrandProfile, BrandVoice, EmailGeneration } from '@/lib/db/types';
+import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle } from '@/lib/db/types';
 
 type TabType = 'new-email' | 'brand' | 'history' | 'user';
 
@@ -12,12 +12,15 @@ export default function DashboardContent() {
   const [activeTab, setActiveTab] = useState<TabType>('new-email');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [emailInput, setEmailInput] = useState('');
+  const [designStyle, setDesignStyle] = useState<DesignStyle>('minimalist');
   
   // Brand profile state
-  const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null);
+  const [brandProfiles, setBrandProfiles] = useState<BrandProfile[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState<BrandProfile | null>(null);
   const [brandLoading, setBrandLoading] = useState(false);
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandMessage, setBrandMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [showBrandForm, setShowBrandForm] = useState(false);
   const [brandForm, setBrandForm] = useState({
     brand_name: '',
     industry: '',
@@ -39,6 +42,13 @@ export default function DashboardContent() {
   // History state
   const [emailHistory, setEmailHistory] = useState<EmailGeneration[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+
+  // Delete confirmation modal
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [brandToDelete, setBrandToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  // Design style dropdown
+  const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
 
   useEffect(() => {
     // Retrieve and clear the pending prompt from localStorage
@@ -88,24 +98,10 @@ export default function DashboardContent() {
       const res = await fetch('/api/brand-profiles');
       if (res.ok) {
         const data = await res.json();
-        // Get the default brand profile or the first one
-        const profile = data.profiles?.find((p: BrandProfile) => p.is_default) || data.profiles?.[0];
-        if (profile) {
-          setBrandProfile(profile);
-          setBrandForm({
-            brand_name: profile.brand_name,
-            industry: profile.industry || '',
-            brand_voice: profile.brand_voice,
-            primary_color: profile.primary_color,
-            secondary_color: profile.secondary_color || '',
-            brand_description: profile.brand_description || '',
-            website_url: profile.website_url || '',
-            logo_url: profile.logo_url || ''
-          });
-        }
+        setBrandProfiles(data.profiles || []);
       }
     } catch (error) {
-      console.error('Error loading brand profile:', error);
+      console.error('Error loading brand profiles:', error);
     } finally {
       setBrandLoading(false);
     }
@@ -166,26 +162,31 @@ export default function DashboardContent() {
     setBrandMessage(null);
     
     try {
-      const url = brandProfile 
-        ? `/api/brand-profiles/${brandProfile.id}` 
+      const url = selectedBrand 
+        ? `/api/brand-profiles/${selectedBrand.id}` 
         : '/api/brand-profiles';
       
-      const method = brandProfile ? 'PUT' : 'POST';
+      const method = selectedBrand ? 'PUT' : 'POST';
       
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...brandForm,
-          is_default: true
+          is_default: brandProfiles.length === 0 || selectedBrand?.is_default || false
         })
       });
 
       if (res.ok) {
         const data = await res.json();
-        setBrandProfile(data.profile);
-        setBrandMessage({ type: 'success', text: 'Brand profile saved successfully!' });
+        setBrandMessage({ type: 'success', text: selectedBrand ? 'Brand updated successfully!' : 'Brand created successfully!' });
         setTimeout(() => setBrandMessage(null), 3000);
+        
+        // Reload brands and close form
+        await loadBrandProfile();
+        setShowBrandForm(false);
+        setSelectedBrand(null);
+        resetBrandForm();
       } else {
         const error = await res.json();
         setBrandMessage({ type: 'error', text: error.error || 'Failed to save brand profile' });
@@ -196,6 +197,106 @@ export default function DashboardContent() {
     } finally {
       setBrandSaving(false);
     }
+  };
+
+  const resetBrandForm = () => {
+    setBrandForm({
+      brand_name: '',
+      industry: '',
+      brand_voice: 'professional' as BrandVoice,
+      primary_color: '#5c5cf0',
+      secondary_color: '',
+      brand_description: '',
+      website_url: '',
+      logo_url: ''
+    });
+  };
+
+  const editBrand = (brand: BrandProfile) => {
+    setSelectedBrand(brand);
+    setBrandForm({
+      brand_name: brand.brand_name,
+      industry: brand.industry || '',
+      brand_voice: brand.brand_voice,
+      primary_color: brand.primary_color,
+      secondary_color: brand.secondary_color || '',
+      brand_description: brand.brand_description || '',
+      website_url: brand.website_url || '',
+      logo_url: brand.logo_url || ''
+    });
+    setShowBrandForm(true);
+  };
+
+  const createNewBrand = () => {
+    setSelectedBrand(null);
+    resetBrandForm();
+    setShowBrandForm(true);
+  };
+
+  const deleteBrand = async (brandId: string) => {
+    if (!brandToDelete) return;
+
+    try {
+      const res = await fetch(`/api/brand-profiles/${brandId}`, {
+        method: 'DELETE'
+      });
+
+      if (res.ok) {
+        setBrandMessage({ type: 'success', text: 'Brand deleted successfully!' });
+        setTimeout(() => setBrandMessage(null), 3000);
+        await loadBrandProfile();
+      } else {
+        const error = await res.json();
+        setBrandMessage({ type: 'error', text: error.error || 'Failed to delete brand' });
+      }
+    } catch (error) {
+      console.error('Error deleting brand:', error);
+      setBrandMessage({ type: 'error', text: 'An error occurred while deleting' });
+    } finally {
+      setDeleteModalOpen(false);
+      setBrandToDelete(null);
+    }
+  };
+
+  const openDeleteModal = (brand: BrandProfile) => {
+    setBrandToDelete({ id: brand.id, name: brand.brand_name });
+    setDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModalOpen(false);
+    setBrandToDelete(null);
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setBrandMessage({ type: 'error', text: 'Please upload an image file' });
+      setTimeout(() => setBrandMessage(null), 3000);
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setBrandMessage({ type: 'error', text: 'Image must be less than 2MB' });
+      setTimeout(() => setBrandMessage(null), 3000);
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      setBrandForm({ ...brandForm, logo_url: base64String });
+    };
+    reader.onerror = () => {
+      setBrandMessage({ type: 'error', text: 'Failed to read image file' });
+      setTimeout(() => setBrandMessage(null), 3000);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleGenerateEmail = async () => {
@@ -217,7 +318,10 @@ export default function DashboardContent() {
       const res = await fetch('/api/generate-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: emailInput.trim() })
+        body: JSON.stringify({ 
+          prompt: emailInput.trim(),
+          designStyle: designStyle
+        })
       });
 
       const data = await res.json();
@@ -262,7 +366,55 @@ export default function DashboardContent() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen overflow-hidden overflow-x-hidden">
+      {/* Delete Confirmation Modal */}
+      {deleteModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={closeDeleteModal}
+          />
+          
+          {/* Modal */}
+          <div className="relative bg-gradient-to-br from-black to-gray-900 border-4 border-red-500 rounded-2xl shadow-2xl shadow-red-500/50 max-w-md w-full p-8 transform transition-all">
+            {/* Warning Icon */}
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/20 border-4 border-red-500 flex items-center justify-center">
+              <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+
+            {/* Title */}
+            <h3 className="text-2xl font-black text-white mb-3 text-center">Delete Brand?</h3>
+            
+            {/* Message */}
+            <p className="text-white/70 text-center mb-2 leading-relaxed">
+              Are you sure you want to delete <span className="text-white font-bold">"{brandToDelete?.name}"</span>?
+            </p>
+            <p className="text-red-400 text-sm text-center mb-8 font-semibold">
+              This action cannot be undone!
+            </p>
+
+            {/* Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={closeDeleteModal}
+                className="flex-1 px-6 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white font-bold hover:bg-white/20 hover:border-white/30 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => brandToDelete && deleteBrand(brandToDelete.id)}
+                className="flex-1 px-6 py-3 rounded-xl bg-red-500 border-2 border-red-600 text-white font-black hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/50 transition-all transform hover:scale-105"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
@@ -365,10 +517,10 @@ export default function DashboardContent() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto lg:ml-16 relative">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden lg:ml-16 relative">
         {/* Animated gradient blobs background - only for new-email tab */}
         {activeTab === 'new-email' && (
-          <div className="pointer-events-none absolute top-0 left-0 right-0 bottom-0 min-h-full z-0">
+          <div className="pointer-events-none absolute top-0 left-0 right-0 bottom-0 min-h-full z-0 overflow-hidden">
             <div className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-br from-[#00ff00]/20 via-[#00ffff]/20 to-[#ff00ff]/20 rounded-full blur-3xl animate-blob" />
             <div className="absolute top-1/2 -left-32 w-80 h-80 bg-gradient-to-br from-[#ff00ff]/20 via-[#00ffff]/20 to-[#00ff00]/20 rounded-full blur-3xl animate-blob animation-delay-2000" />
             <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-gradient-to-br from-[#00ffff]/20 via-[#ff00ff]/20 to-[#00ff00]/20 rounded-full blur-3xl animate-blob animation-delay-4000" />
@@ -395,10 +547,10 @@ export default function DashboardContent() {
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
 
-        <div className="p-4 sm:p-6 lg:p-8 relative z-10">
+        <div className="p-4 sm:p-6 lg:p-8 relative z-10 overflow-x-hidden">
           {/* Tab content */}
           {activeTab === 'new-email' && (
-            <div className="space-y-6 pt-12 sm:pt-16 lg:pt-24 relative z-10">
+            <div className="space-y-6 pt-12 sm:pt-16 lg:pt-24 relative z-10 overflow-x-hidden">
               {/* Email Generator - Homepage Style */}
               <div className="max-w-4xl mx-auto relative z-10">
                 <div className="text-center space-y-2 md:space-y-3 mb-6 md:mb-8">
@@ -416,11 +568,11 @@ export default function DashboardContent() {
                     <textarea
                       value={emailInput}
                       onChange={(e) => setEmailInput(e.target.value)}
-                      placeholder="Describe the email you want to create... (e.g., Product launch announcement with 30% discount)"
+                      placeholder="Describe the email you want to create... (e.g., Product launch announcement with 30% discount for existing customers)"
                       className="w-full resize-none rounded-lg sm:rounded-xl border-0 bg-black/60 px-4 py-3 sm:px-5 sm:py-4 text-sm sm:text-base text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:text-white min-h-[140px] sm:min-h-[160px]"
                     />
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3">
-                      <div className="flex items-center gap-2 text-xs sm:text-sm text-white/60 justify-center sm:justify-start">
+                      <div className="flex items-center gap-3 text-xs sm:text-sm text-white/60 justify-center sm:justify-start flex-wrap">
                         <span className="inline-flex items-center gap-1.5">
                           <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -428,6 +580,62 @@ export default function DashboardContent() {
                           <span className="text-[#00ffff]">AI-powered</span>
                         </span>
                         <span className="text-white/30">·</span>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setStyleDropdownOpen(!styleDropdownOpen)}
+                            className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/20 rounded-lg pl-3 pr-2 py-1.5 text-xs font-medium text-white hover:border-white/40 hover:from-white/15 hover:to-white/10 transition-all min-w-[140px]"
+                          >
+                            <span className="flex-1 text-left">
+                              {designStyle === 'minimalist' && '✦ Minimalist'}
+                              {designStyle === 'editorial' && '📰 Editorial'}
+                              {designStyle === 'retro' && '🕹️ Retro'}
+                              {designStyle === 'brutalist' && '▪️ Brutalist'}
+                              {designStyle === 'cyberpunk' && '⚡ Cyberpunk'}
+                              {designStyle === 'handwritten' && '✍️ Handwritten'}
+                              {designStyle === 'bauhaus' && '▲ Bauhaus'}
+                            </span>
+                            <svg className={`w-4 h-4 text-white/60 transition-transform ${styleDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          
+                          {styleDropdownOpen && (
+                            <>
+                              <div 
+                                className="fixed inset-0 z-10" 
+                                onClick={() => setStyleDropdownOpen(false)}
+                              />
+                              <div className="absolute left-0 top-full mt-2 w-48 max-h-[240px] bg-gradient-to-b from-black via-black to-black/95 border-2 border-white/20 rounded-lg shadow-2xl shadow-black/50 overflow-y-auto z-20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 backdrop-blur-xl">
+                                {([
+                                  { value: 'minimalist', label: '✦ Minimalist', desc: 'Clean & Simple' },
+                                  { value: 'editorial', label: '📰 Editorial', desc: 'Magazine Style' },
+                                  { value: 'retro', label: '🕹️ Retro', desc: 'Vintage Vibes' },
+                                  { value: 'brutalist', label: '▪️ Brutalist', desc: 'Bold & Raw' },
+                                  { value: 'cyberpunk', label: '⚡ Cyberpunk', desc: 'Neon Future' },
+                                  { value: 'handwritten', label: '✍️ Handwritten', desc: 'Organic Touch' },
+                                  { value: 'bauhaus', label: '▲ Bauhaus', desc: 'Geometric' }
+                                ] as const).map((style) => (
+                                  <button
+                                    key={style.value}
+                                    type="button"
+                                    onClick={() => {
+                                      setDesignStyle(style.value);
+                                      setStyleDropdownOpen(false);
+                                    }}
+                                    className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${
+                                      designStyle === style.value ? 'bg-[#00ffff]/10 text-[#00ffff]' : 'text-white'
+                                    }`}
+                                  >
+                                    <div className="font-medium text-sm">{style.label}</div>
+                                    <div className="text-xs text-white/50 mt-0.5">{style.desc}</div>
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <span className="text-white/30 hidden xs:inline">·</span>
                         <span className="hidden xs:inline">
                           {creditsRemaining !== null ? `${creditsRemaining} credits left` : 'Loading...'}
                         </span>
@@ -522,17 +730,223 @@ export default function DashboardContent() {
 
           {activeTab === 'brand' && (
             <div className="space-y-6">
-              <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 text-white">Brand Profile</h1>
-                <p className="text-sm sm:text-base text-white/60">Customize your brand identity for AI-generated emails</p>
-              </div>
+              {!showBrandForm ? (
+                <>
+                  {/* Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                      <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 text-white">Brand Profiles</h1>
+                      <p className="text-sm sm:text-base text-white/60">
+                        {brandProfiles.length === 0 
+                          ? 'Create your first brand profile to personalize your email campaigns' 
+                          : `${brandProfiles.length} brand${brandProfiles.length === 1 ? '' : 's'} configured`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={createNewBrand}
+                      className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex items-center gap-2 self-start sm:self-auto"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      New Brand
+                    </button>
+                  </div>
 
-              {brandLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ffff]"></div>
-                </div>
+                  {/* Success/Error Message */}
+                  {brandMessage && (
+                    <div className={`p-4 rounded-lg border ${
+                      brandMessage.type === 'success' 
+                        ? 'bg-green-500/10 border-green-500/30 text-green-400' 
+                        : 'bg-red-500/10 border-red-500/30 text-red-400'
+                    }`}>
+                      {brandMessage.text}
+                    </div>
+                  )}
+
+                  {brandLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#00ffff]"></div>
+                    </div>
+                  ) : (
+                    brandProfiles.length === 0 ? (
+                      <div className="p-12 rounded-xl border-2 border-dashed border-white/20 bg-white/5 text-center">
+                      <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#00ffff]/20 to-[#00ff00]/20 flex items-center justify-center">
+                        <svg className="w-10 h-10 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                      </div>
+                      <h3 className="text-2xl font-bold text-white mb-3">Create Your First Brand</h3>
+                      <p className="text-white/60 mb-8 max-w-md mx-auto">
+                        Add your brand profile to generate personalized, on-brand email content with AI. 
+                        You can create multiple brands for different products or businesses.
+                      </p>
+                      <button
+                        onClick={createNewBrand}
+                        className="px-8 py-4 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold hover:shadow-xl hover:shadow-[#00ffff]/50 transition-all text-lg"
+                      >
+                        Get Started
+                      </button>
+                    </div>
+                    ) : (
+                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {brandProfiles.map((brand) => (
+                        <div
+                          key={brand.id}
+                          className="group relative rounded-xl border-2 border-white/10 bg-gradient-to-br from-white/5 to-white/10 hover:border-[#00ffff]/50 hover:shadow-xl hover:shadow-[#00ffff]/20 transition-all overflow-hidden"
+                        >
+                          {/* Decorative gradient */}
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#00ffff]/10 to-transparent rounded-full blur-3xl -z-10" />
+                          
+                          {/* Default Badge */}
+                          {brand.is_default && (
+                            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-[#00ffff] text-black text-[10px] font-black tracking-wider z-10">
+                              DEFAULT
+                            </div>
+                          )}
+
+                          {/* Logo */}
+                          <div className="p-4 pb-3 flex justify-center">
+                            <div className="w-20 h-20 rounded-xl bg-white/10 border-2 border-white/20 flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform">
+                              {brand.logo_url ? (
+                                <img 
+                                  src={brand.logo_url} 
+                                  alt={brand.brand_name} 
+                                  className="w-full h-full object-contain p-2" 
+                                  onError={(e) => {
+                                    const target = e.currentTarget;
+                                    target.style.display = 'none';
+                                    if (target.parentElement) {
+                                      const span = document.createElement('span');
+                                      span.className = 'text-3xl font-black text-white';
+                                      span.textContent = brand.brand_name.charAt(0).toUpperCase();
+                                      target.parentElement.appendChild(span);
+                                    }
+                                  }} 
+                                />
+                              ) : (
+                                <span className="text-3xl font-black text-white">{brand.brand_name.charAt(0).toUpperCase()}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Card Body */}
+                          <div className="px-4 pb-4 space-y-3">
+                            {/* Brand Name */}
+                            <div className="text-center">
+                              <h3 className="text-sm font-black text-white mb-1 truncate">{brand.brand_name}</h3>
+                              {brand.industry && (
+                                <p className="text-[11px] text-white/60 truncate">{brand.industry}</p>
+                              )}
+                            </div>
+
+                            {/* Brand Voice Badge */}
+                            <div className="flex justify-center">
+                              <span className="px-2.5 py-1 rounded-md bg-white/10 border border-white/20 text-[11px] text-white font-semibold capitalize">
+                                {brand.brand_voice}
+                              </span>
+                            </div>
+
+                            {/* Brand Colors */}
+                            <div className="space-y-2">
+                              <div className="flex gap-2">
+                                <div 
+                                  className="flex-1 h-8 rounded-md border-2 border-white/30 shadow-lg" 
+                                  style={{ backgroundColor: brand.primary_color }}
+                                  title={`Primary: ${brand.primary_color}`}
+                                />
+                                {brand.secondary_color && (
+                                  <div 
+                                    className="flex-1 h-8 rounded-md border-2 border-white/30 shadow-lg" 
+                                    style={{ backgroundColor: brand.secondary_color }}
+                                    title={`Secondary: ${brand.secondary_color}`}
+                                  />
+                                )}
+                              </div>
+                              <div className="flex gap-2 text-[10px] text-white/50 font-mono">
+                                <span className="flex-1 text-center truncate">{brand.primary_color}</span>
+                                {brand.secondary_color && (
+                                  <span className="flex-1 text-center truncate">{brand.secondary_color}</span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Website URL */}
+                            {brand.website_url && (
+                              <div className="text-center">
+                                <div className="text-[11px] text-white/50 inline-flex items-center gap-1">
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                  </svg>
+                                  <span className="truncate max-w-[120px]">
+                                    {brand.website_url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Description */}
+                            {brand.brand_description && (
+                              <p className="text-[11px] text-white/50 line-clamp-2 leading-relaxed text-center">
+                                {brand.brand_description}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Card Footer - Actions */}
+                          <div className="px-4 pb-4 pt-2 border-t border-white/10">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => editBrand(brand)}
+                                className="flex-1 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ffff]/10 to-[#00ff00]/10 border border-[#00ffff]/30 text-white text-[11px] font-bold hover:from-[#00ffff]/20 hover:to-[#00ff00]/20 hover:border-[#00ffff]/50 transition-all"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openDeleteModal(brand);
+                                }}
+                                className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-[11px] font-bold hover:bg-red-500/20 hover:border-red-500/50 transition-all"
+                                title="Delete brand"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    )
+                  )}
+                </>
               ) : (
+                /* Brand Form */
                 <div className="max-w-2xl space-y-6">
+                  <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
+                    <div>
+                      <h2 className="text-2xl font-bold text-white">{selectedBrand ? 'Edit Brand' : 'Create New Brand'}</h2>
+                      <p className="text-sm text-white/60 mt-1">
+                        {selectedBrand ? 'Update your brand information' : 'Add a new brand profile for your email campaigns'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setShowBrandForm(false);
+                        setSelectedBrand(null);
+                        resetBrandForm();
+                      }}
+                      className="text-white/60 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-lg"
+                      title="Close"
+                    >
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
                   {/* Success/Error Message */}
                   {brandMessage && (
                     <div className={`p-4 rounded-lg border ${
@@ -580,6 +994,77 @@ export default function DashboardContent() {
                       </button>
                     </div>
                     <p className="mt-1 text-xs text-white/40">We'll automatically extract your brand colors, logo, and voice</p>
+                  </div>
+
+                  {/* Logo URL Input & Preview */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">Brand Logo (Optional)</label>
+                    <div className="flex gap-2 mb-2">
+                      <input
+                        type="url"
+                        placeholder="https://example.com/logo.png or paste image URL"
+                        value={brandForm.logo_url.startsWith('data:') ? '' : brandForm.logo_url}
+                        onChange={(e) => setBrandForm({ ...brandForm, logo_url: e.target.value })}
+                        className="flex-1 px-4 py-3 rounded-lg bg-black border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                        disabled={brandForm.logo_url.startsWith('data:')}
+                      />
+                      <label className="px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white font-medium hover:bg-white/20 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2">
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Upload
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleLogoUpload}
+                          className="hidden"
+                        />
+                      </label>
+                    </div>
+                    <p className="text-xs text-white/40">Enter a URL, upload an image (max 2MB), or use auto-fill from website analyzer</p>
+                    
+                    {/* Logo Preview */}
+                    {brandForm.logo_url && (
+                      <div className="mt-4 flex items-center gap-4 p-4 rounded-lg bg-white/5 border border-white/10">
+                        <div className="w-20 h-20 rounded-xl bg-white/10 border-2 border-white/20 flex items-center justify-center overflow-hidden p-2 flex-shrink-0">
+                          <img 
+                            src={brandForm.logo_url} 
+                            alt="Brand logo preview" 
+                            className="w-full h-full object-contain"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              if (target.parentElement) {
+                                const div = document.createElement('div');
+                                div.className = 'flex flex-col items-center gap-1';
+                                div.innerHTML = `
+                                  <svg class="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                  <span class="text-[10px] text-red-400">Failed</span>
+                                `;
+                                target.parentElement.appendChild(div);
+                              }
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white font-medium mb-1">Logo Preview</p>
+                          <p className="text-xs text-white/50 truncate">
+                            {brandForm.logo_url.startsWith('data:') 
+                              ? 'Uploaded image' 
+                              : brandForm.logo_url}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setBrandForm({ ...brandForm, logo_url: '' })}
+                          className="px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/20 transition-all flex-shrink-0"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Brand Name */}
@@ -668,7 +1153,7 @@ export default function DashboardContent() {
                     disabled={brandSaving || !brandForm.brand_name}
                     className="px-6 py-3 rounded-full bg-white text-black font-medium hover:shadow-xl hover:shadow-white/30 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   >
-                    {brandSaving ? 'Saving...' : 'Save Brand Profile'}
+                    {brandSaving ? 'Saving...' : selectedBrand ? 'Update Brand' : 'Create Brand'}
                   </button>
                 </div>
               )}

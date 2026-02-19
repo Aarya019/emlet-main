@@ -5,6 +5,7 @@ export type BrandVoice = 'professional' | 'friendly' | 'casual' | 'formal';
 export type EmailType = 'promotional' | 'newsletter' | 'educational' | 'transactional' | 'other';
 export type GenerationStatus = 'generating' | 'completed' | 'failed';
 export type ActionType = 'email_generation' | 'credit_purchase' | 'credit_refund' | 'plan_upgrade';
+export type DesignStyle = 'minimalist' | 'editorial' | 'retro' | 'brutalist' | 'cyberpunk' | 'handwritten' | 'bauhaus';
 
 export interface Profile {
   id: string;
@@ -39,6 +40,7 @@ export interface EmailGeneration {
   brand_profile_id: string | null;
   prompt: string;
   email_type: EmailType | null;
+  design_style: DesignStyle;
   subject_line: string | null;
   preview_text: string | null;
   content_json: any | null;

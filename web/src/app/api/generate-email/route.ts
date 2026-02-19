@@ -4,6 +4,7 @@ import { generateEmailContent } from '@/lib/ai/gemini';
 import { getDefaultBrandProfile } from '@/lib/db/queries';
 import { deductCredits } from '@/lib/db/queries';
 import { createEmailGeneration } from '@/lib/db/queries';
+import { generateEmailHtml } from '@/lib/email/renderer';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { prompt } = body;
+    const { prompt, designStyle = 'minimalist' } = body;
 
     // Validate prompt
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
@@ -57,6 +58,7 @@ export async function POST(request: NextRequest) {
       brand_profile_id: brandProfile?.id || null,
       prompt: prompt.trim(),
       email_type: null,
+      design_style: designStyle as any,
       subject_line: null,
       preview_text: null,
       content_json: null,
@@ -76,7 +78,44 @@ export async function POST(request: NextRequest) {
 
     try {
       // Generate email content with Gemini
-      const emailContent = await generateEmailContent(prompt.trim(), brandProfile);
+      const emailContent = await generateEmailContent(
+        prompt.trim(), 
+        brandProfile, 
+        designStyle
+      );
+
+      // Strip any HTML tags Gemini may have injected into plain text fields
+      const stripHtml = (str?: string | null): string | undefined => str ? str.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/gi, (m) => ({ '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" }[m] || m)) : undefined;
+      emailContent.subject = stripHtml(emailContent.subject) || emailContent.subject;
+      emailContent.previewText = stripHtml(emailContent.previewText) || emailContent.previewText;
+      emailContent.sections = emailContent.sections.map(s => ({
+        ...s,
+        heading: stripHtml(s.heading),
+        subheading: stripHtml(s.subheading),
+        text: stripHtml(s.text),
+        buttonText: stripHtml(s.buttonText),
+        quote: stripHtml(s.quote),
+        author: stripHtml(s.author),
+        authorTitle: stripHtml(s.authorTitle),
+        features: s.features?.map(f => ({ ...f, title: stripHtml(f.title) || f.title, description: stripHtml(f.description) || f.description })),
+        stats: s.stats?.map(st => ({ ...st, value: stripHtml(st.value) || st.value, label: stripHtml(st.label) || st.label })),
+      }));
+
+      // Normalize and validate email_type
+      const validEmailTypes = ['promotional', 'newsletter', 'educational', 'transactional', 'other'];
+      let normalizedEmailType = emailContent.emailType?.toLowerCase().trim() || 'other';
+      
+      if (!validEmailTypes.includes(normalizedEmailType)) {
+        console.warn(`Invalid email_type returned: "${emailContent.emailType}", defaulting to "other"`);
+        normalizedEmailType = 'other';
+      }
+
+      // Generate HTML and React code from JSON
+      const { html: htmlCode, reactCode } = await generateEmailHtml(
+        emailContent,
+        designStyle,
+        brandProfile
+      );
 
       // Deduct credits (this will fail if insufficient credits)
       const creditsDeducted = await deductCredits(user.id, 1);
@@ -101,10 +140,13 @@ export async function POST(request: NextRequest) {
       const { data: completedGeneration, error: updateError } = await supabase
         .from('email_generations')
         .update({
-          email_type: emailContent.emailType,
+          email_type: normalizedEmailType,
           subject_line: emailContent.subject,
           preview_text: emailContent.previewText,
           content_json: emailContent,
+          react_code: reactCode,
+          html_code: htmlCode,
+          design_style: designStyle,
           status: 'completed',
           error_message: null
         })

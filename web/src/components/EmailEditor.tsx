@@ -106,7 +106,20 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               <button className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium">
                 Save Changes
               </button>
-              <button className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2">
+              <button 
+                onClick={() => {
+                  if (!email.html_code) return;
+                  const blob = new Blob([email.html_code], { type: 'text/html' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${emailContent.subject?.replace(/[^a-z0-9]/gi, '_') || 'email'}.html`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}
+                disabled={!email.html_code}
+                className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-40"
+              >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
@@ -164,70 +177,61 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               <div className={`mx-auto transition-all duration-300 ${
                 previewMode === 'mobile' ? 'max-w-[375px]' : 'max-w-full'
               }`}>
-                <div className="bg-white rounded-lg overflow-hidden shadow-2xl border-4 border-black">
-                <div className="p-8 space-y-6">
-                  {/* Email header preview */}
-                  <div className="text-xs text-gray-500 border-b border-gray-200 pb-4">
-                    <div className="font-bold text-gray-900 mb-1">{emailContent.subject}</div>
-                    <div>{emailContent.previewText}</div>
+                {email.html_code ? (
+                  // Use generated HTML for accurate design-style preview
+                  <div className="rounded-lg overflow-hidden shadow-2xl border border-white/20">
+                    <iframe
+                      srcDoc={email.html_code}
+                      title="Email Preview"
+                      className="w-full border-0"
+                      style={{ height: '700px' }}
+                      sandbox="allow-same-origin"
+                    />
                   </div>
-
-                  {/* Email sections */}
-                  {emailContent.sections.map((section, index) => (
-                    <div key={index} className="space-y-3">
-                      {section.type === 'hero' && (
-                        <div className="text-center">
-                          {section.imageUrl && (
-                            <img src={section.imageUrl} alt={section.imageAlt} className="w-full mb-4 rounded" />
+                ) : (
+                  // Fallback: manual render from JSON
+                  <div className="bg-white rounded-lg overflow-hidden shadow-2xl border-4 border-black">
+                    <div className="p-8 space-y-6">
+                      <div className="text-xs text-gray-500 border-b border-gray-200 pb-4">
+                        <div className="font-bold text-gray-900 mb-1">{emailContent.subject}</div>
+                        <div>{emailContent.previewText}</div>
+                      </div>
+                      {emailContent.sections.map((section, index) => (
+                        <div key={index} className="space-y-3">
+                          {section.type === 'hero' && (
+                            <div className="text-center">
+                              {section.imageUrl && <img src={section.imageUrl} alt={section.imageAlt} className="w-full mb-4 rounded" />}
+                              {section.heading && <h1 className="text-3xl font-black text-gray-900 mb-2">{section.heading}</h1>}
+                              {section.subheading && <p className="text-lg text-gray-600">{section.subheading}</p>}
+                            </div>
                           )}
-                          {section.heading && (
-                            <h1 className="text-3xl font-black text-gray-900 mb-2">{section.heading}</h1>
+                          {section.type === 'content' && (
+                            <div>
+                              {section.heading && <h2 className="text-2xl font-black text-gray-900 mb-2">{section.heading}</h2>}
+                              {section.text && <p className="text-gray-700 leading-relaxed">{section.text}</p>}
+                            </div>
                           )}
-                          {section.subheading && (
-                            <p className="text-lg text-gray-600">{section.subheading}</p>
+                          {section.type === 'cta' && (
+                            <div className="text-center py-6">
+                              {section.heading && <h3 className="text-xl font-black text-gray-900 mb-2">{section.heading}</h3>}
+                              {section.text && <p className="text-gray-600 mb-4">{section.text}</p>}
+                              {section.buttonText && (
+                                <a href={section.buttonUrl || '#'} className="inline-block px-8 py-4 bg-black text-white font-bold text-lg rounded">
+                                  {section.buttonText}
+                                </a>
+                              )}
+                            </div>
                           )}
-                        </div>
-                      )}
-
-                      {section.type === 'content' && (
-                        <div>
-                          {section.heading && (
-                            <h2 className="text-2xl font-black text-gray-900 mb-2">{section.heading}</h2>
-                          )}
-                          {section.text && (
-                            <p className="text-gray-700 leading-relaxed">{section.text}</p>
-                          )}
-                        </div>
-                      )}
-
-                      {section.type === 'cta' && (
-                        <div className="text-center py-6">
-                          {section.heading && (
-                            <h3 className="text-xl font-black text-gray-900 mb-2">{section.heading}</h3>
-                          )}
-                          {section.text && (
-                            <p className="text-gray-600 mb-4">{section.text}</p>
-                          )}
-                          {section.buttonText && (
-                            <a 
-                              href={section.buttonUrl || '#'}
-                              className="inline-block px-8 py-4 bg-black text-white font-bold text-lg rounded border-4 border-black hover:bg-gray-900 transition-colors"
-                            >
-                              {section.buttonText}
-                            </a>
+                          {section.type === 'footer' && (
+                            <div className="text-center text-sm text-gray-500 border-t border-gray-200 pt-4">
+                              {section.text && <p>{section.text}</p>}
+                            </div>
                           )}
                         </div>
-                      )}
-
-                      {section.type === 'footer' && (
-                        <div className="text-center text-sm text-gray-500 border-t border-gray-200 pt-4">
-                          {section.text && <p>{section.text}</p>}
-                        </div>
-                      )}
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
