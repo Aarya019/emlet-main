@@ -674,7 +674,8 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
           src: section.logoUrl,
           alt: section.logoAlt || '',
           height: '28',
-          style: { height: '28px', margin: '0 auto 14px auto', display: 'block', opacity: '0.7' }
+          className: 'em-logo',
+          style: { height: '28px', maxWidth: '120px', width: 'auto', margin: '0 auto 14px auto', display: 'block', opacity: '0.7' }
         })
       : null,
     React.createElement(Text, {

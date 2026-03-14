@@ -36,13 +36,29 @@ type ImageOrientation = 'landscape' | 'portrait' | 'square';
 type ImageSize = 'large' | 'medium' | 'small';
 
 /**
+ * Per design style: a 1-2 word aesthetic modifier appended to the keyword
+ * and a Pexels-accepted color name to filter results by palette.
+ * Pexels accepted color names: red orange yellow green turquoise blue violet pink brown black gray white
+ */
+export const styleImageConfig: Record<string, { modifier: string; color: string }> = {
+  minimalist:  { modifier: 'minimal clean',       color: 'white'     },
+  editorial:   { modifier: 'editorial magazine',   color: 'gray'      },
+  retro:       { modifier: 'vintage warm',         color: 'orange'    },
+  brutalist:   { modifier: 'bold graphic',         color: 'black'     },
+  cyberpunk:   { modifier: 'dark neon futuristic', color: 'blue'      },
+  handwritten: { modifier: 'cozy lifestyle',       color: 'gray'      },
+  bauhaus:     { modifier: 'geometric modern',     color: 'red'       },
+};
+
+/**
  * Search Pexels for a photo matching the keyword.
  * Returns a permanent CDN URL suitable for embedding in emails.
  */
 export async function fetchPexelsImage(
   keyword: string,
   orientation: ImageOrientation = 'landscape',
-  size: ImageSize = 'large'
+  size: ImageSize = 'large',
+  color?: string,
 ): Promise<string | null> {
   const apiKey = process.env.PEXELS_API_KEY;
   if (!apiKey) {
@@ -53,11 +69,14 @@ export async function fetchPexelsImage(
   try {
     const params = new URLSearchParams({
       query: keyword,
-      per_page: '3',   // 3 is enough for variety; less payload than 5
+      per_page: '5',   // fetch 5 so we can pick best aspect ratio
       page: '1',
       orientation,
       size,
     });
+
+    // Optional color filter — keeps images on-palette for the design style
+    if (color) params.set('color', color);
 
     const response = await fetch(`${PEXELS_API_BASE}/search?${params}`, {
       headers: {
@@ -81,8 +100,22 @@ export async function fetchPexelsImage(
       return null;
     }
 
-    // Pick a random photo from the results for variety
-    const photo = data.photos[Math.floor(Math.random() * data.photos.length)];
+    // For landscape/hero sections, pick the photo with the widest aspect ratio.
+    // For square/portrait, pick the one closest to 1:1. Falls back to first.
+    let photo: PexelsPhoto;
+    if (orientation === 'landscape') {
+      photo = data.photos.reduce((best, p) =>
+        p.width / p.height > best.width / best.height ? p : best
+      );
+    } else if (orientation === 'square') {
+      photo = data.photos.reduce((best, p) => {
+        const diff = Math.abs(p.width / p.height - 1);
+        const bestDiff = Math.abs(best.width / best.height - 1);
+        return diff < bestDiff ? p : best;
+      });
+    } else {
+      photo = data.photos[0];
+    }
 
     // `large` (1280px wide) is sufficient for email; `large2x` is overkill
     return photo.src.large;
@@ -97,13 +130,13 @@ export async function fetchPexelsImage(
  * Returns a map of keyword → URL (or null if fetch failed).
  */
 export async function batchFetchPexelsImages(
-  keywords: Array<{ keyword: string; orientation?: ImageOrientation }>
+  keywords: Array<{ keyword: string; orientation?: ImageOrientation; color?: string }>
 ): Promise<Record<string, string | null>> {
   const uniqueKeywords = [...new Map(keywords.map(k => [k.keyword, k])).values()];
 
   const results = await Promise.all(
-    uniqueKeywords.map(async ({ keyword, orientation = 'landscape' }) => {
-      const url = await fetchPexelsImage(keyword, orientation);
+    uniqueKeywords.map(async ({ keyword, orientation = 'landscape', color }) => {
+      const url = await fetchPexelsImage(keyword, orientation, 'large', color);
       return [keyword, url] as [string, string | null];
     })
   );

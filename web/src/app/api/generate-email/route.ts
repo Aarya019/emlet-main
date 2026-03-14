@@ -5,7 +5,7 @@ import { getDefaultBrandProfile, getBrandProfile } from '@/lib/db/queries';
 import { deductCredits } from '@/lib/db/queries';
 import { createEmailGeneration } from '@/lib/db/queries';
 import { generateEmailHtml } from '@/lib/email/renderer';
-import { batchFetchPexelsImages } from '@/lib/images/pexels';
+import { batchFetchPexelsImages, styleImageConfig } from '@/lib/images/pexels';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -115,20 +115,31 @@ export async function POST(request: NextRequest) {
 
       // ── Pexels image resolution ──────────────────────────────────────────
       // Collect all imageKeyword / gallery image keywords from sections
-      type KeywordEntry = { keyword: string; orientation?: 'landscape' | 'portrait' | 'square' };
+      const styleImg = styleImageConfig[designStyle] || styleImageConfig['minimalist'];
+
+      // Enrich the keyword with a 1-2 word style modifier so Pexels results
+      // match the aesthetic (e.g. "team meeting" → "team meeting dark neon")
+      const enrichKeyword = (kw: string) => `${kw} ${styleImg.modifier}`.trim();
+
+      type KeywordEntry = { keyword: string; orientation?: 'landscape' | 'portrait' | 'square'; color?: string };
       const keywordsToFetch: KeywordEntry[] = [];
 
       for (const section of emailContent.sections) {
         if (section.imageKeyword) {
           keywordsToFetch.push({
-            keyword: section.imageKeyword,
+            keyword: enrichKeyword(section.imageKeyword),
             orientation: section.type === 'hero' ? 'landscape' : 'landscape',
+            color: styleImg.color,
           });
         }
         if (section.images) {
           for (const img of section.images) {
             if (img.keyword) {
-              keywordsToFetch.push({ keyword: img.keyword, orientation: 'square' });
+              keywordsToFetch.push({
+                keyword: enrichKeyword(img.keyword),
+                orientation: 'square',
+                color: styleImg.color,
+              });
             }
           }
         }
@@ -144,17 +155,16 @@ export async function POST(request: NextRequest) {
         const updated = { ...section };
 
         if (updated.imageKeyword) {
-          const resolved = pexelsMap[updated.imageKeyword];
+          const resolved = pexelsMap[enrichKeyword(updated.imageKeyword)];
           if (resolved) {
             updated.imageUrl = resolved;
           }
-          // Keep imageKeyword for reference but don't expose in stored JSON
         }
 
         if (updated.images) {
           updated.images = updated.images.map(img => {
             if (img.keyword) {
-              const resolved = pexelsMap[img.keyword];
+              const resolved = pexelsMap[enrichKeyword(img.keyword)];
               return resolved ? { ...img, url: resolved } : img;
             }
             return img;
