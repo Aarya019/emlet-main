@@ -26,6 +26,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [copied, setCopied] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Set<number>>(new Set());
   const [showAddBlock, setShowAddBlock] = useState(false);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [sendToEmail, setSendToEmail] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const BLOCK_TYPES: Array<{ type: EmailSection['type']; label: string; description: string; icon: string }> = [
     { type: 'hero',          label: 'Hero',          description: 'Large banner with heading & image',   icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
@@ -188,6 +192,29 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     });
   };
 
+  const handleSendTestEmail = async () => {
+    if (!sendToEmail.trim() || !email) return;
+    setSending(true);
+    setSendResult(null);
+    try {
+      const res = await fetch('/api/send-test-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailId: email.id, toEmail: sendToEmail.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSendResult({ success: false, message: data.error || 'Failed to send' });
+      } else {
+        setSendResult({ success: true, message: `Sent! Check your inbox at ${sendToEmail.trim()}` });
+      }
+    } catch {
+      setSendResult({ success: false, message: 'Network error. Please try again.' });
+    } finally {
+      setSending(false);
+    }
+  };
+
   const emailContent = email?.content_json as GeneratedEmail | null;
 
   if (loading) {
@@ -277,6 +304,20 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     {isDirty ? 'Save Changes' : 'Saved'}
                   </>
                 )}
+              </button>
+              <button
+                onClick={() => {
+                  setSendResult(null);
+                  setSendToEmail('');
+                  setShowSendModal(true);
+                }}
+                disabled={!email.html_code}
+                className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-40"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+                Send Test
               </button>
               <button
                 onClick={() => {
@@ -922,6 +963,92 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                         </div>
                       </button>
                     ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Send Test Email Modal */}
+            {showSendModal && (
+              <>
+                <div
+                  className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10 animate-in fade-in duration-200"
+                  onClick={() => { setShowSendModal(false); setSendResult(null); }}
+                />
+                <div className="absolute inset-0 z-20 flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl">
+                    {/* Modal Header */}
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff80] flex items-center justify-center flex-shrink-0">
+                          <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                        </div>
+                        Send Test Email
+                      </h3>
+                      <button
+                        onClick={() => { setShowSendModal(false); setSendResult(null); }}
+                        className="text-white/40 hover:text-white transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <p className="text-sm text-white/60 mb-4">
+                      Send a preview of this email to any inbox to see how it looks.
+                    </p>
+
+                    {/* Result Banner */}
+                    {sendResult && (
+                      <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${sendResult.success ? 'bg-[#00ff80]/10 border border-[#00ff80]/30 text-[#00ff80]' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
+                        {sendResult.message}
+                      </div>
+                    )}
+
+                    {/* Email Input */}
+                    <div className="mb-4">
+                      <label className="block text-xs font-medium text-white/50 mb-1.5">Recipient email address</label>
+                      <input
+                        type="email"
+                        value={sendToEmail}
+                        onChange={(e) => setSendToEmail(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter' && !sending) handleSendTestEmail(); }}
+                        placeholder="you@example.com"
+                        className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff] text-sm"
+                        disabled={sending}
+                      />
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => { setShowSendModal(false); setSendResult(null); }}
+                        className="flex-1 px-4 py-2.5 rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-white/30 transition-all text-sm font-medium"
+                        disabled={sending}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={handleSendTestEmail}
+                        disabled={sending || !sendToEmail.trim()}
+                        className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff80] text-black font-semibold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {sending ? (
+                          <>
+                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                            Sending...
+                          </>
+                        ) : (
+                          'Send Email'
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </>
