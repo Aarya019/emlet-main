@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { signOut } from '@/app/actions/auth';
 import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle } from '@/lib/db/types';
+import EmailGeneratingOverlay from '@/components/EmailGeneratingOverlay';
 
 type TabType = 'new-email' | 'brand' | 'history' | 'user';
 
@@ -43,9 +44,13 @@ export default function DashboardContent() {
   const [emailHistory, setEmailHistory] = useState<EmailGeneration[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  // Delete confirmation modal
+  // Brand delete confirmation modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [brandToDelete, setBrandToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  // Email delete state
+  const [emailToDelete, setEmailToDelete] = useState<EmailGeneration | null>(null);
+  const [deletingEmailId, setDeletingEmailId] = useState<string | null>(null);
 
   // Design style dropdown
   const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
@@ -93,6 +98,21 @@ export default function DashboardContent() {
       console.error('Error loading email history:', error);
     } finally {
       setHistoryLoading(false);
+    }
+  };
+
+  const handleDeleteEmail = async (email: EmailGeneration) => {
+    setDeletingEmailId(email.id);
+    try {
+      const res = await fetch(`/api/email-generations/${email.id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setEmailHistory(prev => prev.filter(e => e.id !== email.id));
+      }
+    } catch (error) {
+      console.error('Error deleting email:', error);
+    } finally {
+      setDeletingEmailId(null);
+      setEmailToDelete(null);
     }
   };
 
@@ -378,6 +398,8 @@ export default function DashboardContent() {
 
   return (
     <div className="flex h-screen overflow-hidden overflow-x-hidden">
+      {generating && <EmailGeneratingOverlay />}
+
       {/* Delete Confirmation Modal */}
       {deleteModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -420,6 +442,40 @@ export default function DashboardContent() {
                 className="flex-1 px-6 py-3 rounded-xl bg-red-500 border-2 border-red-600 text-white font-black hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/50 transition-all transform hover:scale-105"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Delete Confirmation Modal */}
+      {emailToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setEmailToDelete(null)} />
+          <div className="relative bg-gradient-to-br from-black to-gray-900 border-4 border-red-500 rounded-2xl shadow-2xl shadow-red-500/50 max-w-md w-full p-8">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/20 border-4 border-red-500 flex items-center justify-center">
+              <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-black text-white mb-3 text-center">Delete Email?</h3>
+            <p className="text-white/70 text-center mb-2 leading-relaxed">
+              Are you sure you want to delete <span className="text-white font-bold">"{emailToDelete.subject_line || 'this email'}"</span>?
+            </p>
+            <p className="text-red-400 text-sm text-center mb-8 font-semibold">This action cannot be undone!</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setEmailToDelete(null)}
+                className="flex-1 px-6 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white font-bold hover:bg-white/20 transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteEmail(emailToDelete)}
+                disabled={deletingEmailId === emailToDelete.id}
+                className="flex-1 px-6 py-3 rounded-xl bg-red-500 border-2 border-red-600 text-white font-black hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/50 transition-all hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                {deletingEmailId === emailToDelete.id ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>
@@ -579,6 +635,12 @@ export default function DashboardContent() {
                     <textarea
                       value={emailInput}
                       onChange={(e) => setEmailInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          if (!generating && emailInput.trim()) handleGenerateEmail();
+                        }
+                      }}
                       placeholder="Describe the email you want to create... (e.g., Product launch announcement with 30% discount for existing customers)"
                       className="w-full resize-none rounded-lg sm:rounded-xl border-0 bg-black/60 px-4 py-3 sm:px-5 sm:py-4 text-sm sm:text-base text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:text-white min-h-[140px] sm:min-h-[160px]"
                     />
@@ -1295,13 +1357,29 @@ export default function DashboardContent() {
                   {emailHistory.map((email) => {
                     const content = email.content_json as any;
                     const firstSection = content?.sections?.[0];
+                    const isDeleting = deletingEmailId === email.id;
                     
                     return (
                       <div
                         key={email.id}
+                        className="group relative cursor-pointer rounded-xl border border-white/10 bg-white/5 overflow-hidden hover:border-[#00ffff]/50 hover:shadow-lg hover:shadow-[#00ffff]/20 transition-all"
                         onClick={() => window.location.href = `/dashboard/email/${email.id}`}
-                        className="group cursor-pointer rounded-xl border border-white/10 bg-white/5 overflow-hidden hover:border-[#00ffff]/50 hover:shadow-lg hover:shadow-[#00ffff]/20 transition-all"
                       >
+                        {/* Delete button — top-left, stops propagation */}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEmailToDelete(email); }}
+                          className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-lg bg-red-500/80 hover:bg-red-500 flex items-center justify-center"
+                          title="Delete email"
+                        >
+                          {isDeleting ? (
+                            <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          )}
+                        </button>
+
                         {/* Preview thumbnail */}
                         <div className="relative aspect-video bg-gradient-to-br from-white/10 to-white/5 overflow-hidden">
                           <div className="absolute inset-0 p-6 flex flex-col justify-center items-center text-center">
