@@ -500,12 +500,18 @@ export default function DashboardContent() {
           {/* Logo */}
           <div className="px-4 py-6 border-b border-white/10">
             <div className="flex items-center gap-2">
-              <span className="inline-flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-white text-sm font-semibold text-black">
-                e
-              </span>
-              <span className="text-lg font-semibold text-white whitespace-nowrap overflow-hidden lg:group-hover:opacity-100 lg:opacity-0 transition-all duration-500 ease-in-out lg:group-hover:max-w-xs lg:max-w-0">
-                emlet
-              </span>
+              {/* Collapsed: icon only */}
+              <img
+                src="/logo.png"
+                alt="Emlet"
+                className="h-8 w-8 flex-shrink-0 rounded object-contain lg:group-hover:hidden"
+              />
+              {/* Expanded: full logo */}
+              <img
+                src="/logo.png"
+                alt="Emlet"
+                className="hidden h-8 object-contain lg:group-hover:block whitespace-nowrap overflow-hidden transition-all duration-500 ease-in-out"
+              />
             </div>
           </div>
 
