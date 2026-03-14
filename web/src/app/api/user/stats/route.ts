@@ -13,9 +13,11 @@ export async function GET() {
 
   const stats = await getUserStats(user.id);
   
-  if (!stats) {
-    return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
-  }
-
-  return NextResponse.json(stats);
+  // Return stats (will have defaults if user profile doesn't exist yet)
+  return NextResponse.json(stats || {
+    credits_remaining: 0,
+    plan_type: 'free',
+    total_emails_generated: 0,
+    emails_this_month: 0,
+  });
 }

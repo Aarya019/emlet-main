@@ -50,6 +50,10 @@ export default function DashboardContent() {
   // Design style dropdown
   const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
 
+  // Brand selector for generation
+  const [generateBrandId, setGenerateBrandId] = useState<string | null>(null);
+  const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
+
   useEffect(() => {
     // Retrieve and clear the pending prompt from localStorage
     const prompt = localStorage.getItem('pendingEmailPrompt');
@@ -98,7 +102,13 @@ export default function DashboardContent() {
       const res = await fetch('/api/brand-profiles');
       if (res.ok) {
         const data = await res.json();
-        setBrandProfiles(data.profiles || []);
+        const profiles: BrandProfile[] = data.profiles || [];
+        setBrandProfiles(profiles);
+        // Auto-select default brand (or first one) for generation
+        if (profiles.length > 0 && !generateBrandId) {
+          const defaultProfile = profiles.find(p => p.is_default) || profiles[0];
+          setGenerateBrandId(defaultProfile.id);
+        }
       }
     } catch (error) {
       console.error('Error loading brand profiles:', error);
@@ -320,7 +330,8 @@ export default function DashboardContent() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           prompt: emailInput.trim(),
-          designStyle: designStyle
+          designStyle: designStyle,
+          brandProfileId: generateBrandId
         })
       });
 
@@ -631,6 +642,96 @@ export default function DashboardContent() {
                                     <div className="text-xs text-white/50 mt-0.5">{style.desc}</div>
                                   </button>
                                 ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <span className="text-white/30">·</span>
+                        {/* Brand selector */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setBrandDropdownOpen(!brandDropdownOpen)}
+                            className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/20 rounded-lg pl-3 pr-2 py-1.5 text-xs font-medium text-white hover:border-white/40 hover:from-white/15 hover:to-white/10 transition-all min-w-[130px]"
+                          >
+                            {(() => {
+                              const brand = brandProfiles.find(b => b.id === generateBrandId);
+                              return brand ? (
+                                <>
+                                  <span
+                                    className="w-3 h-3 rounded-full flex-shrink-0 border border-white/20"
+                                    style={{ backgroundColor: brand.primary_color }}
+                                  />
+                                  <span className="flex-1 text-left truncate">{brand.brand_name}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span className="text-white/40">🏷️</span>
+                                  <span className="flex-1 text-left text-white/50">No brand</span>
+                                </>
+                              );
+                            })()}
+                            <svg className={`w-4 h-4 text-white/60 flex-shrink-0 transition-transform ${brandDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+
+                          {brandDropdownOpen && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setBrandDropdownOpen(false)}
+                              />
+                              <div className="absolute left-0 top-full mt-2 w-52 max-h-[220px] bg-gradient-to-b from-black via-black to-black/95 border-2 border-white/20 rounded-lg shadow-2xl shadow-black/50 overflow-y-auto z-20 backdrop-blur-xl">
+                                {brandProfiles.length === 0 ? (
+                                  <div className="px-4 py-4 text-center">
+                                    <p className="text-xs text-white/40 mb-2">No brand profiles yet</p>
+                                    <button
+                                      type="button"
+                                      onClick={() => { setBrandDropdownOpen(false); handleTabChange('brand'); }}
+                                      className="text-xs text-[#00ffff] underline"
+                                    >
+                                      Create one →
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => { setGenerateBrandId(null); setBrandDropdownOpen(false); }}
+                                      className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 ${
+                                        generateBrandId === null ? 'bg-[#00ffff]/10 text-[#00ffff]' : 'text-white/50'
+                                      }`}
+                                    >
+                                      <div className="text-xs font-medium">No brand</div>
+                                      <div className="text-xs text-white/30 mt-0.5">Generic email</div>
+                                    </button>
+                                    {brandProfiles.map((brand) => (
+                                      <button
+                                        key={brand.id}
+                                        type="button"
+                                        onClick={() => { setGenerateBrandId(brand.id); setBrandDropdownOpen(false); }}
+                                        className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${
+                                          generateBrandId === brand.id ? 'bg-[#00ffff]/10 text-[#00ffff]' : 'text-white'
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-2">
+                                          <span
+                                            className="w-3 h-3 rounded-full flex-shrink-0 border border-white/20"
+                                            style={{ backgroundColor: brand.primary_color }}
+                                          />
+                                          <span className="font-medium text-sm truncate">{brand.brand_name}</span>
+                                          {brand.is_default && (
+                                            <span className="text-[10px] text-[#00ffff]/70 border border-[#00ffff]/30 rounded px-1 ml-auto flex-shrink-0">default</span>
+                                          )}
+                                        </div>
+                                        {brand.industry && (
+                                          <div className="text-xs text-white/40 mt-0.5 pl-5">{brand.industry}</div>
+                                        )}
+                                      </button>
+                                    ))}
+                                  </>
+                                )}
                               </div>
                             </>
                           )}

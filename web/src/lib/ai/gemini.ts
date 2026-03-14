@@ -14,6 +14,8 @@ export interface EmailSection {
   buttonUrl?: string;
   imageUrl?: string;
   imageAlt?: string;
+  /** Short search keyword used to fetch a real image from Pexels (e.g. "coffee shop interior"). Set instead of imageUrl. */
+  imageKeyword?: string;
   // For testimonial sections
   quote?: string;
   author?: string;
@@ -39,6 +41,8 @@ export interface EmailSection {
     url: string;
     alt: string;
     caption?: string;
+    /** Short search keyword for Pexels (e.g. "product display"). Used instead of url when present. */
+    keyword?: string;
   }>;
   // For stats sections
   stats?: Array<{
@@ -320,8 +324,8 @@ Return a JSON object with this exact structure:
       "type": "hero",
       "heading": "Main headline",
       "subheading": "Supporting text",
-      "imageUrl": "https://placehold.co/600x400",
-      "imageAlt": "Image description"
+      "imageKeyword": "relevant search keyword for hero image (e.g. 'modern office team')",
+      "imageAlt": "Descriptive alt text for the image"
     },
     {
       "type": "content",
@@ -365,7 +369,7 @@ Return a JSON object with this exact structure:
       "heading": "Gallery heading",
       "images": [
         {
-          "url": "https://placehold.co/300x300",
+          "keyword": "relevant search keyword for this image (e.g. 'product on shelf')",
           "alt": "Image description",
           "caption": "Optional caption"
         }
@@ -397,8 +401,8 @@ Return a JSON object with this exact structure:
     },
     {
       "type": "image-text",
-      "imageUrl": "https://placehold.co/260x200",
-      "imageAlt": "Product image",
+      "imageKeyword": "relevant search keyword for this section image (e.g. 'laptop workspace')",
+      "imageAlt": "Descriptive alt text",
       "imagePosition": "left",
       "heading": "Feature or product headline",
       "text": "Description of the feature or product benefit",
@@ -487,7 +491,7 @@ RULES:
    - Match the brand_voice tone in all written content
 4. Keep subject lines under 60 characters
 5. Make CTAs clear and action-oriented
-6. Use placeholder images (https://placehold.co/WIDTHxHEIGHT) for non-logo images
+6. For sections that need photos (hero, image-text, gallery), output an "imageKeyword" (or "keyword" for gallery images) — a short, specific 2-4 word English search phrase describing the ideal photo (e.g. "team meeting office", "coffee shop morning", "product packaging minimal"). Do NOT output imageUrl for non-logo images — the system will fetch real photos from Pexels using the keyword.
 7. Return ONLY the JSON object, no markdown formatting
 8. Adapt all content and structure to match the ${designStyle} style perfectly
 9. CRITICAL: ALL string values in the JSON must be PLAIN TEXT ONLY. Never use HTML tags, <span>, <b>, <i>, CSS styles, or any markup inside JSON string fields. The renderer will handle all styling — your job is content only.`;

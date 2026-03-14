@@ -246,7 +246,7 @@ function renderContent(section: EmailSection, config: StyleConfig): React.ReactE
   );
 }
 
-function renderTestimonial(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderTestimonial(section: EmailSection, config: StyleConfig, primaryColor: string, secondaryColor: string): React.ReactElement {
   return React.createElement(Section, {
     style: { padding: config.sectionPadding }
   },
@@ -254,6 +254,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
       style: {
         ...config.cardStyle,
         textAlign: 'center' as const,
+        borderTop: `4px solid ${secondaryColor}`,
       }
     },
       section.authorImage
@@ -663,24 +664,43 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
   );
 }
 
-function renderFooter(section: EmailSection, config: StyleConfig): React.ReactElement {
+function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor: string): React.ReactElement {
   return React.createElement(Section, {
-    style: { padding: '24px 0 16px 0', textAlign: 'center' as const }
+    style: { padding: '24px 0 20px 0', textAlign: 'center' as const }
   },
     React.createElement(Hr, { style: config.hrStyle }),
+    section.logoUrl
+      ? React.createElement(Img, {
+          src: section.logoUrl,
+          alt: section.logoAlt || '',
+          height: '28',
+          style: { height: '28px', margin: '0 auto 14px auto', display: 'block', opacity: '0.7' }
+        })
+      : null,
     React.createElement(Text, {
       style: {
         fontFamily: config.fontFamily,
         fontSize: '12px',
         color: config.bodyColor + '66',
-        lineHeight: '1.6',
-        margin: '0',
+        lineHeight: '1.7',
+        margin: '0 0 8px 0',
       }
-    }, section.text || '')
+    }, section.text || ''),
+    section.buttonText
+      ? React.createElement(Link, {
+          href: section.buttonUrl || '#',
+          style: {
+            fontFamily: config.fontFamily,
+            fontSize: '11px',
+            color: secondaryColor,
+            textDecoration: 'underline',
+          }
+        }, section.buttonText)
+      : null
   );
 }
 
-function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: string, secondaryColor: string): React.ReactElement {
   const borderVal = `${config.hrStyle.borderWidth ?? '1px'} ${config.hrStyle.borderStyle ?? 'solid'} ${config.hrStyle.borderColor ?? '#e0e0e0'}`;
   return React.createElement(Section, {
     style: { padding: '20px 0', borderBottom: borderVal, marginBottom: '8px' }
@@ -692,7 +712,8 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
               src: section.logoUrl,
               alt: section.logoAlt || 'Logo',
               height: '40',
-              style: { height: '40px', display: 'block' }
+              className: 'em-logo',
+              style: { height: '40px', maxWidth: '160px', width: 'auto', display: 'block' }
             })
           : React.createElement(Text, {
               style: {
@@ -710,10 +731,11 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
               style: {
                 fontFamily: config.fontFamily,
                 fontSize: '12px',
-                color: config.bodyColor + '88',
+                color: secondaryColor,
                 margin: '0',
                 textTransform: 'uppercase' as const,
                 letterSpacing: '0.08em',
+                fontWeight: '600',
               }
             }, section.tagline)
           )
@@ -1021,13 +1043,14 @@ function renderDivider(section: EmailSection, config: StyleConfig): React.ReactE
 function renderSection(
   section: EmailSection,
   config: StyleConfig,
-  primaryColor: string
+  primaryColor: string,
+  secondaryColor: string
 ): React.ReactElement | null {
   switch (section.type) {
-    case 'header':        return renderHeader(section, config, primaryColor);
+    case 'header':        return renderHeader(section, config, primaryColor, secondaryColor);
     case 'hero':          return renderHero(section, config, primaryColor);
     case 'content':       return renderContent(section, config);
-    case 'testimonial':   return renderTestimonial(section, config, primaryColor);
+    case 'testimonial':   return renderTestimonial(section, config, primaryColor, secondaryColor);
     case 'feature-list':  return renderFeatureList(section, config, primaryColor);
     case 'pricing-table': return renderPricingTable(section, config, primaryColor);
     case 'stats':         return renderStats(section, config, primaryColor);
@@ -1039,7 +1062,7 @@ function renderSection(
     case 'columns':       return renderColumns(section, config, primaryColor);
     case 'divider':       return renderDivider(section, config);
     case 'cta':           return renderCta(section, config, primaryColor);
-    case 'footer':        return renderFooter(section, config);
+    case 'footer':        return renderFooter(section, config, secondaryColor);
     default:              return null;
   }
 }
@@ -1050,12 +1073,49 @@ export async function generateEmailHtml(
   brandProfile: BrandProfile | null
 ): Promise<{ html: string; reactCode: string }> {
   const config = styleConfigs[designStyle] || styleConfigs.minimalist;
-  const primaryColor = brandProfile?.primary_color || '#5c5cf0';
-  const brandName = brandProfile?.brand_name || 'Company';
+  const primaryColor   = brandProfile?.primary_color   || '#5c5cf0';
+  const secondaryColor = brandProfile?.secondary_color || primaryColor;
+  const logoUrl        = brandProfile?.logo_url        || null;
+  const websiteUrl     = brandProfile?.website_url     || null;
+  const brandName      = brandProfile?.brand_name      || 'Company';
+
+  // ── Force-inject brand data into sections ────────────────────────────
+  // This guarantees brand assets are present regardless of what the AI returned.
+  const processedSections: EmailSection[] = email.sections.map(s => {
+    const sec = { ...s };
+
+    // Header: always use the real brand logo from profile
+    if (sec.type === 'header') {
+      if (logoUrl) sec.logoUrl = logoUrl;
+      sec.logoAlt = brandName;
+    }
+
+    // Hero: use brand logo as the image when AI left it blank
+    if (sec.type === 'hero' && !sec.imageUrl && logoUrl) {
+      sec.imageUrl = logoUrl;
+      sec.imageAlt = brandName;
+    }
+
+    // Footer: inject brand logo so it renders above the fine print
+    if (sec.type === 'footer') {
+      if (logoUrl) sec.logoUrl = logoUrl;
+      if (!sec.logoAlt) sec.logoAlt = brandName;
+    }
+
+    // CTA / announcement / image-text: replace placeholder # with real website
+    if (
+      websiteUrl &&
+      (sec.type === 'cta' || sec.type === 'announcement' || sec.type === 'image-text')
+    ) {
+      if (!sec.buttonUrl || sec.buttonUrl === '#') sec.buttonUrl = websiteUrl;
+    }
+
+    return sec;
+  });
 
   // Build section elements
-  const sectionElements = email.sections
-    .map(s => renderSection(s, config, primaryColor))
+  const sectionElements = processedSections
+    .map(s => renderSection(s, config, primaryColor, secondaryColor))
     .filter((el): el is React.ReactElement => el !== null);
 
   // Build full email element
@@ -1077,6 +1137,7 @@ export async function generateEmailHtml(
         'h1{font-size:26px!important;line-height:1.25!important}' +
         'h2{font-size:20px!important;line-height:1.3!important}' +
         'img{max-width:100%!important;height:auto!important}' +
+        '.em-logo{height:32px!important;max-width:120px!important;width:auto!important}' +
         '.em-btn{display:block!important;width:100%!important;text-align:center!important;box-sizing:border-box!important}' +
         '}'
       )

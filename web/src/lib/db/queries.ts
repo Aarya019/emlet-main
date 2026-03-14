@@ -55,16 +55,38 @@ export async function updateProfile(
 export async function getUserStats(userId: string): Promise<UserStats | null> {
   const supabase = await createClient();
   
+  // Try RPC first, but fall back to direct query if it fails
   const { data, error } = await supabase
-    .rpc('get_user_stats', { user_uuid: userId })
-    .single();
+    .rpc('get_user_stats', { user_uuid: userId });
 
-  if (error) {
-    console.error('Error fetching user stats:', error);
-    return null;
+  if (!error && data && Array.isArray(data) && data.length > 0) {
+    return data[0] as UserStats;
   }
 
-  return data as UserStats;
+  // Fallback: query profiles table directly
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('credits_remaining, plan_type')
+    .eq('id', userId)
+    .single();
+
+  if (profileError || !profileData) {
+    console.error('Error fetching user stats:', error || profileError);
+    // Return default stats if user profile doesn't exist yet
+    return {
+      credits_remaining: 0,
+      plan_type: 'free',
+      total_emails_generated: 0,
+      emails_this_month: 0,
+    } as UserStats;
+  }
+
+  return {
+    credits_remaining: profileData.credits_remaining || 0,
+    plan_type: profileData.plan_type || 'free',
+    total_emails_generated: 0,
+    emails_this_month: 0,
+  } as UserStats;
 }
 
 // =====================================================

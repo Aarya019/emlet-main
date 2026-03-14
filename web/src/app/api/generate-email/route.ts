@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { generateEmailContent } from '@/lib/ai/gemini';
-import { getDefaultBrandProfile } from '@/lib/db/queries';
+import { getDefaultBrandProfile, getBrandProfile } from '@/lib/db/queries';
 import { deductCredits } from '@/lib/db/queries';
 import { createEmailGeneration } from '@/lib/db/queries';
 import { generateEmailHtml } from '@/lib/email/renderer';
+import { batchFetchPexelsImages } from '@/lib/images/pexels';
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { prompt, designStyle = 'minimalist' } = body;
+    const { prompt, designStyle = 'minimalist', brandProfileId } = body;
 
     // Validate prompt
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
@@ -49,8 +50,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's brand profile
-    const brandProfile = await getDefaultBrandProfile(user.id);
+    // Get user's brand profile (use specified one, or fall back to default)
+    const brandProfile = brandProfileId
+      ? await getBrandProfile(brandProfileId, user.id)
+      : await getDefaultBrandProfile(user.id);
 
     // Create initial generation record with 'generating' status
     const initialGeneration = await createEmailGeneration({
@@ -109,6 +112,58 @@ export async function POST(request: NextRequest) {
         console.warn(`Invalid email_type returned: "${emailContent.emailType}", defaulting to "other"`);
         normalizedEmailType = 'other';
       }
+
+      // ── Pexels image resolution ──────────────────────────────────────────
+      // Collect all imageKeyword / gallery image keywords from sections
+      type KeywordEntry = { keyword: string; orientation?: 'landscape' | 'portrait' | 'square' };
+      const keywordsToFetch: KeywordEntry[] = [];
+
+      for (const section of emailContent.sections) {
+        if (section.imageKeyword) {
+          keywordsToFetch.push({
+            keyword: section.imageKeyword,
+            orientation: section.type === 'hero' ? 'landscape' : 'landscape',
+          });
+        }
+        if (section.images) {
+          for (const img of section.images) {
+            if (img.keyword) {
+              keywordsToFetch.push({ keyword: img.keyword, orientation: 'square' });
+            }
+          }
+        }
+      }
+
+      let pexelsMap: Record<string, string | null> = {};
+      if (keywordsToFetch.length > 0) {
+        pexelsMap = await batchFetchPexelsImages(keywordsToFetch);
+      }
+
+      // Inject resolved URLs back into sections
+      emailContent.sections = emailContent.sections.map(section => {
+        const updated = { ...section };
+
+        if (updated.imageKeyword) {
+          const resolved = pexelsMap[updated.imageKeyword];
+          if (resolved) {
+            updated.imageUrl = resolved;
+          }
+          // Keep imageKeyword for reference but don't expose in stored JSON
+        }
+
+        if (updated.images) {
+          updated.images = updated.images.map(img => {
+            if (img.keyword) {
+              const resolved = pexelsMap[img.keyword];
+              return resolved ? { ...img, url: resolved } : img;
+            }
+            return img;
+          });
+        }
+
+        return updated;
+      });
+      // ─────────────────────────────────────────────────────────────────────
 
       // Generate HTML and React code from JSON
       const { html: htmlCode, reactCode } = await generateEmailHtml(
