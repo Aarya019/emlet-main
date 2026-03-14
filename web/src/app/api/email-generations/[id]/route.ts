@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getEmailGeneration } from '@/lib/db/queries';
+import { getEmailGeneration, getBrandProfile } from '@/lib/db/queries';
+import { generateEmailHtml } from '@/lib/email/renderer';
 
 export async function GET(
   request: NextRequest,
@@ -54,4 +55,60 @@ export async function DELETE(
   }
 
   return NextResponse.json({ success: true });
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const supabase = await createClient();
+
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const generation = await getEmailGeneration(id, user.id);
+  if (!generation) {
+    return NextResponse.json({ error: 'Email not found' }, { status: 404 });
+  }
+
+  const body = await request.json();
+  const { content_json } = body;
+
+  if (!content_json || typeof content_json !== 'object') {
+    return NextResponse.json({ error: 'Invalid content_json' }, { status: 400 });
+  }
+
+  // Re-render the email HTML from updated content
+  let html_code = generation.html_code;
+  const subject_line: string = content_json.subject || generation.subject_line || '';
+  const preview_text: string = content_json.previewText || generation.preview_text || '';
+
+  try {
+    let brandProfile = null;
+    if (generation.brand_profile_id) {
+      brandProfile = await getBrandProfile(generation.brand_profile_id, user.id);
+    }
+    const { html } = await generateEmailHtml(content_json, generation.design_style, brandProfile);
+    html_code = html;
+  } catch (err) {
+    console.error('Re-render failed, saving content only:', err);
+  }
+
+  const { data, error } = await supabase
+    .from('email_generations')
+    .update({ content_json, html_code, subject_line, preview_text })
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating email generation:', error);
+    return NextResponse.json({ error: 'Failed to save' }, { status: 500 });
+  }
+
+  return NextResponse.json({ generation: data });
 }

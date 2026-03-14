@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { EmailGeneration } from '@/lib/db/types';
-import type { GeneratedEmail } from '@/lib/ai/gemini';
+import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
 
 interface EmailEditorProps {
   emailId: string;
@@ -18,9 +18,63 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [aiMessage, setAiMessage] = useState('');
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
 
+  // Editor state
+  const [editedEmail, setEditedEmail] = useState<GeneratedEmail | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState<Set<number>>(new Set());
+  const [showAddBlock, setShowAddBlock] = useState(false);
+
+  const BLOCK_TYPES: Array<{ type: EmailSection['type']; label: string; description: string; icon: string }> = [
+    { type: 'hero',          label: 'Hero',          description: 'Large banner with heading & image',   icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
+    { type: 'content',       label: 'Content',       description: 'Heading + body text block',           icon: 'M4 6h16M4 12h16M4 18h7' },
+    { type: 'cta',           label: 'Call to Action', description: 'Heading, text & button',             icon: 'M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5' },
+    { type: 'announcement',  label: 'Announcement',  description: 'Highlighted notice or alert',         icon: 'M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.952 9.168-5v14c-1.543-3.048-5.068-5-9.168-5H7a3.988 3.988 0 01-1.564-.317z' },
+    { type: 'image-text',    label: 'Image + Text',  description: 'Side-by-side image and copy',        icon: 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2' },
+    { type: 'feature-list',  label: 'Feature List',  description: 'Icon + title + description rows',    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
+    { type: 'testimonial',   label: 'Testimonial',   description: 'Quote with author attribution',      icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+    { type: 'stats',         label: 'Stats',         description: 'Key numbers / metrics',              icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
+    { type: 'gallery',       label: 'Gallery',       description: 'Grid of images',                     icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+    { type: 'pricing-table', label: 'Pricing Table', description: 'Plan comparison cards',              icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
+    { type: 'coupon',        label: 'Coupon',        description: 'Promo code with expiry',             icon: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' },
+    { type: 'columns',       label: 'Columns',       description: 'Multi-column layout',                icon: 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7' },
+    { type: 'social-links',  label: 'Social Links',  description: 'Social media icon links',            icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1' },
+    { type: 'header',        label: 'Header',        description: 'Logo + navigation bar',              icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6z' },
+    { type: 'footer',        label: 'Footer',        description: 'Unsubscribe + fine print',           icon: 'M16 4v12l-4-2-4 2V4M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
+    { type: 'divider',       label: 'Divider',       description: 'Horizontal rule spacer',             icon: 'M5 12h14' },
+  ];
+
+  const DEFAULT_SECTION: Record<EmailSection['type'], Partial<EmailSection>> = {
+    hero:          { heading: 'Welcome', subheading: 'Your subtitle here', text: '' },
+    content:       { heading: 'Section Heading', text: 'Your content goes here.' },
+    cta:           { heading: 'Take Action', text: 'Convince them to click.', buttonText: 'Get Started', buttonUrl: 'https://' },
+    announcement:  { heading: 'Important Update', text: 'Details of your announcement here.' },
+    'image-text':  { heading: 'Feature Title', text: 'Describe the feature.', imageUrl: '', imagePosition: 'left' },
+    'feature-list': { heading: 'Our Features', features: [{ title: 'Feature 1', description: 'Description here.' }] },
+    testimonial:   { quote: 'This product changed my life.', author: 'Jane Doe', authorTitle: 'CEO, Acme Inc.' },
+    stats:         { heading: 'By the Numbers', stats: [{ value: '1,000+', label: 'Customers' }, { value: '99%', label: 'Satisfaction' }] },
+    gallery:       { heading: 'Gallery', images: [{ url: '', alt: 'Image 1' }, { url: '', alt: 'Image 2' }] },
+    'pricing-table': { heading: 'Pricing', plans: [{ name: 'Pro', price: '$29', period: '/mo', features: ['Feature A', 'Feature B'], buttonText: 'Start Free Trial' }] },
+    coupon:        { heading: 'Special Offer', text: 'Use this code at checkout.', code: 'SAVE20', expiryText: 'Expires soon' },
+    columns:       { columns: [{ heading: 'Column 1', text: 'Content here.' }, { heading: 'Column 2', text: 'Content here.' }] },
+    'social-links': { text: 'Follow us on social media', socialLinks: [{ platform: 'Twitter', url: 'https://' }, { platform: 'Instagram', url: 'https://' }] },
+    header:        { logoUrl: '', logoAlt: 'Logo', tagline: '' },
+    footer:        { text: 'You received this email because you subscribed. Unsubscribe.' },
+    divider:       {},
+  };
+
   useEffect(() => {
     loadEmail();
   }, [emailId]);
+
+  // Sync editedEmail when email loads (only on first load)
+  useEffect(() => {
+    if (email && !editedEmail) {
+      setEditedEmail(email.content_json as GeneratedEmail);
+    }
+  }, [email, editedEmail]);
 
   const loadEmail = async () => {
     setLoading(true);
@@ -42,6 +96,96 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const updateEmailField = useCallback((field: keyof GeneratedEmail, value: string) => {
+    setEditedEmail(prev => prev ? { ...prev, [field]: value } : prev);
+    setIsDirty(true);
+  }, []);
+
+  const updateSection = useCallback((index: number, updates: Partial<EmailSection>) => {
+    setEditedEmail(prev => {
+      if (!prev) return prev;
+      const sections = prev.sections.map((s, i) => i === index ? { ...s, ...updates } : s);
+      return { ...prev, sections };
+    });
+    setIsDirty(true);
+  }, []);
+
+  const deleteSection = useCallback((index: number) => {
+    setEditedEmail(prev => {
+      if (!prev) return prev;
+      return { ...prev, sections: prev.sections.filter((_, i) => i !== index) };
+    });
+    setCollapsedSections(prev => {
+      const next = new Set<number>();
+      prev.forEach(i => { if (i < index) next.add(i); else if (i > index) next.add(i - 1); });
+      return next;
+    });
+    setIsDirty(true);
+  }, []);
+
+  const moveSection = useCallback((index: number, direction: 'up' | 'down') => {
+    setEditedEmail(prev => {
+      if (!prev) return prev;
+      const sections = [...prev.sections];
+      const swapIndex = direction === 'up' ? index - 1 : index + 1;
+      if (swapIndex < 0 || swapIndex >= sections.length) return prev;
+      [sections[index], sections[swapIndex]] = [sections[swapIndex], sections[index]];
+      return { ...prev, sections };
+    });
+    setIsDirty(true);
+  }, []);
+
+  const toggleCollapse = useCallback((index: number) => {
+    setCollapsedSections(prev => {
+      const next = new Set(prev);
+      next.has(index) ? next.delete(index) : next.add(index);
+      return next;
+    });
+  }, []);
+
+  const addSection = useCallback((type: EmailSection['type']) => {
+    const newSection: EmailSection = { type, ...DEFAULT_SECTION[type] } as EmailSection;
+    setEditedEmail(prev => {
+      if (!prev) return prev;
+      return { ...prev, sections: [...prev.sections, newSection] };
+    });
+    setIsDirty(true);
+    setShowAddBlock(false);
+  }, []);
+
+  const handleSave = async () => {
+    if (!editedEmail) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const res = await fetch(`/api/email-generations/${emailId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content_json: editedEmail }),
+      });
+      if (!res.ok) {
+        setSaveError('Failed to save changes');
+        return;
+      }
+      const data = await res.json();
+      setEmail(data.generation);
+      setIsDirty(false);
+    } catch (err) {
+      console.error('Save error:', err);
+      setSaveError('An error occurred while saving');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const copyHtml = () => {
+    if (!email?.html_code) return;
+    navigator.clipboard.writeText(email.html_code).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   const emailContent = email?.content_json as GeneratedEmail | null;
@@ -94,6 +238,9 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
             </div>
 
             <div className="flex items-center gap-3">
+              {saveError && (
+                <span className="text-red-400 text-xs">{saveError}</span>
+              )}
               <div className="relative">
                 <button
                   disabled
@@ -108,10 +255,30 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   Coming soon
                 </span>
               </div>
-              <button className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium">
-                Save Changes
+              <button
+                onClick={handleSave}
+                disabled={!isDirty || saving}
+                className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${
+                  isDirty
+                    ? 'bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black hover:shadow-lg hover:shadow-[#00ffff]/30'
+                    : 'border border-white/10 text-white/30 cursor-not-allowed'
+                }`}
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-black/30 border-t-black/80 rounded-full animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    {isDirty ? 'Save Changes' : 'Saved'}
+                  </>
+                )}
               </button>
-              <button 
+              <button
                 onClick={() => {
                   if (!email.html_code) return;
                   const blob = new Blob([email.html_code], { type: 'text/html' });
@@ -247,138 +414,518 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-xl font-bold text-white">Content Editor</h2>
-                  <p className="text-sm text-white/60">Edit email sections manually</p>
+                  <p className="text-sm text-white/60">
+                    {isDirty ? (
+                      <span className="text-yellow-400 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block" />
+                        Unsaved changes
+                      </span>
+                    ) : 'All changes saved'}
+                  </p>
                 </div>
-                <button className="text-sm text-[#00ffff] hover:text-[#00ffff]/80 transition-colors flex items-center gap-1">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Add Section
-                </button>
               </div>
 
-              {/* Subject Line */}
-              <div className="p-4 rounded-lg border border-white/10 bg-white/5 hover:border-white/20 transition-colors">
-                <label className="block text-xs font-medium text-white/40 mb-2">Subject Line</label>
-                <input
-                  type="text"
-                  defaultValue={emailContent.subject}
-                  className="w-full px-0 py-1 bg-transparent border-0 text-white text-lg font-semibold focus:outline-none focus:ring-0 placeholder-white/30"
-                  placeholder="Enter subject line..."
-                />
-              </div>
-
-              {/* Preview Text */}
-              <div className="p-4 rounded-lg border border-white/10 bg-white/5 hover:border-white/20 transition-colors">
-                <label className="block text-xs font-medium text-white/40 mb-2">Preview Text</label>
-                <input
-                  type="text"
-                  defaultValue={emailContent.previewText}
-                  className="w-full px-0 py-1 bg-transparent border-0 text-white focus:outline-none focus:ring-0 placeholder-white/30"
-                  placeholder="Enter preview text..."
-                />
-              </div>
-
-              {/* Sections */}
-              <div className="space-y-3">
-                {emailContent.sections.map((section, index) => (
-                  <div key={index} className="group rounded-lg border border-white/10 bg-white/5 hover:border-white/20 transition-all">
-                    <div className="flex items-center justify-between p-3 border-b border-white/10">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded bg-[#00ffff]/10 flex items-center justify-center">
-                          <span className="text-xs font-bold text-[#00ffff]">{index + 1}</span>
-                        </div>
-                        <span className="text-xs font-bold text-white/60 uppercase tracking-wide">{section.type}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button className="p-1 text-white/40 hover:text-white transition-colors opacity-0 group-hover:opacity-100">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                          </svg>
-                        </button>
-                        <button className="p-1 text-white/40 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-4 space-y-3">
-                      {section.heading && (
-                        <div>
-                          <label className="block text-xs text-white/40 mb-1.5">Heading</label>
-                          <input
-                            type="text"
-                            defaultValue={section.heading}
-                            className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white text-lg font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
-                            placeholder="Enter heading..."
-                          />
-                        </div>
-                      )}
-
-                      {section.subheading && (
-                        <div>
-                          <label className="block text-xs text-white/40 mb-1.5">Subheading</label>
-                          <input
-                            type="text"
-                            defaultValue={section.subheading}
-                            className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
-                            placeholder="Enter subheading..."
-                          />
-                        </div>
-                      )}
-
-                      {section.text && (
-                        <div>
-                          <label className="block text-xs text-white/40 mb-1.5">Content</label>
-                          <textarea
-                            defaultValue={section.text}
-                            rows={3}
-                            className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20"
-                            placeholder="Enter content..."
-                          />
-                        </div>
-                      )}
-
-                      {section.buttonText && (
-                        <div className="grid grid-cols-2 gap-3">
-                          <div>
-                            <label className="block text-xs text-white/40 mb-1.5">Button Text</label>
-                            <input
-                              type="text"
-                              defaultValue={section.buttonText}
-                              className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
-                              placeholder="Click here"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-white/40 mb-1.5">Button URL</label>
-                            <input
-                              type="text"
-                              defaultValue={section.buttonUrl}
-                              className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
-                              placeholder="https://..."
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      {section.imageUrl && (
-                        <div>
-                          <label className="block text-xs text-white/40 mb-1.5">Image URL</label>
-                          <input
-                            type="text"
-                            defaultValue={section.imageUrl}
-                            className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
-                            placeholder="https://..."
-                          />
-                        </div>
-                      )}
-                    </div>
+              {editedEmail && (
+                <>
+                  {/* Subject Line */}
+                  <div className="p-4 rounded-lg border border-white/10 bg-white/5 hover:border-white/20 transition-colors">
+                    <label className="block text-xs font-medium text-white/40 mb-2 uppercase tracking-wider">Subject Line</label>
+                    <input
+                      type="text"
+                      value={editedEmail.subject || ''}
+                      onChange={e => updateEmailField('subject', e.target.value)}
+                      className="w-full px-0 py-1 bg-transparent border-0 text-white text-base font-semibold focus:outline-none focus:ring-0 placeholder-white/30"
+                      placeholder="Enter subject line…"
+                    />
                   </div>
-                ))}
-              </div>
+
+                  {/* Preview Text */}
+                  <div className="p-4 rounded-lg border border-white/10 bg-white/5 hover:border-white/20 transition-colors">
+                    <label className="block text-xs font-medium text-white/40 mb-2 uppercase tracking-wider">Preview Text</label>
+                    <input
+                      type="text"
+                      value={editedEmail.previewText || ''}
+                      onChange={e => updateEmailField('previewText', e.target.value)}
+                      className="w-full px-0 py-1 bg-transparent border-0 text-white focus:outline-none focus:ring-0 placeholder-white/30"
+                      placeholder="Enter preview text…"
+                    />
+                  </div>
+
+                  {/* Sections */}
+                  <div className="space-y-3">
+                    {editedEmail.sections.map((section, index) => {
+                      const isCollapsed = collapsedSections.has(index);
+                      const canMoveUp = index > 0;
+                      const canMoveDown = index < editedEmail.sections.length - 1;
+                      return (
+                        <div key={index} className="group rounded-lg border border-white/10 bg-white/5 hover:border-white/20 transition-all">
+                          {/* Section header */}
+                          <div
+                            className="flex items-center justify-between p-3 cursor-pointer select-none"
+                            onClick={() => toggleCollapse(index)}
+                          >
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded bg-[#00ffff]/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-xs font-bold text-[#00ffff]">{index + 1}</span>
+                              </div>
+                              <span className="text-xs font-bold text-white/60 uppercase tracking-wide">{section.type}</span>
+                              {section.heading && (
+                                <span className="text-xs text-white/30 truncate max-w-[100px]">{section.heading}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                              <button
+                                disabled={!canMoveUp}
+                                onClick={() => moveSection(index, 'up')}
+                                className="p-1.5 rounded text-white/30 hover:text-white hover:bg-white/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                                title="Move up"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                                </svg>
+                              </button>
+                              <button
+                                disabled={!canMoveDown}
+                                onClick={() => moveSection(index, 'down')}
+                                className="p-1.5 rounded text-white/30 hover:text-white hover:bg-white/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
+                                title="Move down"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => deleteSection(index)}
+                                className="p-1.5 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                title="Delete section"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                              <svg
+                                className={`w-3.5 h-3.5 text-white/30 ml-1 transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </div>
+                          </div>
+
+                          {/* Section fields */}
+                          {!isCollapsed && (
+                            <div className="px-4 pb-4 space-y-3 border-t border-white/10 pt-3">
+
+                              {/* ── Common fields ── */}
+                              {section.heading !== undefined && (
+                                <div>
+                                  <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Heading</label>
+                                  <input type="text" value={section.heading || ''} onChange={e => updateSection(index, { heading: e.target.value })}
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Enter heading…" />
+                                </div>
+                              )}
+                              {section.subheading !== undefined && (
+                                <div>
+                                  <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Subheading</label>
+                                  <input type="text" value={section.subheading || ''} onChange={e => updateSection(index, { subheading: e.target.value })}
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Enter subheading…" />
+                                </div>
+                              )}
+                              {section.text !== undefined && (
+                                <div>
+                                  <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Content</label>
+                                  <textarea value={section.text || ''} onChange={e => updateSection(index, { text: e.target.value })} rows={3}
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Enter content…" />
+                                </div>
+                              )}
+                              {section.buttonText !== undefined && (
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Button Text</label>
+                                    <input type="text" value={section.buttonText || ''} onChange={e => updateSection(index, { buttonText: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Click here" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Button URL</label>
+                                    <input type="text" value={section.buttonUrl || ''} onChange={e => updateSection(index, { buttonUrl: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                  </div>
+                                </div>
+                              )}
+                              {section.imageUrl !== undefined && (
+                                <div>
+                                  <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Image URL</label>
+                                  <input type="text" value={section.imageUrl || ''} onChange={e => updateSection(index, { imageUrl: e.target.value })}
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                </div>
+                              )}
+
+                              {/* ── image-text: position toggle ── */}
+                              {section.type === 'image-text' && (
+                                <div>
+                                  <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Image Position</label>
+                                  <div className="flex gap-2">
+                                    {(['left', 'right'] as const).map(pos => (
+                                      <button key={pos} onClick={() => updateSection(index, { imagePosition: pos })}
+                                        className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${section.imagePosition === pos ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                        {pos.charAt(0).toUpperCase() + pos.slice(1)}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* ── header: logo + tagline ── */}
+                              {section.type === 'header' && (
+                                <>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Logo URL</label>
+                                    <input type="text" value={section.logoUrl || ''} onChange={e => updateSection(index, { logoUrl: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Logo Alt Text</label>
+                                    <input type="text" value={section.logoAlt || ''} onChange={e => updateSection(index, { logoAlt: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Brand name" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Tagline</label>
+                                    <input type="text" value={section.tagline || ''} onChange={e => updateSection(index, { tagline: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Optional tagline…" />
+                                  </div>
+                                </>
+                              )}
+
+                              {/* ── testimonial ── */}
+                              {section.type === 'testimonial' && (
+                                <>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Quote</label>
+                                    <textarea value={section.quote || ''} onChange={e => updateSection(index, { quote: e.target.value })} rows={3}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Customer quote…" />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Author Name</label>
+                                      <input type="text" value={section.author || ''} onChange={e => updateSection(index, { author: e.target.value })}
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Jane Doe" />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Author Title</label>
+                                      <input type="text" value={section.authorTitle || ''} onChange={e => updateSection(index, { authorTitle: e.target.value })}
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="CEO, Acme" />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Author Image URL</label>
+                                    <input type="text" value={section.authorImage || ''} onChange={e => updateSection(index, { authorImage: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                  </div>
+                                </>
+                              )}
+
+                              {/* ── coupon ── */}
+                              {section.type === 'coupon' && (
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Promo Code</label>
+                                    <input type="text" value={section.code || ''} onChange={e => updateSection(index, { code: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white font-mono focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="SAVE20" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Expiry Text</label>
+                                    <input type="text" value={section.expiryText || ''} onChange={e => updateSection(index, { expiryText: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Expires soon" />
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* ── stats ── */}
+                              {section.type === 'stats' && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-xs text-white/40 uppercase tracking-wider">Stats</label>
+                                    <button onClick={() => updateSection(index, { stats: [...(section.stats || []), { value: '', label: '' }] })}
+                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                      Add stat
+                                    </button>
+                                  </div>
+                                  {(section.stats || []).map((stat, si) => (
+                                    <div key={si} className="flex gap-2 items-center">
+                                      <input type="text" value={stat.value} onChange={e => { const s = (section.stats || []).map((x, i) => i === si ? { ...x, value: e.target.value } : x); updateSection(index, { stats: s }); }}
+                                        className="w-1/3 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="99%" />
+                                      <input type="text" value={stat.label} onChange={e => { const s = (section.stats || []).map((x, i) => i === si ? { ...x, label: e.target.value } : x); updateSection(index, { stats: s }); }}
+                                        className="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Label" />
+                                      <button onClick={() => updateSection(index, { stats: (section.stats || []).filter((_, i) => i !== si) })}
+                                        className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* ── feature-list ── */}
+                              {section.type === 'feature-list' && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-xs text-white/40 uppercase tracking-wider">Features</label>
+                                    <button onClick={() => updateSection(index, { features: [...(section.features || []), { title: '', description: '' }] })}
+                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                      Add feature
+                                    </button>
+                                  </div>
+                                  {(section.features || []).map((feat, fi) => (
+                                    <div key={fi} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1.5">
+                                      <div className="flex items-center gap-2">
+                                        <input type="text" value={feat.title} onChange={e => { const f = (section.features || []).map((x, i) => i === fi ? { ...x, title: e.target.value } : x); updateSection(index, { features: f }); }}
+                                          className="flex-1 px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Feature title" />
+                                        <button onClick={() => updateSection(index, { features: (section.features || []).filter((_, i) => i !== fi) })}
+                                          className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                      </div>
+                                      <input type="text" value={feat.description} onChange={e => { const f = (section.features || []).map((x, i) => i === fi ? { ...x, description: e.target.value } : x); updateSection(index, { features: f }); }}
+                                        className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white/70 text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Description…" />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* ── gallery ── */}
+                              {section.type === 'gallery' && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-xs text-white/40 uppercase tracking-wider">Images</label>
+                                    <button onClick={() => updateSection(index, { images: [...(section.images || []), { url: '', alt: '' }] })}
+                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                      Add image
+                                    </button>
+                                  </div>
+                                  {(section.images || []).map((img, ii) => (
+                                    <div key={ii} className="flex gap-2 items-center">
+                                      <input type="text" value={img.url} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, url: e.target.value } : x); updateSection(index, { images: imgs }); }}
+                                        className="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="URL" />
+                                      <input type="text" value={img.alt} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, alt: e.target.value } : x); updateSection(index, { images: imgs }); }}
+                                        className="w-1/3 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Alt" />
+                                      <button onClick={() => updateSection(index, { images: (section.images || []).filter((_, i) => i !== ii) })}
+                                        className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* ── pricing-table ── */}
+                              {section.type === 'pricing-table' && (
+                                <div className="space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-xs text-white/40 uppercase tracking-wider">Plans</label>
+                                    <button onClick={() => updateSection(index, { plans: [...(section.plans || []), { name: 'New Plan', price: '$0', features: [], buttonText: 'Get Started' }] })}
+                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                      Add plan
+                                    </button>
+                                  </div>
+                                  {(section.plans || []).map((plan, pi) => (
+                                    <div key={pi} className="p-3 rounded-lg bg-white/5 border border-white/10 space-y-2">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-xs font-bold text-white/60">Plan {pi + 1}</span>
+                                        <div className="flex items-center gap-2">
+                                          <label className="flex items-center gap-1 text-xs text-white/40 cursor-pointer">
+                                            <input type="checkbox" checked={plan.highlighted || false} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, highlighted: e.target.checked } : x); updateSection(index, { plans: p }); }} className="accent-[#00ffff]" />
+                                            Highlighted
+                                          </label>
+                                          <button onClick={() => updateSection(index, { plans: (section.plans || []).filter((_, i) => i !== pi) })}
+                                            className="text-white/30 hover:text-red-400 transition-colors">
+                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                          </button>
+                                        </div>
+                                      </div>
+                                      <div className="grid grid-cols-3 gap-2">
+                                        <input type="text" value={plan.name} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, name: e.target.value } : x); updateSection(index, { plans: p }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Name" />
+                                        <input type="text" value={plan.price} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, price: e.target.value } : x); updateSection(index, { plans: p }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="$29" />
+                                        <input type="text" value={plan.period || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, period: e.target.value } : x); updateSection(index, { plans: p }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="/mo" />
+                                      </div>
+                                      <input type="text" value={plan.buttonText || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, buttonText: e.target.value } : x); updateSection(index, { plans: p }); }}
+                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button text" />
+                                      <div className="space-y-1">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-[11px] text-white/30">Features</span>
+                                          <button onClick={() => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, features: [...x.features, ''] } : x); updateSection(index, { plans: p }); }}
+                                            className="text-[11px] text-[#00ffff]/60 hover:text-[#00ffff] transition-colors">+ feature</button>
+                                        </div>
+                                        {plan.features.map((feat, fii) => (
+                                          <div key={fii} className="flex gap-1 items-center">
+                                            <input type="text" value={feat} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, features: x.features.map((f, fi) => fi === fii ? e.target.value : f) } : x); updateSection(index, { plans: p }); }}
+                                              className="flex-1 px-2 py-0.5 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Feature…" />
+                                            <button onClick={() => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, features: x.features.filter((_, fi) => fi !== fii) } : x); updateSection(index, { plans: p }); }}
+                                              className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0">
+                                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* ── columns ── */}
+                              {section.type === 'columns' && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-xs text-white/40 uppercase tracking-wider">Columns</label>
+                                    <button onClick={() => updateSection(index, { columns: [...(section.columns || []), { heading: '', text: '' }] })}
+                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                      Add column
+                                    </button>
+                                  </div>
+                                  {(section.columns || []).map((col, ci) => (
+                                    <div key={ci} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1.5">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[11px] text-white/30">Col {ci + 1}</span>
+                                        <button onClick={() => updateSection(index, { columns: (section.columns || []).filter((_, i) => i !== ci) })}
+                                          className="text-white/30 hover:text-red-400 transition-colors">
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                      </div>
+                                      <input type="text" value={col.heading || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, heading: e.target.value } : x); updateSection(index, { columns: c }); }}
+                                        className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Column heading" />
+                                      <textarea value={col.text || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, text: e.target.value } : x); updateSection(index, { columns: c }); }} rows={2}
+                                        className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white/70 text-xs focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Column text…" />
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <input type="text" value={col.buttonText || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, buttonText: e.target.value } : x); updateSection(index, { columns: c }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button text" />
+                                        <input type="text" value={col.buttonUrl || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, buttonUrl: e.target.value } : x); updateSection(index, { columns: c }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* ── social-links ── */}
+                              {section.type === 'social-links' && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-xs text-white/40 uppercase tracking-wider">Social Links</label>
+                                    <button onClick={() => updateSection(index, { socialLinks: [...(section.socialLinks || []), { platform: '', url: '' }] })}
+                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                      Add link
+                                    </button>
+                                  </div>
+                                  {(section.socialLinks || []).map((link, li) => (
+                                    <div key={li} className="flex gap-2 items-center">
+                                      <input type="text" value={link.platform} onChange={e => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, platform: e.target.value } : x); updateSection(index, { socialLinks: sl }); }}
+                                        className="w-1/3 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Twitter" />
+                                      <input type="text" value={link.url} onChange={e => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, url: e.target.value } : x); updateSection(index, { socialLinks: sl }); }}
+                                        className="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                      <button onClick={() => updateSection(index, { socialLinks: (section.socialLinks || []).filter((_, i) => i !== li) })}
+                                        className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
+                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* ── divider: nothing to edit ── */}
+                              {section.type === 'divider' && (
+                                <p className="text-xs text-white/30 italic">No editable content for a divider.</p>
+                              )}
+
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Add Block button */}
+                  <button
+                    onClick={() => setShowAddBlock(true)}
+                    className="w-full py-2.5 rounded-lg border border-dashed border-white/20 text-white/50 hover:border-[#00ffff]/50 hover:text-[#00ffff] transition-all text-sm font-medium flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Block
+                  </button>
+
+                  {/* Save button at bottom for convenience */}
+                  {isDirty && (
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="w-full py-3 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
+                    >
+                      {saving ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-black/30 border-t-black/80 rounded-full animate-spin" />
+                          Saving & refreshing preview…
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          Save & Refresh Preview
+                        </>
+                      )}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
+
+            {/* Add Block Modal */}
+            {showAddBlock && (
+              <>
+                <div
+                  className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10"
+                  onClick={() => setShowAddBlock(false)}
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-[#0a0a0a] border border-white/10 rounded-t-2xl z-20 max-h-[80%] flex flex-col">
+                  <div className="flex items-center justify-between p-4 border-b border-white/10 flex-shrink-0">
+                    <h3 className="text-base font-bold text-white">Add a Block</h3>
+                    <button onClick={() => setShowAddBlock(false)} className="text-white/40 hover:text-white transition-colors">
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="overflow-y-auto p-4 grid grid-cols-2 gap-2">
+                    {BLOCK_TYPES.map(({ type, label, description, icon }) => (
+                      <button
+                        key={type}
+                        onClick={() => addSection(type)}
+                        className="flex items-start gap-3 p-3 rounded-xl border border-white/10 bg-white/5 hover:border-[#00ffff]/40 hover:bg-[#00ffff]/5 transition-all text-left group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-[#00ffff]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#00ffff]/20">
+                          <svg className="w-4 h-4 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
+                          </svg>
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-white group-hover:text-[#00ffff] transition-colors">{label}</p>
+                          <p className="text-[11px] text-white/40 leading-snug mt-0.5">{description}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* AI Chat Panel - OVERLAY */}
             {aiChatOpen && (
