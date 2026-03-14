@@ -1353,10 +1353,8 @@ export default function DashboardContent() {
                 </div>
               ) : (
                 /* Email grid with previews */
-                <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {emailHistory.map((email) => {
-                    const content = email.content_json as any;
-                    const firstSection = content?.sections?.[0];
                     const isDeleting = deletingEmailId === email.id;
                     
                     return (
@@ -1380,51 +1378,52 @@ export default function DashboardContent() {
                           )}
                         </button>
 
-                        {/* Preview thumbnail */}
-                        <div className="relative aspect-video bg-gradient-to-br from-white/10 to-white/5 overflow-hidden">
-                          <div className="absolute inset-0 p-6 flex flex-col justify-center items-center text-center">
-                            {firstSection?.heading ? (
-                              <h3 className="text-white text-lg font-bold line-clamp-2 mb-2">
-                                {firstSection.heading}
-                              </h3>
-                            ) : (
-                              <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mb-2">
-                                <svg className="w-6 h-6 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                </svg>
-                              </div>
-                            )}
-                            {firstSection?.subheading && (
-                              <p className="text-white/60 text-sm line-clamp-2">
-                                {firstSection.subheading}
-                              </p>
-                            )}
-                          </div>
-                          
-                          {/* Status badge */}
-                          <div className="absolute top-2 right-2">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              email.status === 'completed' 
-                                ? 'bg-green-500/90 text-white' 
-                                : email.status === 'failed'
-                                ? 'bg-red-500/90 text-white'
-                                : 'bg-yellow-500/90 text-white'
-                            }`}>
-                              {email.status}
-                            </span>
-                          </div>
+                        {/* Status badge */}
+                        <div className="absolute top-2 right-2 z-10">
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            email.status === 'completed'
+                              ? 'bg-green-500/90 text-white'
+                              : email.status === 'failed'
+                              ? 'bg-red-500/90 text-white'
+                              : 'bg-yellow-500/90 text-white'
+                          }`}>
+                            {email.status}
+                          </span>
+                        </div>
+
+                        {/* Scaled HTML preview thumbnail */}
+                        <div className="relative w-full overflow-hidden bg-white" style={{ height: 220 }}>
+                          {email.html_code ? (
+                            <iframe
+                              srcDoc={email.html_code}
+                              title={email.subject_line || 'Email preview'}
+                              sandbox="allow-same-origin"
+                              scrolling="no"
+                              className="absolute top-0 left-1/2 border-0 pointer-events-none"
+                              style={{
+                                width: 600,
+                                height: 900,
+                                transform: 'translateX(-50%) scale(0.38)',
+                                transformOrigin: 'top center',
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-white/10 to-white/5">
+                              <svg className="w-8 h-8 text-white/30 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                              </svg>
+                              <span className="text-white/40 text-xs">No preview</span>
+                            </div>
+                          )}
+                          {/* Hover overlay to block iframe interaction */}
+                          <div className="absolute inset-0 group-hover:bg-[#00ffff]/5 transition-colors" />
                         </div>
 
                         {/* Email info */}
-                        <div className="p-4">
-                          <h3 className="text-white font-semibold mb-1 truncate group-hover:text-[#00ffff] transition-colors">
+                        <div className="p-3">
+                          <h3 className="text-white font-semibold mb-0.5 truncate text-sm group-hover:text-[#00ffff] transition-colors">
                             {email.subject_line || 'Untitled Email'}
                           </h3>
-                          {email.preview_text && (
-                            <p className="text-sm text-white/60 mb-3 line-clamp-2">
-                              {email.preview_text}
-                            </p>
-                          )}
                           <div className="flex items-center justify-between text-xs text-white/40">
                             <span>
                               {new Date(email.created_at).toLocaleDateString('en-US', {

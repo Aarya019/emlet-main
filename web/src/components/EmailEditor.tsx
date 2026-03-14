@@ -94,15 +94,20 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
             </div>
 
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => setAiChatOpen(!aiChatOpen)}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all text-sm font-bold flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                Edit with AI
-              </button>
+              <div className="relative">
+                <button
+                  disabled
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff]/40 to-[#00ff00]/40 text-black/60 text-sm font-bold flex items-center gap-2 cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  Edit with AI
+                </button>
+                <span className="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-yellow-400 text-black text-[10px] font-black leading-none whitespace-nowrap">
+                  Coming soon
+                </span>
+              </div>
               <button className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium">
                 Save Changes
               </button>
