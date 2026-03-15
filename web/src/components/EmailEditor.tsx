@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import type { EmailGeneration } from '@/lib/db/types';
 import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
+import ImageUploadInput from '@/components/ImageUploadInput';
 
 interface EmailEditorProps {
   emailId: string;
@@ -594,11 +595,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 </div>
                               )}
                               {section.imageUrl !== undefined && (
-                                <div>
-                                  <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Image URL</label>
-                                  <input type="text" value={section.imageUrl || ''} onChange={e => updateSection(index, { imageUrl: e.target.value })}
-                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
-                                </div>
+                                <ImageUploadInput
+                                  label="Image URL"
+                                  value={section.imageUrl || ''}
+                                  onChange={url => updateSection(index, { imageUrl: url })}
+                                  onRemove={section.imageUrl ? () => updateSection(index, { imageUrl: '' }) : undefined}
+                                />
                               )}
 
                               {/* ── image-text: position toggle ── */}
@@ -619,11 +621,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                               {/* ── header: logo + tagline ── */}
                               {section.type === 'header' && (
                                 <>
-                                  <div>
-                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Logo URL</label>
-                                    <input type="text" value={section.logoUrl || ''} onChange={e => updateSection(index, { logoUrl: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
-                                  </div>
+                                  <ImageUploadInput
+                                    label="Logo URL"
+                                    value={section.logoUrl || ''}
+                                    onChange={url => updateSection(index, { logoUrl: url })}
+                                    onRemove={section.logoUrl ? () => updateSection(index, { logoUrl: '' }) : undefined}
+                                  />
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Logo Alt Text</label>
                                     <input type="text" value={section.logoAlt || ''} onChange={e => updateSection(index, { logoAlt: e.target.value })}
@@ -657,11 +660,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="CEO, Acme" />
                                     </div>
                                   </div>
-                                  <div>
-                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Author Image URL</label>
-                                    <input type="text" value={section.authorImage || ''} onChange={e => updateSection(index, { authorImage: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
-                                  </div>
+                                  <ImageUploadInput
+                                    label="Author Image URL"
+                                    value={section.authorImage || ''}
+                                    onChange={url => updateSection(index, { authorImage: url })}
+                                    onRemove={section.authorImage ? () => updateSection(index, { authorImage: '' }) : undefined}
+                                  />
                                 </>
                               )}
 
@@ -748,8 +752,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   </div>
                                   {(section.images || []).map((img, ii) => (
                                     <div key={ii} className="flex gap-2 items-center">
-                                      <input type="text" value={img.url} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, url: e.target.value } : x); updateSection(index, { images: imgs }); }}
-                                        className="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="URL" />
+                                      <ImageUploadInput
+                                        label=""
+                                        value={img.url}
+                                        onChange={url => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, url } : x); updateSection(index, { images: imgs }); }}
+                                        compact
+                                        placeholder="URL"
+                                      />
                                       <input type="text" value={img.alt} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, alt: e.target.value } : x); updateSection(index, { images: imgs }); }}
                                         className="w-1/3 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Alt" />
                                       <button onClick={() => updateSection(index, { images: (section.images || []).filter((_, i) => i !== ii) })}
@@ -866,15 +875,27 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     </button>
                                   </div>
                                   {(section.socialLinks || []).map((link, li) => (
-                                    <div key={li} className="flex gap-2 items-center">
-                                      <input type="text" value={link.platform} onChange={e => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, platform: e.target.value } : x); updateSection(index, { socialLinks: sl }); }}
-                                        className="w-1/3 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Twitter" />
-                                      <input type="text" value={link.url} onChange={e => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, url: e.target.value } : x); updateSection(index, { socialLinks: sl }); }}
-                                        className="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
-                                      <button onClick={() => updateSection(index, { socialLinks: (section.socialLinks || []).filter((_, i) => i !== li) })}
-                                        className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
-                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                      </button>
+                                    <div key={li} className="space-y-1.5 p-2 rounded-lg bg-white/5 border border-white/10">
+                                      <div className="flex gap-2 items-center">
+                                        <input type="text" value={link.platform} onChange={e => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, platform: e.target.value } : x); updateSection(index, { socialLinks: sl }); }}
+                                          className="w-1/3 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Twitter" />
+                                        <input type="text" value={link.url} onChange={e => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, url: e.target.value } : x); updateSection(index, { socialLinks: sl }); }}
+                                          className="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                        <button onClick={() => updateSection(index, { socialLinks: (section.socialLinks || []).filter((_, i) => i !== li) })}
+                                          className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-white/30 uppercase tracking-wider w-10 flex-shrink-0">Icon</span>
+                                        <ImageUploadInput
+                                          label=""
+                                          value={link.iconUrl || ''}
+                                          onChange={url => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, iconUrl: url } : x); updateSection(index, { socialLinks: sl }); }}
+                                          compact
+                                          placeholder="Upload or paste icon URL"
+                                        />
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
@@ -883,6 +904,23 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                               {/* ── divider: nothing to edit ── */}
                               {section.type === 'divider' && (
                                 <p className="text-xs text-white/30 italic">No editable content for a divider.</p>
+                              )}
+
+                              {/* ── footer ── */}
+                              {section.type === 'footer' && (
+                                <>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Footer Text</label>
+                                    <textarea value={section.text || ''} onChange={e => updateSection(index, { text: e.target.value })} rows={2}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Company Name · 123 Street, City" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Unsubscribe URL</label>
+                                    <input type="text" value={section.unsubscribeUrl || ''} onChange={e => updateSection(index, { unsubscribeUrl: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://yourapp.com/unsubscribe" />
+                                    <p className="text-[11px] text-white/25 mt-1">Leave blank to use your ESP's merge tag</p>
+                                  </div>
+                                </>
                               )}
 
                             </div>

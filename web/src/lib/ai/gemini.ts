@@ -59,11 +59,14 @@ export interface EmailSection {
   // For coupon sections
   code?: string;
   expiryText?: string;
+  // For footer sections
+  unsubscribeUrl?: string;
   // For social-links sections
   socialLinks?: Array<{
     platform: string;
     url: string;
     icon?: string;
+    iconUrl?: string;
   }>;
   // For columns sections
   columns?: Array<{
@@ -316,7 +319,7 @@ VARIETY GUIDELINES (CRITICAL - Make each email unique):
 OUTPUT FORMAT:
 Return a JSON object with this exact structure:
 {
-  "subject": "Email subject line (50-60 characters)",
+  "subject": "Short punchy subject line (30 characters max, ideally under 20)",
   "previewText": "Preview text shown in inbox (80-100 characters)",
   "emailType": "promotional|newsletter|educational|transactional|other",
   "sections": [
@@ -447,7 +450,7 @@ Return a JSON object with this exact structure:
     },
     {
       "type": "footer",
-      "text": "Footer text with company info and unsubscribe link"
+      "text": "Company Name · 123 Street, City, Country"
     }
   ]
 }
@@ -489,7 +492,7 @@ RULES:
    - Set all button URLs to the brand's website_url or relevant subpages
    - Weave the brand_name naturally into copy (headlines, content, CTAs)
    - Match the brand_voice tone in all written content
-4. Keep subject lines under 60 characters
+4. Keep subject lines as short as possible — ideally under 20 characters, hard max 30. No filler words. Punchy, direct, curiosity-driving.
 5. Make CTAs clear and action-oriented
 6. For sections that need photos (hero, image-text, gallery), output an "imageKeyword" (or "keyword" for gallery images) — a short, specific 2-4 word English search phrase describing the ideal photo (e.g. "team meeting office", "coffee shop morning", "product packaging minimal"). Do NOT output imageUrl for non-logo images — the system will fetch real photos from Pexels using the keyword.
 7. Return ONLY the JSON object, no markdown formatting

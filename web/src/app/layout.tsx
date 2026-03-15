@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Emlet – AI Email Studio",
+  title: "Emlet | AI Email Generator",
   description: "Generate production-ready marketing emails with AI and React Email templates.",
 };
 

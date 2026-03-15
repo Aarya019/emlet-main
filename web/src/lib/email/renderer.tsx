@@ -697,7 +697,26 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
             textDecoration: 'underline',
           }
         }, section.buttonText)
-      : null
+      : null,
+    React.createElement(Text, {
+      style: {
+        fontFamily: config.fontFamily,
+        fontSize: '11px',
+        color: config.bodyColor + '44',
+        margin: '10px 0 0 0',
+      }
+    },
+      'Don\'t want these emails? ',
+      React.createElement(Link, {
+        href: section.unsubscribeUrl || '{{unsubscribe_url}}',
+        style: {
+          fontFamily: config.fontFamily,
+          fontSize: '11px',
+          color: config.bodyColor + '66',
+          textDecoration: 'underline',
+        }
+      }, 'Unsubscribe')
+    )
   );
 }
 
@@ -747,8 +766,9 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
 
 function renderImageText(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
   const isLeft = section.imagePosition !== 'right';
+  const hasImage = !!section.imageUrl;
 
-  const imageCol = React.createElement(Column, {
+  const imageCol = hasImage ? React.createElement(Column, {
     className: 'em-col',
     style: {
       width: '45%',
@@ -758,16 +778,16 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
     }
   },
     React.createElement(Img, {
-      src: section.imageUrl || 'https://placehold.co/260x200',
+      src: section.imageUrl!,
       alt: section.imageAlt || '',
       width: '260',
       style: { width: '100%', borderRadius: config.borderRadius, display: 'block' }
     })
-  );
+  ) : null;
 
   const textCol = React.createElement(Column, {
     className: 'em-col',
-    style: { width: '55%', verticalAlign: 'middle' as const }
+    style: { width: hasImage ? '55%' : '100%', verticalAlign: 'middle' as const }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -814,9 +834,11 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
   return React.createElement(Section, {
     style: { padding: config.sectionPadding }
   },
-    React.createElement(Row, null,
-      ...(isLeft ? [imageCol, textCol] : [textCol, imageCol])
-    )
+    hasImage
+      ? React.createElement(Row, null,
+          ...(isLeft ? [imageCol, textCol] : [textCol, imageCol])
+        )
+      : textCol
   );
 }
 
@@ -921,7 +943,17 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
               fontSize: link.icon ? '22px' : '12px',
               fontWeight: link.icon ? '400' : '700',
             }
-          }, link.icon || link.platform)
+          },
+            link.iconUrl
+              ? React.createElement(Img, {
+                  src: link.iconUrl,
+                  alt: link.platform,
+                  width: '24',
+                  height: '24',
+                  style: { width: '24px', height: '24px', display: 'inline-block', verticalAlign: 'middle' }
+                })
+              : (link.icon || link.platform)
+          )
         )
       )
     )
@@ -1085,21 +1117,21 @@ export async function generateEmailHtml(
   const processedSections: EmailSection[] = email.sections.map(s => {
     const sec = { ...s };
 
-    // Header: always use the real brand logo from profile
+    // Header: inject brand logo only if the section doesn't already have one set
     if (sec.type === 'header') {
-      if (logoUrl) sec.logoUrl = logoUrl;
-      sec.logoAlt = brandName;
+      if (logoUrl && sec.logoUrl === undefined) sec.logoUrl = logoUrl;
+      if (!sec.logoAlt) sec.logoAlt = brandName;
     }
 
-    // Hero: use brand logo as the image when AI left it blank
-    if (sec.type === 'hero' && !sec.imageUrl && logoUrl) {
+    // Hero: use brand logo as the image only when AI left imageUrl undefined (not when user cleared it)
+    if (sec.type === 'hero' && sec.imageUrl === undefined && logoUrl) {
       sec.imageUrl = logoUrl;
       sec.imageAlt = brandName;
     }
 
-    // Footer: inject brand logo so it renders above the fine print
+    // Footer: inject brand logo only if not already set
     if (sec.type === 'footer') {
-      if (logoUrl) sec.logoUrl = logoUrl;
+      if (logoUrl && sec.logoUrl === undefined) sec.logoUrl = logoUrl;
       if (!sec.logoAlt) sec.logoAlt = brandName;
     }
 
