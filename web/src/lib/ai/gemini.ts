@@ -119,10 +119,9 @@ ${prompt}
 
 Remember to:
 - Use the brand voice and identity specified
-- Create a neobrutalist design (thick borders, bold text, high contrast)
 - Include appropriate sections (hero, content blocks, CTA, footer)
 - Make it engaging and conversion-focused
-- Return ONLY valid JSON matching the schema`;
+- Return ONLY valid JSON matching the schema — no markdown, no code fences, no explanation`;
 
   const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
@@ -131,13 +130,23 @@ Remember to:
     const response = result.response;
     const text = response.text();
 
-    // Parse JSON response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    // Strip markdown code fences if Gemini wrapped the JSON
+    const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+
+    // Try to extract the outermost JSON object
+    const jsonMatch = stripped.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
+      console.error('Gemini raw response (no JSON found):', text.slice(0, 500));
       throw new Error('Failed to extract JSON from response');
     }
 
-    const emailData = JSON.parse(jsonMatch[0]) as GeneratedEmail;
+    let emailData: GeneratedEmail;
+    try {
+      emailData = JSON.parse(jsonMatch[0]) as GeneratedEmail;
+    } catch (parseErr) {
+      console.error('JSON parse error:', parseErr, '\nRaw match:', jsonMatch[0].slice(0, 500));
+      throw new Error('Failed to parse JSON from response');
+    }
 
     // Validate required fields
     if (!emailData.subject || !emailData.sections || emailData.sections.length === 0) {
@@ -147,7 +156,7 @@ Remember to:
     return emailData;
   } catch (error) {
     console.error('Error generating email with Gemini:', error);
-    throw new Error('Failed to generate email content');
+    throw error instanceof Error ? error : new Error('Failed to generate email content');
   }
 }
 

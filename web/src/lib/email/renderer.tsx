@@ -909,6 +909,24 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
   );
 }
 
+const SOCIAL_ICON_MAP: Record<string, string> = {
+  twitter:   '/social/twitter.png',
+  x:         '/social/twitter.png',
+  instagram: '/social/instagram.png',
+  facebook:  '/social/facebook.png',
+  linkedin:  '/social/linkedin.png',
+  tiktok:    '/social/tiktok.png',
+  youtube:   '/social/youtube.png',
+};
+
+function getSocialIconUrl(link: { platform: string; iconUrl?: string }): string | null {
+  if (link.iconUrl) return link.iconUrl;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://emlet.app';
+  const key = link.platform.toLowerCase().trim();
+  const path = SOCIAL_ICON_MAP[key];
+  return path ? `${siteUrl}${path}` : null;
+}
+
 function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
   const links = section.socialLinks || [];
   return React.createElement(Section, {
@@ -928,8 +946,9 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
         }, section.heading)
       : null,
     React.createElement(Row, null,
-      ...links.map((link, i) =>
-        React.createElement(Column, {
+      ...links.map((link, i) => {
+        const resolvedIconUrl = getSocialIconUrl(link);
+        return React.createElement(Column, {
           key: i,
           className: 'em-col',
           style: { textAlign: 'center' as const, padding: '0 8px' }
@@ -940,22 +959,22 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
               color: primaryColor,
               textDecoration: 'none',
               fontFamily: config.fontFamily,
-              fontSize: link.icon ? '22px' : '12px',
-              fontWeight: link.icon ? '400' : '700',
+              fontSize: resolvedIconUrl ? undefined : (link.icon ? '22px' : '12px'),
+              fontWeight: resolvedIconUrl ? undefined : (link.icon ? '400' : '700'),
             }
           },
-            link.iconUrl
+            resolvedIconUrl
               ? React.createElement(Img, {
-                  src: link.iconUrl,
+                  src: resolvedIconUrl,
                   alt: link.platform,
-                  width: '24',
-                  height: '24',
-                  style: { width: '24px', height: '24px', display: 'inline-block', verticalAlign: 'middle' }
+                  width: '28',
+                  height: '28',
+                  style: { width: '28px', height: '28px', display: 'inline-block', verticalAlign: 'middle' }
                 })
               : (link.icon || link.platform)
           )
-        )
-      )
+        );
+      })
     )
   );
 }

@@ -298,7 +298,7 @@ export default function DashboardContent() {
     setBrandToDelete(null);
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -309,24 +309,33 @@ export default function DashboardContent() {
       return;
     }
 
-    // Validate file size (max 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setBrandMessage({ type: 'error', text: 'Image must be less than 2MB' });
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setBrandMessage({ type: 'error', text: 'Image must be less than 5MB' });
       setTimeout(() => setBrandMessage(null), 3000);
       return;
     }
 
-    // Convert to base64
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      setBrandForm({ ...brandForm, logo_url: base64String });
-    };
-    reader.onerror = () => {
-      setBrandMessage({ type: 'error', text: 'Failed to read image file' });
+    setBrandMessage({ type: 'success', text: 'Uploading logo…' });
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch('/api/upload-image', { method: 'POST', body: formData });
+      const data = await res.json();
+      if (!res.ok) {
+        setBrandMessage({ type: 'error', text: data.error || 'Upload failed' });
+        setTimeout(() => setBrandMessage(null), 3000);
+      } else {
+        setBrandForm({ ...brandForm, logo_url: data.url });
+        setBrandMessage({ type: 'success', text: 'Logo uploaded!' });
+        setTimeout(() => setBrandMessage(null), 2000);
+      }
+    } catch {
+      setBrandMessage({ type: 'error', text: 'Network error during upload' });
       setTimeout(() => setBrandMessage(null), 3000);
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const handleGenerateEmail = async () => {
@@ -1172,10 +1181,9 @@ export default function DashboardContent() {
                       <input
                         type="url"
                         placeholder="https://example.com/logo.png or paste image URL"
-                        value={brandForm.logo_url.startsWith('data:') ? '' : brandForm.logo_url}
+                        value={brandForm.logo_url}
                         onChange={(e) => setBrandForm({ ...brandForm, logo_url: e.target.value })}
                         className="flex-1 px-4 py-3 rounded-lg bg-black border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
-                        disabled={brandForm.logo_url.startsWith('data:')}
                       />
                       <label className="px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white font-medium hover:bg-white/20 transition-all cursor-pointer whitespace-nowrap flex items-center gap-2">
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1190,7 +1198,7 @@ export default function DashboardContent() {
                         />
                       </label>
                     </div>
-                    <p className="text-xs text-white/40">Enter a URL, upload an image (max 2MB), or use auto-fill from website analyzer</p>
+                    <p className="text-xs text-white/40">Enter a URL, upload an image (max 5MB), or use auto-fill from website analyzer</p>
                     
                     {/* Logo Preview */}
                     {brandForm.logo_url && (
@@ -1220,9 +1228,7 @@ export default function DashboardContent() {
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-white font-medium mb-1">Logo Preview</p>
                           <p className="text-xs text-white/50 truncate">
-                            {brandForm.logo_url.startsWith('data:') 
-                              ? 'Uploaded image' 
-                              : brandForm.logo_url}
+                            {brandForm.logo_url}
                           </p>
                         </div>
                         <button
