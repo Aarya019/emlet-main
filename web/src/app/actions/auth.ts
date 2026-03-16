@@ -4,6 +4,12 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 
+function getSiteUrl() {
+  // SITE_URL is a server-only env var (set in Vercel without NEXT_PUBLIC_ prefix)
+  // Falls back to NEXT_PUBLIC_SITE_URL for local dev
+  return process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+}
+
 export async function signIn(formData: FormData) {
   const supabase = await createClient();
 
@@ -34,7 +40,7 @@ export async function signUp(formData: FormData) {
     email: data.email,
     password: data.password,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
     },
   });
 
@@ -72,7 +78,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      redirectTo: `${getSiteUrl()}/auth/callback`,
     },
   });
 
