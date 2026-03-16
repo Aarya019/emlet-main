@@ -12,6 +12,15 @@ export default function Home() {
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [userInput, setUserInput] = useState('');
 
+  // Handle Supabase OAuth code landing at root (fallback when redirectTo is ignored)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    if (code) {
+      router.replace(`/auth/callback?code=${code}`);
+    }
+  }, [router]);
+
   const examples = [
     "Product launch with 40% discount...",
     "Customer thank you email...",
