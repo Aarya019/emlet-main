@@ -16,18 +16,10 @@ function planFromPriceId(priceId: string): 'pro' | 'enterprise' | null {
 
 // Look up user ID from Paddle customer_id via profiles table
 async function userIdFromCustomerId(customerId: string): Promise<string | null> {
-  // First try profiles table
+  // First try profiles table (works for returning customers)
   const profile = await getUserByPaddleCustomerId(customerId);
   if (profile) return profile.id;
-
-  // Fall back: look up paddle customer metadata for user_id we stored at checkout
-  try {
-    const customer = await paddle.customers.get(customerId);
-    const userId = (customer as any)?.customData?.userId as string | undefined;
-    return userId ?? null;
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -61,9 +53,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const plan = planFromPriceId(priceId);
         if (!plan) break;
 
-        const userId = await userIdFromCustomerId(customerId);
+        // customData.userId is set on the checkout → propagated to the subscription by Paddle
+        const customDataUserId: string | undefined =
+          (sub.customData as any)?.userId ?? (sub.custom_data as any)?.userId;
+
+        const userId = customDataUserId ?? (await userIdFromCustomerId(customerId));
         if (!userId) {
-          console.error('No user found for paddle customer', customerId);
+          console.error('No user found for paddle customer', customerId, 'customData:', sub.customData);
           break;
         }
 
