@@ -43,7 +43,9 @@ export async function POST(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (!profile || profile.credits_remaining < 1) {
+    const isEnterprise = profile?.plan_type === 'enterprise';
+
+    if (!isEnterprise && (!profile || profile.credits_remaining < 1)) {
       return NextResponse.json(
         { error: 'Insufficient credits. Please upgrade your plan.' }, 
         { status: 402 }
@@ -182,23 +184,21 @@ export async function POST(request: NextRequest) {
         brandProfile
       );
 
-      // Deduct credits (this will fail if insufficient credits)
-      const creditsDeducted = await deductCredits(user.id, 1);
-      
-      if (!creditsDeducted) {
-        // Update generation with error
-        await supabase
-          .from('email_generations')
-          .update({
-            status: 'failed',
-            error_message: 'Failed to deduct credits'
-          })
-          .eq('id', initialGeneration.id);
+      // Deduct credits (skip for enterprise — unlimited)
+      if (!isEnterprise) {
+        const creditsDeducted = await deductCredits(user.id, 1);
 
-        return NextResponse.json(
-          { error: 'Failed to deduct credits' }, 
-          { status: 500 }
-        );
+        if (!creditsDeducted) {
+          await supabase
+            .from('email_generations')
+            .update({ status: 'failed', error_message: 'Failed to deduct credits' })
+            .eq('id', initialGeneration.id);
+
+          return NextResponse.json(
+            { error: 'Failed to deduct credits' },
+            { status: 500 }
+          );
+        }
       }
 
       // Update generation record with completed status
@@ -237,7 +237,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         generation: completedGeneration,
-        creditsRemaining: updatedProfile?.credits_remaining || 0
+        creditsRemaining: isEnterprise ? null : (updatedProfile?.credits_remaining || 0)
       }, { status: 201 });
 
     } catch (generationError) {

@@ -14,6 +14,9 @@ export interface Profile {
   plan_type: PlanType;
   credits_remaining: number;
   total_credits_used: number;
+  paddle_customer_id: string | null;
+  paddle_subscription_id: string | null;
+  subscription_status: 'active' | 'canceled' | 'past_due' | 'paused' | 'trialing' | null;
   created_at: string;
   updated_at: string;
 }

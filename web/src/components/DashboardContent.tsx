@@ -5,6 +5,32 @@ import { signOut } from '@/app/actions/auth';
 import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle } from '@/lib/db/types';
 import EmailGeneratingOverlay from '@/components/EmailGeneratingOverlay';
 
+function ManageBillingButton() {
+  const [loading, setLoading] = useState(false);
+  const handleClick = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/paddle/portal', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to get portal URL');
+      const { url } = await res.json();
+      if (url) window.open(url, '_blank');
+    } catch (err) {
+      console.error('Portal error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <button
+      onClick={handleClick}
+      disabled={loading}
+      className="px-6 py-2.5 rounded-full border border-white/20 text-white hover:bg-white/5 transition-all text-sm disabled:opacity-50"
+    >
+      {loading ? 'Loading…' : 'Manage Billing'}
+    </button>
+  );
+}
+
 type TabType = 'new-email' | 'brand' | 'history' | 'user';
 
 export default function DashboardContent() {
@@ -39,6 +65,7 @@ export default function DashboardContent() {
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [generatedEmail, setGeneratedEmail] = useState<EmailGeneration | null>(null);
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
+  const [planType, setPlanType] = useState<'free' | 'pro' | 'enterprise'>('free');
 
   // History state
   const [emailHistory, setEmailHistory] = useState<EmailGeneration[]>([]);
@@ -80,6 +107,7 @@ export default function DashboardContent() {
       if (res.ok) {
         const data = await res.json();
         setCreditsRemaining(data.credits_remaining);
+        setPlanType(data.plan_type ?? 'free');
       }
     } catch (error) {
       console.error('Error loading user stats:', error);
@@ -344,7 +372,7 @@ export default function DashboardContent() {
       return;
     }
 
-    if (creditsRemaining !== null && creditsRemaining < 1) {
+    if (planType !== 'enterprise' && creditsRemaining !== null && creditsRemaining < 1) {
       setGenerationError('Insufficient credits. Please upgrade your plan.');
       return;
     }
@@ -373,7 +401,9 @@ export default function DashboardContent() {
 
       // Success
       setGeneratedEmail(data.generation);
-      setCreditsRemaining(data.creditsRemaining);
+      if (data.creditsRemaining !== null && data.creditsRemaining !== undefined) {
+        setCreditsRemaining(data.creditsRemaining);
+      }
       setEmailInput(''); // Clear input
       
       // Reload history to show new email
@@ -815,12 +845,12 @@ export default function DashboardContent() {
                         </div>
                         <span className="text-white/30 hidden xs:inline">·</span>
                         <span className="hidden xs:inline">
-                          {creditsRemaining !== null ? `${creditsRemaining} credits left` : 'Loading...'}
+                          {planType === 'enterprise' ? 'Unlimited credits' : creditsRemaining !== null ? `${creditsRemaining} credits left` : 'Loading...'}
                         </span>
                       </div>
                       <button 
                         onClick={handleGenerateEmail}
-                        disabled={generating || !emailInput.trim() || (creditsRemaining !== null && creditsRemaining < 1)}
+                        disabled={generating || !emailInput.trim() || (planType !== 'enterprise' && creditsRemaining !== null && creditsRemaining < 1)}
                         className="w-full sm:w-auto rounded-full bg-white px-5 sm:px-6 py-2.5 text-sm font-medium text-black transition-all duration-300 hover:shadow-2xl hover:shadow-white/30 hover:-translate-y-1 hover:scale-105 active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:scale-100"
                       >
                         {generating ? 'Generating...' : 'Generate Email'}
@@ -1483,15 +1513,33 @@ export default function DashboardContent() {
 
                 {/* Billing Section */}
                 <div className="p-6 rounded-xl border border-white/10 bg-white/5">
-                  <h3 className="text-lg font-semibold text-white mb-4">Billing & Plan</h3>
+                  <h3 className="text-lg font-semibold text-white mb-4">Billing &amp; Plan</h3>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-white/60 mb-1">Current Plan</label>
-                      <p className="text-white font-medium">Free Trial</p>
+                      <p className="text-white font-medium capitalize">
+                        {planType === 'free' ? 'Free' : planType === 'pro' ? 'Pro — $19/mo' : 'Enterprise — $49/mo'}
+                      </p>
                     </div>
-                    <button className="px-6 py-2.5 rounded-full border border-white/20 text-white hover:bg-white/5 transition-all">
-                      Upgrade Plan
-                    </button>
+                    <div>
+                      <label className="block text-sm font-medium text-white/60 mb-1">Credits Remaining</label>
+                      <p className="text-white font-medium">
+                        {planType === 'enterprise' ? 'Unlimited' : creditsRemaining !== null ? `${creditsRemaining} credits` : '—'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-3">
+                      {planType !== 'enterprise' && (
+                        <a
+                          href="/pricing"
+                          className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all text-sm"
+                        >
+                          {planType === 'free' ? 'Upgrade Plan' : 'Change Plan'}
+                        </a>
+                      )}
+                      {(planType === 'pro' || planType === 'enterprise') && (
+                        <ManageBillingButton />
+                      )}
+                    </div>
                   </div>
                 </div>
 

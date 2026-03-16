@@ -74,17 +74,17 @@ export async function getUserStats(userId: string): Promise<UserStats | null> {
     console.error('Error fetching user stats:', error || profileError);
     // Return default stats if user profile doesn't exist yet
     return {
+      total_emails: 0,
       credits_remaining: 0,
       plan_type: 'free',
-      total_emails_generated: 0,
       emails_this_month: 0,
     } as UserStats;
   }
 
   return {
+    total_emails: 0,
     credits_remaining: profileData.credits_remaining || 0,
     plan_type: profileData.plan_type || 'free',
-    total_emails_generated: 0,
     emails_this_month: 0,
   } as UserStats;
 }
@@ -335,4 +335,86 @@ export async function deductCredits(userId: string, credits: number): Promise<bo
   }
 
   return data;
+}
+
+// =====================================================
+// PADDLE BILLING QUERIES
+// =====================================================
+
+export async function setUserPlan(
+  userId: string,
+  planType: 'free' | 'pro' | 'enterprise',
+  creditsRemaining: number,
+  paddleCustomerId?: string,
+  paddleSubscriptionId?: string,
+  subscriptionStatus?: string
+): Promise<boolean> {
+  const supabase = await createClient();
+
+  const updates: Record<string, unknown> = {
+    plan_type: planType,
+    credits_remaining: creditsRemaining,
+    updated_at: new Date().toISOString(),
+  };
+  if (paddleCustomerId !== undefined) updates.paddle_customer_id = paddleCustomerId;
+  if (paddleSubscriptionId !== undefined) updates.paddle_subscription_id = paddleSubscriptionId;
+  if (subscriptionStatus !== undefined) updates.subscription_status = subscriptionStatus;
+
+  const { error } = await supabase
+    .from('profiles')
+    .update(updates)
+    .eq('id', userId);
+
+  if (error) {
+    console.error('Error setting user plan:', error);
+    return false;
+  }
+  return true;
+}
+
+export async function getUserByPaddleSubscriptionId(subscriptionId: string): Promise<{ id: string; plan_type: string } | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, plan_type')
+    .eq('paddle_subscription_id', subscriptionId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching user by paddle subscription ID:', error);
+    return null;
+  }
+  return data;
+}
+
+export async function getUserByPaddleCustomerId(customerId: string): Promise<{ id: string; plan_type: string } | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, plan_type')
+    .eq('paddle_customer_id', customerId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching user by paddle customer ID:', error);
+    return null;
+  }
+  return data;
+}
+
+export async function resetMonthlyCredits(userId: string, credits: number): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ credits_remaining: credits, updated_at: new Date().toISOString() })
+    .eq('id', userId);
+
+  if (error) {
+    console.error('Error resetting credits:', error);
+    return false;
+  }
+  return true;
 }
