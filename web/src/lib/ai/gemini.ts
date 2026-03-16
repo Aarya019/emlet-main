@@ -164,6 +164,7 @@ Remember to:
  * Build system prompt with brand context and design style
  */
 function buildSystemPrompt(brandProfile: BrandProfile | null, designStyle: string): string {
+  const currentYear = new Date().getFullYear();
   const brandContext = brandProfile
     ? `
 BRAND PROFILE:
@@ -494,6 +495,7 @@ SECTION USAGE GUIDELINES:
 RULES:
 1. Always include: 1 header (first section), 1 hero, 1 CTA, 1 footer (last section)
 2. Choose 2-4 middle sections based on the prompt and email type
+3. FOOTER COPYRIGHT: Always use the current year ${currentYear} in footer text (e.g. "© ${currentYear} Company Name")
 3. BRAND PERSONALIZATION (CRITICAL):
    - Include logo in hero imageUrl and footer sections when logo_url is provided
    - Use primary_color for all main CTAs and primary design elements
