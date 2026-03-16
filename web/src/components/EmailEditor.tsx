@@ -160,6 +160,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     setShowAddBlock(false);
   }, []);
 
+  const handleCancelChanges = useCallback(() => {
+    if (!email) return;
+    setEditedEmail(JSON.parse(JSON.stringify(email.content_json)) as GeneratedEmail);
+    setIsDirty(false);
+  }, [email]);
+
   const handleSave = async () => {
     if (!editedEmail) return;
     setSaving(true);
@@ -283,6 +289,17 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   Coming soon
                 </span>
               </div>
+              {isDirty && (
+                <button
+                  onClick={handleCancelChanges}
+                  className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all border border-white/20 text-white/60 hover:border-white/40 hover:text-white/80"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Cancel
+                </button>
+              )}
               <button
                 onClick={handleSave}
                 disabled={!isDirty || saving}

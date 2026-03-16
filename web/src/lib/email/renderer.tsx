@@ -909,22 +909,23 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
   );
 }
 
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const SOCIAL_ICON_BASE = `${SUPABASE_URL}/storage/v1/object/public/email-images/social`;
+
 const SOCIAL_ICON_MAP: Record<string, string> = {
-  twitter:   '/social/twitter.png',
-  x:         '/social/twitter.png',
-  instagram: '/social/instagram.png',
-  facebook:  '/social/facebook.png',
-  linkedin:  '/social/linkedin.png',
-  tiktok:    '/social/tiktok.png',
-  youtube:   '/social/youtube.png',
+  twitter:   `${SOCIAL_ICON_BASE}/twitter.png`,
+  x:         `${SOCIAL_ICON_BASE}/twitter.png`,
+  instagram: `${SOCIAL_ICON_BASE}/instagram.png`,
+  facebook:  `${SOCIAL_ICON_BASE}/facebook.png`,
+  linkedin:  `${SOCIAL_ICON_BASE}/linkedin.png`,
+  tiktok:    `${SOCIAL_ICON_BASE}/tiktok.png`,
+  youtube:   `${SOCIAL_ICON_BASE}/youtube.png`,
 };
 
 function getSocialIconUrl(link: { platform: string; iconUrl?: string }): string | null {
   if (link.iconUrl) return link.iconUrl;
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://emlet.app';
   const key = link.platform.toLowerCase().trim();
-  const path = SOCIAL_ICON_MAP[key];
-  return path ? `${siteUrl}${path}` : null;
+  return SOCIAL_ICON_MAP[key] || null;
 }
 
 function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
@@ -945,34 +946,34 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
           }
         }, section.heading)
       : null,
-    React.createElement(Row, null,
+    React.createElement('div', {
+      style: { textAlign: 'center' as const }
+    },
       ...links.map((link, i) => {
         const resolvedIconUrl = getSocialIconUrl(link);
-        return React.createElement(Column, {
+        return React.createElement(Link, {
           key: i,
-          className: 'em-col',
-          style: { textAlign: 'center' as const, padding: '0 8px' }
+          href: link.url,
+          style: {
+            display: 'inline-block',
+            margin: '0 6px',
+            color: primaryColor,
+            textDecoration: 'none',
+            fontFamily: config.fontFamily,
+            fontSize: resolvedIconUrl ? undefined : (link.icon ? '22px' : '12px'),
+            fontWeight: resolvedIconUrl ? undefined : (link.icon ? '400' : '700'),
+            verticalAlign: 'middle',
+          }
         },
-          React.createElement(Link, {
-            href: link.url,
-            style: {
-              color: primaryColor,
-              textDecoration: 'none',
-              fontFamily: config.fontFamily,
-              fontSize: resolvedIconUrl ? undefined : (link.icon ? '22px' : '12px'),
-              fontWeight: resolvedIconUrl ? undefined : (link.icon ? '400' : '700'),
-            }
-          },
-            resolvedIconUrl
-              ? React.createElement(Img, {
-                  src: resolvedIconUrl,
-                  alt: link.platform,
-                  width: '28',
-                  height: '28',
-                  style: { width: '28px', height: '28px', display: 'inline-block', verticalAlign: 'middle' }
-                })
-              : (link.icon || link.platform)
-          )
+          resolvedIconUrl
+            ? React.createElement(Img, {
+                src: resolvedIconUrl,
+                alt: link.platform,
+                width: '28',
+                height: '28',
+                style: { width: '28px', height: '28px', display: 'block' }
+              })
+            : (link.icon || link.platform)
         );
       })
     )
