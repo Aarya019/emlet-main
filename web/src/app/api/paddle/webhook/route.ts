@@ -9,25 +9,33 @@ function planFromPriceId(priceId: string): 'pro' | 'enterprise' | null {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  console.log('[paddle-webhook] received request');
+
   if (!process.env.PADDLE_WEBHOOK_SECRET) {
-    console.error('PADDLE_WEBHOOK_SECRET not set');
+    console.error('[paddle-webhook] PADDLE_WEBHOOK_SECRET not set');
     return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
   }
 
   const rawBody = await req.text();
   const signature = req.headers.get('paddle-signature') ?? '';
+  console.log('[paddle-webhook] signature header present:', !!signature);
+  console.log('[paddle-webhook] raw body length:', rawBody.length);
 
   let event: any;
   try {
     event = await paddle.webhooks.unmarshal(rawBody, process.env.PADDLE_WEBHOOK_SECRET, signature);
   } catch (err) {
-    console.error('Paddle webhook signature verification failed:', err);
+    console.error('[paddle-webhook] signature verification failed:', err);
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
   }
 
   const eventType: string = event.eventType ?? event.event_type ?? '';
+  console.log('[paddle-webhook] event type:', eventType);
+  console.log('[paddle-webhook] event data keys:', Object.keys(event.data ?? {}));
+
   // Use admin client — webhook has no user session, so anon client is blocked by RLS
   const db = createAdminClient();
+  console.log('[paddle-webhook] SUPABASE_SERVICE_ROLE_KEY set:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
 
   try {
     switch (eventType) {
@@ -38,7 +46,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const subscriptionId: string = sub.id;
         const priceId: string = sub.items?.[0]?.price?.id ?? '';
         const plan = planFromPriceId(priceId);
-        if (!plan) break;
+        console.log('[paddle-webhook] activated - customerId:', customerId, 'subscriptionId:', subscriptionId, 'priceId:', priceId, 'plan:', plan);
+        if (!plan) { console.warn('[paddle-webhook] unknown priceId:', priceId, 'env pro:', process.env.PADDLE_PRO_PRICE_ID, 'env ent:', process.env.PADDLE_ENTERPRISE_PRICE_ID); break; }  
 
         // Paddle propagates checkout customData onto the subscription object
         const customDataUserId: string | undefined =
@@ -50,10 +59,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           userId = data?.id;
         }
         if (!userId) {
-          console.error('No user found for paddle customer', customerId, 'customData:', sub.customData);
+          console.error('[paddle-webhook] no user found - customerId:', customerId, 'customData:', sub.customData);
           break;
         }
-
+        console.log('[paddle-webhook] resolved userId:', userId);
         const credits = plan === 'enterprise' ? 999999 : PLAN_CREDITS[plan];
         const { error } = await db.from('profiles').update({
           plan_type: plan,
@@ -63,7 +72,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           subscription_status: 'active',
           updated_at: new Date().toISOString(),
         }).eq('id', userId);
-        if (error) console.error('DB update error (activated):', error);
+        if (error) console.error('[paddle-webhook] DB update error (activated):', error);
+        else console.log('[paddle-webhook] DB updated successfully for userId:', userId);
         break;
       }
 
@@ -132,9 +142,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         break;
     }
   } catch (err) {
-    console.error(`Error handling Paddle event ${eventType}:`, err);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    console.error(`[paddle-webhook] unhandled error for event ${eventType}:`, err);
+    // Return 200 so Paddle doesn't keep retrying — processing errors are logged above
+    return NextResponse.json({ received: true, error: 'Processing error — see server logs' });
   }
 
+  console.log('[paddle-webhook] done, eventType:', eventType);
   return NextResponse.json({ received: true });
 }
