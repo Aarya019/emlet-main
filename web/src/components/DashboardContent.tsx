@@ -1502,20 +1502,15 @@ export default function DashboardContent() {
               </div>
 
               {/* ── Profile card ─────────────────────────────────────── */}
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
-                {/* Gradient banner */}
-                <div className="h-20 bg-gradient-to-r from-[#00ffff]/20 via-[#00ff00]/10 to-transparent" />
-                <div className="px-6 pb-6 -mt-8 flex items-end gap-4">
-                  {/* Avatar */}
-                  <div className="w-16 h-16 rounded-2xl border-2 border-black bg-gradient-to-br from-[#00ffff] to-[#00ff00] flex items-center justify-center text-black font-bold text-2xl flex-shrink-0 shadow-lg shadow-[#00ffff]/20">
-                    {userEmail ? userEmail[0].toUpperCase() : 'U'}
-                  </div>
-                  <div className="pb-1 min-w-0">
-                    <p className="font-semibold text-white truncate">{userEmail || '—'}</p>
-                    <p className="text-xs text-white/40 mt-0.5">
-                      Member since {memberSince ? new Date(memberSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—'}
-                    </p>
-                  </div>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-5 flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00ffff] to-[#00ff00] flex items-center justify-center text-black font-bold text-xl flex-shrink-0">
+                  {userEmail ? userEmail[0].toUpperCase() : 'U'}
+                </div>
+                <div className="min-w-0">
+                  <p className="font-semibold text-white truncate">{userEmail || '—'}</p>
+                  <p className="text-xs text-white/40 mt-0.5">
+                    Member since {memberSince ? new Date(memberSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—'}
+                  </p>
                 </div>
               </div>
 
