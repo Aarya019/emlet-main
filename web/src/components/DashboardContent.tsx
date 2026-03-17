@@ -66,6 +66,9 @@ export default function DashboardContent() {
   const [generatedEmail, setGeneratedEmail] = useState<EmailGeneration | null>(null);
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const [planType, setPlanType] = useState<'free' | 'pro' | 'enterprise'>('free');
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [memberSince, setMemberSince] = useState<string>('');
+  const [totalEmails, setTotalEmails] = useState<number>(0);
 
   // History state
   const [emailHistory, setEmailHistory] = useState<EmailGeneration[]>([]);
@@ -108,6 +111,9 @@ export default function DashboardContent() {
         const data = await res.json();
         setCreditsRemaining(data.credits_remaining);
         setPlanType(data.plan_type ?? 'free');
+        if (data.email) setUserEmail(data.email);
+        if (data.member_since) setMemberSince(data.member_since);
+        if (data.total_emails != null) setTotalEmails(data.total_emails);
       }
     } catch (error) {
       console.error('Error loading user stats:', error);
@@ -1489,80 +1495,121 @@ export default function DashboardContent() {
           )}
 
           {activeTab === 'user' && (
-            <div className="space-y-6">
+            <div className="space-y-6 max-w-2xl">
               <div>
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 text-white">Account Settings</h1>
-                <p className="text-sm sm:text-base text-white/60">Manage your account and billing</p>
+                <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-white">Account Settings</h1>
+                <p className="text-sm text-white/40">Manage your profile, plan, and billing</p>
               </div>
 
-              <div className="max-w-2xl space-y-6">
-                {/* Account Section */}
-                <div className="p-6 rounded-xl border border-white/10 bg-white/5">
-                  <h3 className="text-lg font-semibold text-white mb-4">Account Information</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-white/60 mb-1">Email</label>
-                      <p className="text-white">user@example.com</p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-white/60 mb-1">Member Since</label>
-                      <p className="text-white">February 2026</p>
-                    </div>
+              {/* ── Profile card ─────────────────────────────────────── */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] overflow-hidden">
+                {/* Gradient banner */}
+                <div className="h-20 bg-gradient-to-r from-[#00ffff]/20 via-[#00ff00]/10 to-transparent" />
+                <div className="px-6 pb-6 -mt-8 flex items-end gap-4">
+                  {/* Avatar */}
+                  <div className="w-16 h-16 rounded-2xl border-2 border-black bg-gradient-to-br from-[#00ffff] to-[#00ff00] flex items-center justify-center text-black font-bold text-2xl flex-shrink-0 shadow-lg shadow-[#00ffff]/20">
+                    {userEmail ? userEmail[0].toUpperCase() : 'U'}
+                  </div>
+                  <div className="pb-1 min-w-0">
+                    <p className="font-semibold text-white truncate">{userEmail || '—'}</p>
+                    <p className="text-xs text-white/40 mt-0.5">
+                      Member since {memberSince ? new Date(memberSince).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : '—'}
+                    </p>
                   </div>
                 </div>
+              </div>
 
-                {/* Billing Section */}
-                <div className="p-6 rounded-xl border border-white/10 bg-white/5">
-                  <h3 className="text-lg font-semibold text-white mb-4">Billing &amp; Plan</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-white/60 mb-1">Current Plan</label>
-                      <p className="text-white font-medium capitalize">
-                        {planType === 'free' ? 'Free' : planType === 'pro' ? 'Pro — $19/mo' : 'Enterprise — $49/mo'}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-white/60 mb-1">Credits Remaining</label>
-                      <p className="text-white font-medium">
-                        {planType === 'enterprise' ? 'Unlimited' : creditsRemaining !== null ? `${creditsRemaining} credits` : '—'}
-                      </p>
-                    </div>
-                    <div className="flex flex-wrap gap-3">
-                      {planType !== 'enterprise' && (
-                        <a
-                          href="/pricing"
-                          className="px-6 py-2.5 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all text-sm"
-                        >
-                          {planType === 'free' ? 'Upgrade Plan' : 'Change Plan'}
-                        </a>
-                      )}
-                      {(planType === 'pro' || planType === 'enterprise') && (
-                        <ManageBillingButton />
-                      )}
-                    </div>
+              {/* ── Usage stats row ──────────────────────────────────── */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Total Emails', value: totalEmails },
+                  { label: 'This Month', value: '—' },
+                  { label: 'Credits Used', value: creditsRemaining !== null && planType !== 'enterprise' ? (planType === 'pro' ? 50 : 5) - creditsRemaining : '∞' },
+                ].map(stat => (
+                  <div key={stat.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center">
+                    <p className="text-2xl font-bold text-white">{stat.value}</p>
+                    <p className="text-xs text-white/40 mt-1">{stat.label}</p>
                   </div>
+                ))}
+              </div>
+
+              {/* ── Plan & billing ───────────────────────────────────── */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-5">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-semibold text-white">Plan &amp; Billing</h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wide ${
+                    planType === 'enterprise'
+                      ? 'bg-[#ff00ff]/20 text-[#ff00ff] border border-[#ff00ff]/30'
+                      : planType === 'pro'
+                      ? 'bg-[#00ffff]/20 text-[#00ffff] border border-[#00ffff]/30'
+                      : 'bg-white/10 text-white/60 border border-white/10'
+                  }`}>
+                    {planType === 'free' ? 'FREE' : planType === 'pro' ? 'PRO' : 'ENTERPRISE'}
+                  </span>
                 </div>
 
-                {/* Session Section */}
-                <div className="p-6 rounded-xl border border-white/10 bg-white/5">
-                  <h3 className="text-lg font-semibold text-white mb-4">Session</h3>
-                  <button
-                    onClick={async () => {
-                      await signOut();
-                    }}
-                    className="px-6 py-2.5 rounded-full bg-white/10 text-white hover:bg-white/20 transition-all"
-                  >
-                    Sign Out
-                  </button>
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-white/60">Credits remaining</span>
+                    <span className="text-white font-medium">
+                      {planType === 'enterprise' ? 'Unlimited' : creditsRemaining !== null ? `${creditsRemaining} / ${planType === 'pro' ? 50 : 5}` : '—'}
+                    </span>
+                  </div>
+                  {planType !== 'enterprise' && creditsRemaining !== null && (
+                    <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          planType === 'pro'
+                            ? 'bg-gradient-to-r from-[#00ffff] to-[#00ff00]'
+                            : 'bg-gradient-to-r from-[#00ffff] to-[#00ff00]'
+                        }`}
+                        style={{ width: `${Math.round((creditsRemaining / (planType === 'pro' ? 50 : 5)) * 100)}%` }}
+                      />
+                    </div>
+                  )}
+                  {planType !== 'enterprise' && (
+                    <p className="text-xs text-white/30">Resets monthly</p>
+                  )}
                 </div>
 
-                {/* Danger Zone */}
-                <div className="p-6 rounded-xl border border-red-500/20 bg-red-500/5">
-                  <h3 className="text-lg font-semibold text-white mb-4">Danger Zone</h3>
-                  <button className="px-6 py-2.5 rounded-full border border-red-500/50 text-red-400 hover:bg-red-500/10 transition-all">
-                    Delete Account
-                  </button>
+                <div className="flex flex-wrap gap-3 pt-1">
+                  {planType !== 'enterprise' && (
+                    <a
+                      href="/pricing"
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 hover:-translate-y-px transition-all"
+                    >
+                      {planType === 'free' ? 'Upgrade Plan' : 'Change Plan'}
+                    </a>
+                  )}
+                  {(planType === 'pro' || planType === 'enterprise') && (
+                    <ManageBillingButton />
+                  )}
                 </div>
+              </div>
+
+              {/* ── Session ──────────────────────────────────────────── */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white">Sign out</p>
+                  <p className="text-xs text-white/40 mt-0.5">You'll be redirected to the home page</p>
+                </div>
+                <button
+                  onClick={async () => { await signOut(); }}
+                  className="px-5 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/15 transition-all"
+                >
+                  Sign Out
+                </button>
+              </div>
+
+              {/* ── Danger zone ──────────────────────────────────────── */}
+              <div className="rounded-2xl border border-red-500/20 bg-red-500/[0.03] p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-red-400">Delete account</p>
+                  <p className="text-xs text-white/30 mt-0.5">Permanently remove your account and all data</p>
+                </div>
+                <button className="px-5 py-2 rounded-xl border border-red-500/40 text-red-400 text-sm font-medium hover:bg-red-500/10 transition-all">
+                  Delete
+                </button>
               </div>
             </div>
           )}

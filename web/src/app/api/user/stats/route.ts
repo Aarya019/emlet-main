@@ -13,11 +13,15 @@ export async function GET() {
 
   const stats = await getUserStats(user.id);
   
-  // Return stats (will have defaults if user profile doesn't exist yet)
-  return NextResponse.json(stats || {
-    credits_remaining: 0,
-    plan_type: 'free',
-    total_emails_generated: 0,
-    emails_this_month: 0,
+  // Return stats with auth user fields
+  return NextResponse.json({
+    ...(stats || {
+      credits_remaining: 0,
+      plan_type: 'free',
+      total_emails: 0,
+      emails_this_month: 0,
+    }),
+    email: user.email ?? '',
+    member_since: user.created_at ?? '',
   });
 }
