@@ -68,10 +68,7 @@ export default function SignUpPage() {
           <div className="space-y-8">
             <div>
               <div className="flex items-center gap-3 mb-6">
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-white text-lg font-semibold text-black">
-                  e
-                </span>
-                <span className="text-2xl font-semibold text-white">emlet</span>
+                <img src="/logo.png" alt="Emlet" className="h-12 w-auto" />
               </div>
               <h1 className="text-5xl font-bold text-white mb-4">
                 Start creating today
@@ -121,10 +118,7 @@ export default function SignUpPage() {
         <div className="w-full max-w-md space-y-8">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 justify-center mb-8">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-base font-semibold text-black">
-              e
-            </span>
-            <span className="text-xl font-semibold text-white">emlet</span>
+            <img src="/logo.png" alt="Emlet" className="h-10 w-auto" />
           </div>
 
           <div>

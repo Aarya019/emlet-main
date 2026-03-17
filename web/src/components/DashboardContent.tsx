@@ -1299,11 +1299,40 @@ export default function DashboardContent() {
                       className="w-full px-4 py-3 rounded-lg bg-black border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
                     >
                       <option value="">Select industry</option>
-                      <option value="Technology">Technology</option>
-                      <option value="E-commerce">E-commerce</option>
-                      <option value="Education">Education</option>
-                      <option value="Healthcare">Healthcare</option>
-                      <option value="Finance">Finance</option>
+                      <optgroup label="Tech">
+                        <option value="Technology">Technology</option>
+                        <option value="SaaS">SaaS &amp; Software</option>
+                        <option value="AI">AI &amp; Machine Learning</option>
+                        <option value="Gaming">Gaming</option>
+                        <option value="Cybersecurity">Cybersecurity</option>
+                      </optgroup>
+                      <optgroup label="Commerce">
+                        <option value="E-commerce">E-commerce</option>
+                        <option value="Retail">Retail</option>
+                        <option value="Fashion">Fashion &amp; Apparel</option>
+                        <option value="Food &amp; Beverage">Food &amp; Beverage</option>
+                        <option value="Real Estate">Real Estate</option>
+                      </optgroup>
+                      <optgroup label="Services">
+                        <option value="Finance">Finance &amp; Banking</option>
+                        <option value="Insurance">Insurance</option>
+                        <option value="Legal">Legal</option>
+                        <option value="Consulting">Consulting</option>
+                        <option value="Marketing">Marketing &amp; Advertising</option>
+                      </optgroup>
+                      <optgroup label="People">
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Education">Education</option>
+                        <option value="Non-profit">Non-profit</option>
+                        <option value="Government">Government</option>
+                      </optgroup>
+                      <optgroup label="Creative">
+                        <option value="Media">Media &amp; Publishing</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Travel">Travel &amp; Hospitality</option>
+                        <option value="Sports">Sports &amp; Fitness</option>
+                        <option value="Beauty">Beauty &amp; Wellness</option>
+                      </optgroup>
                       <option value="Other">Other</option>
                     </select>
                   </div>
@@ -1330,21 +1359,82 @@ export default function DashboardContent() {
                   </div>
 
                   {/* Brand Colors */}
-                  <div>
-                    <label className="block text-sm font-medium text-white mb-2">Primary Color</label>
-                    <div className="flex gap-3">
-                      <input
-                        type="color"
-                        value={brandForm.primary_color}
-                        onChange={(e) => setBrandForm({ ...brandForm, primary_color: e.target.value })}
-                        className="w-12 h-12 rounded-lg cursor-pointer"
-                      />
-                      <input
-                        type="text"
-                        value={brandForm.primary_color}
-                        onChange={(e) => setBrandForm({ ...brandForm, primary_color: e.target.value })}
-                        className="flex-1 px-4 py-3 rounded-lg bg-black border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
-                      />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Primary Color */}
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-2">Primary Color</label>
+                      <div className="flex gap-3 items-center">
+                        <div className="relative flex-shrink-0">
+                          <input
+                            type="color"
+                            value={brandForm.primary_color}
+                            onChange={(e) => setBrandForm({ ...brandForm, primary_color: e.target.value })}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <div
+                            className="w-12 h-12 rounded-lg border-2 border-white/20 shadow-inner cursor-pointer"
+                            style={{ backgroundColor: brandForm.primary_color }}
+                          />
+                        </div>
+                        <input
+                          type="text"
+                          value={brandForm.primary_color}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^#[0-9A-Fa-f]{0,6}$/.test(val)) setBrandForm({ ...brandForm, primary_color: val });
+                          }}
+                          maxLength={7}
+                          placeholder="#5c5cf0"
+                          className="flex-1 min-w-0 px-4 py-3 rounded-lg bg-black border border-white/20 text-white font-mono text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Secondary Color */}
+                    <div>
+                      <label className="block text-sm font-medium text-white mb-2">
+                        Secondary Color
+                        <span className="ml-2 text-xs text-white/40 font-normal">(optional)</span>
+                      </label>
+                      <div className="flex gap-3 items-center">
+                        <div className="relative flex-shrink-0">
+                          <input
+                            type="color"
+                            value={brandForm.secondary_color || '#ffffff'}
+                            onChange={(e) => setBrandForm({ ...brandForm, secondary_color: e.target.value })}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                          />
+                          <div
+                            className="w-12 h-12 rounded-lg border-2 border-white/20 shadow-inner cursor-pointer"
+                            style={{ backgroundColor: brandForm.secondary_color || 'transparent',
+                              backgroundImage: brandForm.secondary_color ? 'none' : 'repeating-conic-gradient(#ffffff18 0% 25%, transparent 0% 50%) 0 0 / 12px 12px'
+                            }}
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0 flex gap-2">
+                          <input
+                            type="text"
+                            value={brandForm.secondary_color || ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val === '' || /^#[0-9A-Fa-f]{0,6}$/.test(val)) setBrandForm({ ...brandForm, secondary_color: val });
+                            }}
+                            maxLength={7}
+                            placeholder="#ffffff"
+                            className="flex-1 min-w-0 px-4 py-3 rounded-lg bg-black border border-white/20 text-white font-mono text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                          />
+                          {brandForm.secondary_color && (
+                            <button
+                              type="button"
+                              onClick={() => setBrandForm({ ...brandForm, secondary_color: '' })}
+                              className="px-3 py-3 rounded-lg border border-white/20 text-white/40 hover:text-white hover:border-white/40 transition-colors text-xs"
+                              title="Clear secondary color"
+                            >
+                              ✕
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
