@@ -125,13 +125,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <a href="/" className="flex items-center gap-2 group">
-            {/* Logo */}
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#00ffff] to-[#00ff00] text-sm font-black text-black select-none">
-              e
-            </span>
-            <span className="text-base font-black tracking-tight text-white">
-              emlet
-            </span>
+            <img src="/logo.png" alt="Emlet" className="h-8 w-auto" />
           </a>
           <nav className="hidden items-center gap-8 text-sm text-white/70 md:flex">
             <a href="#how-it-works" className="transition-colors hover:text-white">How it works</a>
@@ -363,10 +357,7 @@ export default function Home() {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <a href="/" className="flex items-center gap-2 mb-4 w-fit">
-                <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#00ffff] to-[#00ff00] text-sm font-black text-black">
-                  e
-                </span>
-                <span className="text-base font-black text-white">emlet</span>
+                <img src="/logo.png" alt="Emlet" className="h-8 w-auto" />
               </a>
               <p className="text-sm text-white/40 leading-relaxed">
                 AI-powered email studio.<br />Idea to inbox in seconds.
