@@ -1139,7 +1139,7 @@ export async function generateEmailHtml(
 
     // Header: inject brand logo only if the section doesn't already have one set
     if (sec.type === 'header') {
-      if (logoUrl && sec.logoUrl === undefined) sec.logoUrl = logoUrl;
+      if (logoUrl && !sec.logoUrl) sec.logoUrl = logoUrl;
       if (!sec.logoAlt) sec.logoAlt = brandName;
     }
 
@@ -1151,7 +1151,7 @@ export async function generateEmailHtml(
 
     // Footer: inject brand logo only if not already set
     if (sec.type === 'footer') {
-      if (logoUrl && sec.logoUrl === undefined) sec.logoUrl = logoUrl;
+      if (logoUrl && !sec.logoUrl) sec.logoUrl = logoUrl;
       if (!sec.logoAlt) sec.logoAlt = brandName;
     }
 

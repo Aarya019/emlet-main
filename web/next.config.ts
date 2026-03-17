@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://cdn.paddle.com https://sandbox-cdn.paddle.com",
               "frame-src https://buy.paddle.com https://checkout.paddle.com https://*.paddle.com https://sandbox-buy.paddle.com https://sandbox-checkout.paddle.com https://www.youtube.com https://www.youtube-nocookie.com",
               "connect-src 'self' https://*.paddle.com https://checkout-service.paddle.com https://sandbox-checkout-service.paddle.com https://*.supabase.co https://www.youtube.com",
-              "img-src 'self' data: blob: https://*.paddle.com https://*.supabase.co https://images.pexels.com https://i.ytimg.com",
+              "img-src 'self' data: blob: https://*.paddle.com https://*.supabase.co https://images.pexels.com https://i.ytimg.com https://*.gstatic.com https://*.googleusercontent.com",
               "font-src 'self' data:",
             ].join('; '),
           },
