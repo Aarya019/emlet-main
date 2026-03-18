@@ -108,7 +108,7 @@ export default function Home() {
       {/* ── Try for free announcement pill ──────────────────────────────────── */}
       <div className="relative z-50 flex items-center justify-center gap-3 bg-gradient-to-r from-[#00ffff]/10 via-[#00ff00]/10 to-[#ff00ff]/10 border-b border-white/5 px-4 py-2 text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 px-3 py-0.5 text-xs font-semibold text-[#00ffff] tracking-wide uppercase">Free</span>
-        <span className="text-xs text-white/60">Get 5 high-converting marketing emails every month — no credit card required.</span>
+        <span className="text-xs text-white/60">Try for free — no credit card required.</span>
         <a href="/sign-up" className="text-xs font-semibold text-white underline underline-offset-2 hover:text-[#00ffff] transition-colors whitespace-nowrap">Start free →</a>
       </div>
       {/* Animated gradient blobs with magnetic effect */}
@@ -150,9 +150,9 @@ export default function Home() {
       </header>
 
       {/* ── Hero / Generator ───────────────────────────────────────────────── */}
-      <section className="relative z-10 mx-auto flex min-h-[calc(100vh-4rem)] max-w-4xl items-center justify-center px-4 py-12 sm:px-6">
-        <div className="w-full space-y-8 text-center">
-          <div className="space-y-4">
+      <section className="relative z-10 mx-auto flex h-[calc(100vh-var(--hero-offset,88px))] max-w-4xl items-center justify-center px-4 sm:px-6 overflow-hidden">
+        <div className="w-full space-y-5 text-center">
+          <div className="space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#00ffff]/30 bg-[#00ffff]/5 px-4 py-1.5 text-xs font-medium text-[#00ffff]">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ffff] opacity-75" />
@@ -160,7 +160,7 @@ export default function Home() {
               </span>
               AI-powered · results in seconds
             </div>
-            <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl leading-[1.05]">
+            <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl leading-[1.05]">
               Generate high converting
               <br />
               <span className="bg-gradient-to-r from-[#00ffff] via-[#00ff00] to-[#ff00ff] bg-clip-text text-transparent">
@@ -169,7 +169,7 @@ export default function Home() {
               <br />
               in seconds.
             </h1>
-            <p className="mx-auto max-w-2xl text-base text-white/60 sm:text-lg md:text-xl leading-relaxed">
+            <p className="mx-auto max-w-2xl text-sm text-white/60 sm:text-base md:text-lg leading-relaxed">
               Describe your campaign. Emlet's AI writes copy that converts, designs the layout, and outputs
               production-ready HTML — faster than writing a single subject line.
             </p>
@@ -184,7 +184,7 @@ export default function Home() {
                 placeholder={isUserTyping ? 'Describe the email you want to create...' : ''}
                 onFocus={() => { setIsUserTyping(true); setStreamingText(''); }}
                 onChange={(e) => { setIsUserTyping(true); setUserInput(e.target.value); setStreamingText(e.target.value); }}
-                className="w-full resize-none rounded-xl border-0 bg-black/60 px-5 py-4 text-base text-white/60 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:text-white min-h-[140px]"
+                className="w-full resize-none rounded-xl border-0 bg-black/60 px-5 py-3 text-base text-white/60 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:text-white min-h-[100px] max-h-[120px]"
               />
               <div className="flex items-center justify-between gap-3 px-4 py-3">
                 <div className="flex items-center gap-2 text-xs text-white/40">
