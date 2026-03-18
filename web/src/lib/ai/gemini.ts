@@ -116,7 +116,7 @@ export async function generateEmailContent(
   designStyle: string = 'minimalist'
 ): Promise<GeneratedEmail> {
   const model = genAI.getGenerativeModel({ 
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.1-pro-preview',
     generationConfig: {
       temperature: 1.0, // Balanced creativity — high enough for varied copy, low enough for reliable JSON
       topP: 0.95,
@@ -563,7 +563,7 @@ RULES:
  */
 export async function testGeminiConnection(): Promise<boolean> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-pro-preview' });
     const result = await model.generateContent('Say "Hello"');
     const response = result.response.text();
     return response.length > 0;
