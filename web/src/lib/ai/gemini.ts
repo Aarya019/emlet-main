@@ -171,6 +171,7 @@ Remember to:
 - Use the brand voice and identity specified
 - Include appropriate sections (hero, content blocks, CTA, footer)
 - Make it engaging and conversion-focused
+- Do NOT use emojis anywhere — not in subject lines, headings, body copy, or CTAs
 - Return ONLY valid JSON matching the schema — no markdown, no code fences, no explanation`;
 
   const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
@@ -582,7 +583,8 @@ RULES:
 8. For sections that need photos (hero, image-text, gallery), output an "imageKeyword" (or "keyword" for gallery images) — a short, specific 2-4 word English search phrase describing the ideal photo (e.g. "team meeting office", "coffee shop morning", "product packaging minimal"). Do NOT output imageUrl for non-logo images — the system will fetch real photos from Pexels using the keyword.
 9. Return ONLY the JSON object, no markdown formatting
 10. Adapt all content and structure to match the ${designStyle} style perfectly
-11. CRITICAL: ALL string values in the JSON must be PLAIN TEXT ONLY. Never use HTML tags, <span>, <b>, <i>, CSS styles, or any markup inside JSON string fields. The renderer will handle all styling — your job is content only.`;
+11. CRITICAL: ALL string values in the JSON must be PLAIN TEXT ONLY. Never use HTML tags, <span>, <b>, <i>, CSS styles, or any markup inside JSON string fields. The renderer will handle all styling — your job is content only.
+12. NO EMOJIS anywhere in the output — not in subject lines, headings, body text, button labels, or any other field.`;
 }
 
 /**
