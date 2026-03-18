@@ -26,12 +26,12 @@ const STEPS = [
 ];
 
 const FEATURES = [
-  { icon: '⚡', title: 'Converts, not just looks good', desc: 'AI-written copy engineered to drive clicks, opens, and revenue — not just pretty words.' },
-  { icon: '🎨', title: '10+ design styles', desc: 'Minimalist, editorial, retro, brutalist, cyberpunk and more — all optimised for inboxes.' },
-  { icon: '📦', title: 'Block-based editor', desc: 'Hero, CTA, testimonial, stats — every block fully editable without touching code.' },
-  { icon: '🔧', title: 'React Email powered', desc: 'Production HTML that renders perfectly in Gmail, Outlook, and Apple Mail.' },
-  { icon: '🚀', title: 'Export anywhere', desc: 'One-click HTML & TSX export for Mailchimp, SendGrid, Resend, or any ESP.' },
-  { icon: '🏢', title: 'Brand profiles', desc: 'Save your colors, voice & logo — every email stays on-brand, every time.' },
+  { title: 'Converts, not just looks good', desc: 'AI-written copy engineered to drive clicks, opens, and revenue — not just pretty words.' },
+  { title: '10+ design styles', desc: 'Minimalist, editorial, retro, brutalist, cyberpunk and more — all optimised for inboxes.' },
+  { title: 'Block-based editor', desc: 'Hero, CTA, testimonial, stats — every block fully editable without touching code.' },
+  { title: 'React Email powered', desc: 'Production HTML that renders perfectly in Gmail, Outlook, and Apple Mail.' },
+  { title: 'Export anywhere', desc: 'One-click HTML & TSX export for Mailchimp, SendGrid, Resend, or any ESP.' },
+  { title: 'Brand profiles', desc: 'Save your colors, voice & logo — every email stays on-brand, every time.' },
 ];
 
 export default function Home() {
@@ -161,13 +161,13 @@ export default function Home() {
               AI-powered · results in seconds
             </div>
             <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl leading-[1.05]">
-              Generate high converting
+              Generate high-converting
+              <br />
+              marketing emails
               <br />
               <span className="bg-gradient-to-r from-[#00ffff] via-[#00ff00] to-[#ff00ff] bg-clip-text text-transparent">
-                marketing emails
+                in seconds.
               </span>
-              <br />
-              in seconds.
             </h1>
             <p className="mx-auto max-w-2xl text-sm text-white/60 sm:text-base md:text-lg leading-relaxed">
               Describe your campaign. Emlet's AI writes copy that converts, designs the layout, and outputs
@@ -327,7 +327,7 @@ export default function Home() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {FEATURES.map((f) => (
             <div key={f.title} className="rounded-2xl border border-white/8 bg-white/[0.02] p-6 hover:border-white/15 hover:bg-white/[0.04] transition-all group">
-              <div className="text-3xl mb-4">{f.icon}</div>
+
               <h3 className="text-base font-bold text-white mb-1 group-hover:text-[#00ffff] transition-colors">{f.title}</h3>
               <p className="text-sm text-white/50 leading-relaxed">{f.desc}</p>
             </div>
@@ -367,7 +367,7 @@ export default function Home() {
                 <img src="/logo.png" alt="Emlet" className="h-8 w-auto" />
               </a>
               <p className="text-sm text-white/40 leading-relaxed">
-                Generate high converting marketing emails in seconds.<br />Idea to inbox, instantly.
+                Generate high-converting marketing emails in seconds.<br />Idea to inbox, instantly.
               </p>
             </div>
 
