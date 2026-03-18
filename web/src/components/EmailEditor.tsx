@@ -32,6 +32,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
   const [previewKey, setPreviewKey] = useState(0);
+  const [defaultColors, setDefaultColors] = useState<{ bodyBg: string; bodyColor: string; primaryColor: string; secondaryColor: string } | null>(null);
 
   // Live preview state
   const [livePreviewHtml, setLivePreviewHtml] = useState<string | null>(null);
@@ -85,12 +86,22 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     loadEmail();
   }, [emailId]);
 
-  // Sync editedEmail when email loads (only on first load)
+  // Sync editedEmail when email loads (only on first load), seeding section colors from brand defaults
   useEffect(() => {
-    if (email && !editedEmail) {
-      setEditedEmail(email.content_json as GeneratedEmail);
+    if (email && !editedEmail && defaultColors) {
+      const raw = email.content_json as GeneratedEmail;
+      const seeded: GeneratedEmail = {
+        ...raw,
+        sections: raw.sections.map(s => ({
+          ...s,
+          backgroundColor: s.backgroundColor ?? defaultColors.bodyBg,
+          textColor:       s.textColor       ?? defaultColors.bodyColor,
+          buttonColor:     s.buttonColor     ?? defaultColors.primaryColor,
+        })),
+      };
+      setEditedEmail(seeded);
     }
-  }, [email, editedEmail]);
+  }, [email, editedEmail, defaultColors]);
 
   // Debounced live preview: re-render on every edit with 700ms debounce
   useEffect(() => {
@@ -138,6 +149,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
       const data = await res.json();
       setEmail(data.generation);
+      if (data.defaultColors) setDefaultColors(data.defaultColors);
     } catch (err) {
       console.error('Error loading email:', err);
       setError('An error occurred while loading the email');

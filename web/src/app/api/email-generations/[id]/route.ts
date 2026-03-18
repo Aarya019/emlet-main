@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getEmailGeneration, getBrandProfile } from '@/lib/db/queries';
-import { generateEmailHtml } from '@/lib/email/renderer';
+import { generateEmailHtml, styleConfigs } from '@/lib/email/renderer';
 
 export async function GET(
   request: NextRequest,
@@ -25,7 +25,20 @@ export async function GET(
     );
   }
 
-  return NextResponse.json({ generation });
+  let brand = null;
+  if (generation.brand_profile_id) {
+    brand = await getBrandProfile(generation.brand_profile_id, user.id);
+  }
+
+  const config = styleConfigs[generation.design_style] || styleConfigs.minimalist;
+  const defaultColors = {
+    bodyBg:      config.bodyBg,
+    bodyColor:   config.bodyColor,
+    primaryColor: brand?.primary_color   || '#5c5cf0',
+    secondaryColor: brand?.secondary_color || brand?.primary_color || '#5c5cf0',
+  };
+
+  return NextResponse.json({ generation, defaultColors });
 }
 
 export async function DELETE(

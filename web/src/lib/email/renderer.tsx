@@ -45,7 +45,7 @@ interface StyleConfig {
   cardStyle: React.CSSProperties;
 }
 
-const styleConfigs: Record<string, StyleConfig> = {
+export const styleConfigs: Record<string, StyleConfig> = {
   minimalist: {
     fontFamily: "'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif",
     headingFontFamily: "'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif",
