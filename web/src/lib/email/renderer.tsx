@@ -337,9 +337,11 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
 }
 
 function renderTestimonial(section: EmailSection, config: StyleConfig, primaryColor: string, secondaryColor: string): React.ReactElement {
+  const fg  = section.textColor   || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
   // Side-by-side layout: circular avatar on the left, quote + author on the right
   if (section.authorImage) {
-    return React.createElement(Section, { style: { padding: config.sectionPadding } },
+    return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) } },
       React.createElement('div', { style: { ...config.cardStyle } },
         React.createElement(Row, null,
           React.createElement(Column, { style: { width: '76px', verticalAlign: 'top' } },
@@ -358,7 +360,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
                     fontFamily: config.fontFamily,
                     fontSize: '16px',
                     fontStyle: 'italic',
-                    color: config.bodyColor,
+                    color: fg,
                     lineHeight: '1.65',
                     margin: '0 0 10px 0',
                   }
@@ -370,7 +372,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
                     fontFamily: config.fontFamily,
                     fontSize: '13px',
                     fontWeight: '700',
-                    color: primaryColor,
+                    color: btn,
                     margin: '0 0 2px 0',
                   }
                 }, section.author)
@@ -380,7 +382,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
                   style: {
                     fontFamily: config.fontFamily,
                     fontSize: '12px',
-                    color: config.bodyColor + '88',
+                    color: fg + '88',
                     margin: '0',
                   }
                 }, section.authorTitle)
@@ -393,7 +395,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
 
   // Centered card layout (no avatar)
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     React.createElement('div', {
       style: {
@@ -408,7 +410,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
               fontFamily: config.fontFamily,
               fontSize: '18px',
               fontStyle: 'italic',
-              color: config.bodyColor,
+              color: fg,
               lineHeight: '1.6',
               margin: '0 0 16px 0',
             }
@@ -420,7 +422,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
               fontFamily: config.fontFamily,
               fontSize: '14px',
               fontWeight: '700',
-              color: primaryColor,
+              color: btn,
               margin: '0 0 4px 0',
             }
           }, section.author)
@@ -430,7 +432,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
             style: {
               fontFamily: config.fontFamily,
               fontSize: '12px',
-              color: config.bodyColor + '88',
+              color: fg + '88',
               margin: '0',
             }
           }, section.authorTitle)
@@ -440,6 +442,8 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
 }
 
 function renderFeatureList(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const fg  = section.textColor   || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
   const features = section.features || [];
   const isGrid = section.layout === 'grid';
   const isNumbered = !!section.numbered;
@@ -451,7 +455,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
           fontFamily: config.headingFontFamily,
           fontSize: '24px',
           fontWeight: config.headingWeight,
-          color: config.bodyColor,
+          color: fg,
           margin: '0 0 20px 0',
           textAlign: (isGrid ? 'center' : 'left') as any,
         }
@@ -462,7 +466,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
   if (isGrid) {
     const pairs: typeof features[] = [];
     for (let i = 0; i < features.length; i += 2) pairs.push(features.slice(i, i + 2));
-    return React.createElement(Section, { style: { padding: config.sectionPadding } },
+    return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) } },
       headingEl,
       ...pairs.map((pair, rowIdx) =>
         React.createElement(Section, { key: rowIdx, style: { marginBottom: '16px' } },
@@ -482,7 +486,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
                     fontFamily: config.fontFamily,
                     fontSize: '15px',
                     fontWeight: '700',
-                    color: config.bodyColor,
+                    color: fg,
                     margin: '0 0 6px 0',
                   }
                 }, feature.title),
@@ -490,7 +494,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
                   style: {
                     fontFamily: config.fontFamily,
                     fontSize: '13px',
-                    color: config.bodyColor + '99',
+                    color: fg + '99',
                     lineHeight: '1.5',
                     margin: '0',
                   }
@@ -505,7 +509,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
   }
 
   // Default vertical list (numbered badges or icon bullets)
-  return React.createElement(Section, { style: { padding: config.sectionPadding } },
+  return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) } },
     headingEl,
     ...features.map((feature, i) =>
       React.createElement(Section, { key: i, style: { marginBottom: '16px', display: 'table', width: '100%' } },
@@ -517,7 +521,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
                     width: '28px',
                     height: '28px',
                     borderRadius: '50%',
-                    backgroundColor: primaryColor,
+                    backgroundColor: btn,
                     color: '#ffffff',
                     fontFamily: config.fontFamily,
                     fontSize: '13px',
@@ -528,7 +532,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
                   }
                 }, String(i + 1))
               : React.createElement(Text, {
-                  style: { fontSize: '20px', margin: '0', color: primaryColor }
+                  style: { fontSize: '20px', margin: '0', color: btn }
                 }, feature.icon || '\u2713')
           ),
           React.createElement(Column, { style: { verticalAlign: 'top' } },
@@ -537,7 +541,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
                 fontFamily: config.fontFamily,
                 fontSize: '15px',
                 fontWeight: '700',
-                color: config.bodyColor,
+                color: fg,
                 margin: '0 0 4px 0',
               }
             }, feature.title),
@@ -545,7 +549,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
               style: {
                 fontFamily: config.fontFamily,
                 fontSize: '14px',
-                color: config.bodyColor + '99',
+                color: fg + '99',
                 margin: '0',
                 lineHeight: '1.5',
               }
@@ -558,9 +562,11 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
 }
 
 function renderPricingTable(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const fg  = section.textColor   || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
   const plans = section.plans || [];
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -569,7 +575,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
             fontFamily: config.headingFontFamily,
             fontSize: '24px',
             fontWeight: config.headingWeight,
-            color: config.bodyColor,
+            color: fg,
             margin: '0 0 20px 0',
             textAlign: 'center',
           }
@@ -584,7 +590,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
             padding: '16px',
             textAlign: 'center' as const,
             ...(plan.highlighted ? {
-              backgroundColor: primaryColor,
+              backgroundColor: btn,
               color: '#fff',
               borderRadius: config.borderRadius,
             } : config.cardStyle)
@@ -597,7 +603,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
               fontWeight: '700',
               textTransform: 'uppercase',
               letterSpacing: '0.08em',
-              color: plan.highlighted ? '#fff' : config.bodyColor + '88',
+              color: plan.highlighted ? '#fff' : fg + '88',
               margin: '0 0 8px 0',
             }
           }, plan.name),
@@ -606,7 +612,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
               fontFamily: config.fontFamily,
               fontSize: '36px',
               fontWeight: '900',
-              color: plan.highlighted ? '#fff' : config.bodyColor,
+              color: plan.highlighted ? '#fff' : fg,
               margin: '0 0 4px 0',
               lineHeight: '1',
             }
@@ -616,7 +622,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
                 style: {
                   fontFamily: config.fontFamily,
                   fontSize: '12px',
-                  color: plan.highlighted ? '#ffffffcc' : config.bodyColor + '88',
+                  color: plan.highlighted ? '#ffffffcc' : fg + '88',
                   margin: '0 0 16px 0',
                 }
               }, plan.period)
@@ -628,7 +634,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
               style: {
                 fontFamily: config.fontFamily,
                 fontSize: '13px',
-                color: plan.highlighted ? '#ffffffdd' : config.bodyColor,
+                color: plan.highlighted ? '#ffffffdd' : fg,
                 margin: '4px 0',
               }
             }, `✓ ${feat}`)
@@ -641,8 +647,8 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
                   display: 'block',
                   marginTop: '16px',
                   padding: config.buttonPadding,
-                  backgroundColor: plan.highlighted ? '#fff' : primaryColor,
-                  color: plan.highlighted ? primaryColor : '#fff',
+                  backgroundColor: plan.highlighted ? '#fff' : btn,
+                  color: plan.highlighted ? btn : '#fff',
                   fontFamily: config.fontFamily,
                   fontWeight: '700',
                   fontSize: '14px',
@@ -658,9 +664,11 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
 }
 
 function renderStats(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const fg  = section.textColor   || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
   const stats = section.stats || [];
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -669,7 +677,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
             fontFamily: config.headingFontFamily,
             fontSize: '24px',
             fontWeight: config.headingWeight,
-            color: config.bodyColor,
+            color: fg,
             margin: '0 0 20px 0',
             textAlign: 'center',
           }
@@ -686,7 +694,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
             style: {
               ...config.cardStyle,
               textAlign: 'center' as const,
-              borderTop: `3px solid ${primaryColor}`,
+              borderTop: `3px solid ${btn}`,
               padding: '20px 12px',
             }
           },
@@ -698,7 +706,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
                 fontFamily: config.fontFamily,
                 fontSize: '36px',
                 fontWeight: '900',
-                color: primaryColor,
+                color: btn,
                 margin: '0 0 4px 0',
                 lineHeight: '1',
               }
@@ -707,7 +715,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
               style: {
                 fontFamily: config.fontFamily,
                 fontSize: '13px',
-                color: config.bodyColor + '88',
+                color: fg + '88',
                 margin: '0',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
@@ -721,6 +729,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
 }
 
 function renderGallery(section: EmailSection, config: StyleConfig): React.ReactElement {
+  const fg = section.textColor || config.bodyColor;
   const images = section.images || [];
   // 2 per row for exactly 4 images (2×2 grid), otherwise 3 per row
   const perRow = images.length === 4 ? 2 : Math.min(images.length, 3);
@@ -728,7 +737,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
   for (let i = 0; i < images.length; i += perRow) rows.push(images.slice(i, i + perRow));
 
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -737,7 +746,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
             fontFamily: config.headingFontFamily,
             fontSize: '24px',
             fontWeight: config.headingWeight,
-            color: config.bodyColor,
+            color: fg,
             margin: '0 0 16px 0',
           }
         }, section.heading)
@@ -762,7 +771,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
                 fontFamily: config.fontFamily,
                 fontSize: '12px',
                 fontWeight: '600',
-                color: config.bodyColor,
+                color: fg,
                 textAlign: 'center' as const,
                 margin: '6px 0 0 0',
               }
@@ -772,7 +781,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
                   style: {
                     fontFamily: config.fontFamily,
                     fontSize: '11px',
-                    color: config.bodyColor + '88',
+                    color: fg + '88',
                     textAlign: 'center' as const,
                     margin: '2px 0 0 0',
                   }
@@ -912,8 +921,10 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
 }
 
 function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor: string): React.ReactElement {
+  const fg  = section.textColor   || config.bodyColor;
+  const btn = section.buttonColor || secondaryColor;
   return React.createElement(Section, {
-    style: { padding: '24px 0 20px 0', textAlign: 'center' as const }
+    style: { padding: '24px 0 20px 0', textAlign: 'center' as const, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     React.createElement(Hr, { style: config.hrStyle }),
     section.logoUrl
@@ -929,7 +940,7 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
       style: {
         fontFamily: config.fontFamily,
         fontSize: '12px',
-        color: config.bodyColor + '66',
+        color: fg + '66',
         lineHeight: '1.7',
         margin: '0 0 8px 0',
       }
@@ -940,7 +951,7 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
           style: {
             fontFamily: config.fontFamily,
             fontSize: '11px',
-            color: secondaryColor,
+            color: btn,
             textDecoration: 'underline',
           }
         }, section.buttonText)
@@ -949,7 +960,7 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
       style: {
         fontFamily: config.fontFamily,
         fontSize: '11px',
-        color: config.bodyColor + '44',
+        color: fg + '44',
         margin: '10px 0 0 0',
       }
     },
@@ -959,7 +970,7 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
         style: {
           fontFamily: config.fontFamily,
           fontSize: '11px',
-          color: config.bodyColor + '66',
+          color: fg + '66',
           textDecoration: 'underline',
         }
       }, 'Unsubscribe')
@@ -968,9 +979,11 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
 }
 
 function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: string, secondaryColor: string): React.ReactElement {
+  const fg  = section.textColor   || primaryColor;    // brand name / logo fallback text
+  const btn = section.buttonColor || secondaryColor;  // tagline + nav links
   const borderVal = `${config.hrStyle.borderWidth ?? '1px'} ${config.hrStyle.borderStyle ?? 'solid'} ${config.hrStyle.borderColor ?? '#e0e0e0'}`;
   return React.createElement(Section, {
-    style: { padding: '20px 0', borderBottom: borderVal, marginBottom: '8px' }
+    style: { padding: '20px 0', borderBottom: borderVal, marginBottom: '8px', ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     React.createElement(Row, null,
       React.createElement(Column, { style: { verticalAlign: 'middle' } },
@@ -987,7 +1000,7 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
                 fontFamily: config.fontFamily,
                 fontSize: '20px',
                 fontWeight: config.headingWeight,
-                color: primaryColor,
+                color: fg,
                 margin: '0',
               }
             }, section.logoAlt || 'Brand')
@@ -998,7 +1011,7 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
               style: {
                 fontFamily: config.fontFamily,
                 fontSize: '12px',
-                color: secondaryColor,
+                color: btn,
                 margin: '0',
                 textTransform: 'uppercase' as const,
                 letterSpacing: '0.08em',
@@ -1020,7 +1033,7 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
                   fontFamily: config.fontFamily,
                   fontSize: '12px',
                   fontWeight: '600',
-                  color: secondaryColor,
+                  color: btn,
                   textDecoration: 'none',
                   margin: '0 10px',
                   textTransform: 'uppercase' as const,
@@ -1036,6 +1049,8 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
 }
 
 function renderImageText(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const fg  = section.textColor   || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
   const isLeft = section.imagePosition !== 'right';
   const hasImage = !!section.imageUrl;
 
@@ -1068,7 +1083,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
             fontSize: '22px',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
-            color: config.bodyColor,
+            color: fg,
             margin: '0 0 12px 0',
           }
         }, section.heading)
@@ -1078,7 +1093,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
           style: {
             fontFamily: config.fontFamily,
             fontSize: '15px',
-            color: config.bodyColor,
+            color: fg,
             lineHeight: '1.7',
             margin: '0 0 16px 0',
           }
@@ -1090,7 +1105,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
           className: 'em-btn',
           style: {
             padding: config.buttonPadding,
-            backgroundColor: primaryColor,
+            backgroundColor: btn,
             color: '#ffffff',
             fontFamily: config.fontFamily,
             fontWeight: '700',
@@ -1106,7 +1121,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
           style: {
             fontFamily: config.fontFamily,
             fontSize: '12px',
-            color: config.bodyColor + '77',
+            color: fg + '77',
             margin: '12px 0 0 0',
             lineHeight: '1.4',
           }
@@ -1117,7 +1132,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
   );
 
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     hasImage
       ? React.createElement(Row, null,
@@ -1128,16 +1143,18 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
 }
 
 function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const fg  = section.textColor   || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     React.createElement('div', {
       style: {
-        border: `2px dashed ${primaryColor}`,
+        border: `2px dashed ${btn}`,
         borderRadius: config.borderRadius,
         padding: '32px 24px',
         textAlign: 'center' as const,
-        backgroundColor: primaryColor + '0d',
+        backgroundColor: btn + '0d',
       }
     },
       section.heading
@@ -1148,7 +1165,7 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
               fontWeight: '700',
               textTransform: 'uppercase' as const,
               letterSpacing: '0.1em',
-              color: config.bodyColor + '88',
+              color: fg + '88',
               margin: '0 0 16px 0',
             }
           }, section.heading)
@@ -1160,10 +1177,10 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
               fontSize: '30px',
               fontWeight: '900',
               letterSpacing: '0.15em',
-              color: primaryColor,
+              color: btn,
               margin: '0 0 8px 0',
               padding: '10px 24px',
-              border: `2px solid ${primaryColor}`,
+              border: `2px solid ${btn}`,
               borderRadius: config.borderRadius,
               display: 'inline-block',
             }
@@ -1174,7 +1191,7 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
             style: {
               fontFamily: config.fontFamily,
               fontSize: '15px',
-              color: config.bodyColor,
+              color: fg,
               margin: '12px 0 8px 0',
               lineHeight: '1.5',
             }
@@ -1185,7 +1202,7 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
             style: {
               fontFamily: config.fontFamily,
               fontSize: '12px',
-              color: config.bodyColor + '88',
+              color: fg + '88',
               margin: '0',
             }
           }, section.expiryText)
@@ -1214,9 +1231,11 @@ function getSocialIconUrl(link: { platform: string; iconUrl?: string }): string 
 }
 
 function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const fg  = section.textColor   || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
   const links = section.socialLinks || [];
   return React.createElement(Section, {
-    style: { padding: '16px 0', textAlign: 'center' as const }
+    style: { padding: '16px 0', textAlign: 'center' as const, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     section.heading
       ? React.createElement(Text, {
@@ -1226,7 +1245,7 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
             fontWeight: '700',
             textTransform: 'uppercase' as const,
             letterSpacing: '0.1em',
-            color: config.bodyColor + '88',
+            color: fg + '88',
             margin: '0 0 12px 0',
           }
         }, section.heading)
@@ -1242,7 +1261,7 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
           style: {
             display: 'inline-block',
             margin: '0 6px',
-            color: primaryColor,
+            color: btn,
             textDecoration: 'none',
             fontFamily: config.fontFamily,
             fontSize: resolvedIconUrl ? undefined : (link.icon ? '22px' : '12px'),
@@ -1266,9 +1285,11 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
 }
 
 function renderColumns(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const fg  = section.textColor   || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
   const colItems = section.columns || [];
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -1278,7 +1299,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
             fontSize: '24px',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
-            color: config.bodyColor,
+            color: fg,
             margin: '0 0 24px 0',
             textAlign: 'center',
           }
@@ -1314,7 +1335,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
                     fontFamily: config.fontFamily,
                     fontSize: '15px',
                     fontWeight: '700',
-                    color: config.bodyColor,
+                    color: fg,
                     margin: '0 0 8px 0',
                   }
                 }, col.heading)
@@ -1324,7 +1345,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
                   style: {
                     fontFamily: config.fontFamily,
                     fontSize: '13px',
-                    color: config.bodyColor + '99',
+                    color: fg + '99',
                     lineHeight: '1.5',
                     margin: '0 0 12px 0',
                   }
@@ -1336,7 +1357,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
                   className: 'em-btn',
                   style: {
                     padding: '8px 16px',
-                    backgroundColor: primaryColor,
+                    backgroundColor: btn,
                     color: '#ffffff',
                     fontFamily: config.fontFamily,
                     fontWeight: '700',
@@ -1354,12 +1375,14 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
 }
 
 function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const fg  = section.textColor   || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     React.createElement('div', {
       style: {
-        borderLeft: `4px solid ${primaryColor}`,
+        borderLeft: `4px solid ${btn}`,
         paddingLeft: '24px',
         margin: '0',
       }
@@ -1371,7 +1394,7 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
               fontSize: '22px',
               fontStyle: 'italic',
               fontWeight: config.headingWeight,
-              color: config.bodyColor,
+              color: fg,
               lineHeight: '1.5',
               margin: '0 0 12px 0',
             }
@@ -1385,7 +1408,7 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
               fontWeight: '700',
               textTransform: 'uppercase' as const,
               letterSpacing: '0.08em',
-              color: primaryColor,
+              color: btn,
               margin: '0',
             }
           }, `\u2014 ${section.author}${section.authorTitle ? `, ${section.authorTitle}` : ''}`)
@@ -1395,11 +1418,12 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
 }
 
 function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const fg = section.textColor || config.bodyColor;
   // Pick a theme based on design style background
   const isDark = config.bodyBg === '#0a0a0f' || config.bodyBg === '#ffffff' && config.bodyColor === '#000000';
   const theme = isDark ? oneDark : atomDark;
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -1408,7 +1432,7 @@ function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColo
             fontFamily: config.headingFontFamily,
             fontSize: '18px',
             fontWeight: config.headingWeight,
-            color: config.bodyColor,
+            color: fg,
             margin: '0 0 12px 0',
           }
         }, section.heading)
@@ -1430,7 +1454,7 @@ function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColo
           style: {
             fontFamily: config.fontFamily,
             fontSize: '13px',
-            color: config.bodyColor + '88',
+            color: fg + '88',
             margin: '10px 0 0 0',
             lineHeight: '1.5',
           }
