@@ -11,6 +11,16 @@ export interface EmailSection {
   subheading?: string;
   /** Large lead paragraph rendered at a bigger, bolder size above the body text. Use for strong opening statements or key summaries. */
   intro?: string;
+  /** Small uppercase category/topic label shown above the section heading. E.g. "New Feature", "Community Update", "Behind the Scenes" */
+  eyebrow?: string;
+  /** For feature-list: render numbered step badges (1, 2, 3…) instead of icon bullets */
+  numbered?: boolean;
+  /** For feature-list: 'grid' renders a centered 2-column card layout; omit for default vertical list */
+  layout?: 'list' | 'grid';
+  /** Optional secondary action text link rendered below the primary CTA button — e.g. "Learn more", "See pricing" */
+  secondaryButtonText?: string;
+  /** URL for the secondary action */
+  secondaryButtonUrl?: string;
   text?: string;
   buttonText?: string;
   buttonUrl?: string;
@@ -485,11 +495,11 @@ Return a JSON object with this exact structure:
 }
 
 SECTION TYPES:
-- header: Brand logo bar with optional tagline — ALWAYS the very first section
-- hero: Main banner with heading, subheading, optional image
-- content: Text content block with optional heading
-- testimonial: Customer quote with author info and optional avatar image
-- feature-list: List of product/service features with icons and descriptions
+- header: Brand logo bar with optional tagline — ALWAYS the very first section. Optionally supply 'columns' as an array of nav links [{heading:'About', buttonUrl:'/about'}, ...] to add a centered nav row below the logo.
+- hero: Main banner with heading, subheading, optional image. Always add 'buttonText'+'buttonUrl'. Add 'eyebrow' for a small category badge above the heading. Add 'secondaryButtonText'+'secondaryButtonUrl' for a ghost/text secondary action.
+- content: Text content block. Add 'eyebrow' (e.g. "Behind The Scenes") for a small coloured label above the heading.
+- testimonial: Customer quote with author info. Include 'authorImage' URL to render a side-by-side avatar layout instead of centered card.
+- feature-list: List of product/service features with icons and descriptions. Set 'numbered: true' for step-by-step numbered badges. Set 'layout: "grid"' for a 2-column centered card grid.
 - pricing-table: Pricing tiers with features, highlight one as recommended
 - gallery: Grid of images with optional captions
 - stats: Key metrics and numbers (e.g., customers, growth, ratings)
@@ -501,7 +511,7 @@ SECTION TYPES:
 - divider: Decorative separator with optional centered label text
 - quote: Pull-quote block — a memorable single sentence or excerpt set in large italic type with a coloured left border. Use 'text' for the quote text (no explicit quotation marks needed), and optionally 'author' + 'authorTitle' for attribution.
 - code-block: Syntax-highlighted code snippet. Use 'text' for the raw code, 'language' for the language (e.g. 'javascript', 'typescript', 'python', 'bash', 'json', 'html', 'sql'), 'heading' for an optional label above the block, and 'subheading' for an optional caption/explanation below.
-- cta: Call-to-action with button
+- cta: Call-to-action with heading + button. Add 'secondaryButtonText'+'secondaryButtonUrl' for a secondary link below the main button.
 - footer: Footer with company details, address, and unsubscribe notice
 
 SECTION USAGE GUIDELINES (use as starting templates — always build a full, rich email, never a sparse one):
@@ -522,7 +532,9 @@ RULES:
    - hero heading: 5-10 words max, bold and punchy. Open with power words: "Finally", "Introducing", "Unlock", "Transform", "The #1", "Stop", "Discover"
    - hero subheading: 1-2 sentences, name a specific, concrete benefit. No vague filler like "take your business to the next level"
    - hero button (buttonText + buttonUrl): always add a CTA button on the hero — use the brand's website_url. Button text should be punchy ("Get started free", "Start building", "Claim your spot")
+   - eyebrow field (content/hero): use sparingly for variety — 2-4 word category or section label in small caps. E.g. "What's new", "Built for teams", "Case Study", "Why it works". Provides visual hierarchy.
    - content intro field: use for a single powerful lead sentence (1 sentence max) that punches above the body text. Then use 'text' for 2-4 paragraphs separated by double-newlines (\n\n). Each paragraph should be 2-3 sentences. Total content block should feel like a magazine article — no filler.
+   - secondaryButtonText: use on hero or CTA to offer a softer action alongside the primary — e.g. "Watch demo" next to "Start free trial", or "See all features" next to "Get started"
    - quote sections: the quote 'text' should be a pithy, memorable statement — either from a real-sounding customer, a thought leader, or a key insight distilled into one sentence. Make it quotable.
    - code-block sections: provide clean, real, runnable code relevant to the email topic. No pseudocode. Comment the key parts.
    - testimonials: include a specific, credible outcome in the quote (e.g. "We cut our email production time from 2 hours to 8 minutes") with a realistic name, title, and company

@@ -190,6 +190,20 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
           style: { width: '100%', maxWidth: '600px', marginBottom: '24px', borderRadius: config.borderRadius }
         })
       : null,
+    // Optional eyebrow label above the hero heading
+    section.eyebrow
+      ? React.createElement(Text, {
+          style: {
+            fontFamily: config.fontFamily,
+            fontSize: '11px',
+            fontWeight: '700',
+            textTransform: 'uppercase' as const,
+            letterSpacing: '0.12em',
+            color: primaryColor,
+            margin: '0 0 10px 0',
+          }
+        }, section.eyebrow)
+      : null,
     section.heading
       ? React.createElement(Heading, {
           as: 'h1',
@@ -233,16 +247,47 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
             textDecoration: 'none',
           }
         }, section.buttonText)
+      : null,
+    // Optional secondary ghost/text action below the primary button
+    section.secondaryButtonText
+      ? React.createElement(Text, {
+          style: { margin: '14px 0 0 0', textAlign: config.heroAlign }
+        },
+          React.createElement(Link, {
+            href: section.secondaryButtonUrl || '#',
+            style: {
+              fontFamily: config.fontFamily,
+              fontSize: '14px',
+              color: primaryColor,
+              textDecoration: 'underline',
+              fontWeight: '600',
+            }
+          }, section.secondaryButtonText)
+        )
       : null
   );
 }
 
-function renderContent(section: EmailSection, config: StyleConfig): React.ReactElement {
+function renderContent(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
   // Split text on double-newline to create multiple paragraphs
   const paragraphs = (section.text || '').split(/\n\n+/).filter(Boolean);
   return React.createElement(Section, {
     style: { padding: config.sectionPadding, ...config.sectionBorderStyle }
   },
+    // Optional eyebrow label — small uppercase coloured category tag above heading
+    section.eyebrow
+      ? React.createElement(Text, {
+          style: {
+            fontFamily: config.fontFamily,
+            fontSize: '11px',
+            fontWeight: '700',
+            textTransform: 'uppercase' as const,
+            letterSpacing: '0.12em',
+            color: primaryColor,
+            margin: '0 0 8px 0',
+          }
+        }, section.eyebrow)
+      : null,
     section.heading
       ? React.createElement(Heading, {
           as: 'h2',
@@ -286,6 +331,61 @@ function renderContent(section: EmailSection, config: StyleConfig): React.ReactE
 }
 
 function renderTestimonial(section: EmailSection, config: StyleConfig, primaryColor: string, secondaryColor: string): React.ReactElement {
+  // Side-by-side layout: circular avatar on the left, quote + author on the right
+  if (section.authorImage) {
+    return React.createElement(Section, { style: { padding: config.sectionPadding } },
+      React.createElement('div', { style: { ...config.cardStyle } },
+        React.createElement(Row, null,
+          React.createElement(Column, { style: { width: '76px', verticalAlign: 'top' } },
+            React.createElement(Img, {
+              src: section.authorImage,
+              alt: section.author || '',
+              width: '56',
+              height: '56',
+              style: { borderRadius: '50%', display: 'block', width: '56px', height: '56px' }
+            })
+          ),
+          React.createElement(Column, { style: { verticalAlign: 'middle' } },
+            section.quote
+              ? React.createElement(Text, {
+                  style: {
+                    fontFamily: config.fontFamily,
+                    fontSize: '16px',
+                    fontStyle: 'italic',
+                    color: config.bodyColor,
+                    lineHeight: '1.65',
+                    margin: '0 0 10px 0',
+                  }
+                }, `\u201C${section.quote}\u201D`)
+              : null,
+            section.author
+              ? React.createElement(Text, {
+                  style: {
+                    fontFamily: config.fontFamily,
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    color: primaryColor,
+                    margin: '0 0 2px 0',
+                  }
+                }, section.author)
+              : null,
+            section.authorTitle
+              ? React.createElement(Text, {
+                  style: {
+                    fontFamily: config.fontFamily,
+                    fontSize: '12px',
+                    color: config.bodyColor + '88',
+                    margin: '0',
+                  }
+                }, section.authorTitle)
+              : null
+          )
+        )
+      )
+    );
+  }
+
+  // Centered card layout (no avatar)
   return React.createElement(Section, {
     style: { padding: config.sectionPadding }
   },
@@ -296,15 +396,6 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
         borderTop: `4px solid ${secondaryColor}`,
       }
     },
-      section.authorImage
-        ? React.createElement(Img, {
-            src: section.authorImage,
-            alt: section.author || '',
-            width: '64',
-            height: '64',
-            style: { borderRadius: '50%', margin: '0 auto 16px auto', display: 'block' }
-          })
-        : null,
       section.quote
         ? React.createElement(Text, {
             style: {
@@ -315,7 +406,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
               lineHeight: '1.6',
               margin: '0 0 16px 0',
             }
-          }, `"${section.quote}"`)
+          }, `\u201C${section.quote}\u201D`)
         : null,
       section.author
         ? React.createElement(Text, {
@@ -343,32 +434,96 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
 }
 
 function renderFeatureList(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
-  return React.createElement(Section, {
-    style: { padding: config.sectionPadding }
-  },
-    section.heading
-      ? React.createElement(Heading, {
-          as: 'h2',
-          style: {
-            fontFamily: config.headingFontFamily,
-            fontSize: '24px',
-            fontWeight: config.headingWeight,
-            color: config.bodyColor,
-            margin: '0 0 20px 0',
-          }
-        }, section.heading)
-      : null,
-    ...(section.features || []).map((feature, i) =>
+  const features = section.features || [];
+  const isGrid = section.layout === 'grid';
+  const isNumbered = !!section.numbered;
+
+  const headingEl = section.heading
+    ? React.createElement(Heading, {
+        as: 'h2',
+        style: {
+          fontFamily: config.headingFontFamily,
+          fontSize: '24px',
+          fontWeight: config.headingWeight,
+          color: config.bodyColor,
+          margin: '0 0 20px 0',
+          textAlign: (isGrid ? 'center' : 'left') as any,
+        }
+      }, section.heading)
+    : null;
+
+  // 2-column centered card grid variant
+  if (isGrid) {
+    const pairs: typeof features[] = [];
+    for (let i = 0; i < features.length; i += 2) pairs.push(features.slice(i, i + 2));
+    return React.createElement(Section, { style: { padding: config.sectionPadding } },
+      headingEl,
+      ...pairs.map((pair, rowIdx) =>
+        React.createElement(Section, { key: rowIdx, style: { marginBottom: '16px' } },
+          React.createElement(Row, null,
+            ...pair.map((feature, i) =>
+            React.createElement(Column, {
+              key: i,
+              className: 'em-col',
+              style: { verticalAlign: 'top', padding: '0 8px' }
+            },
+              React.createElement('div', { style: { ...config.cardStyle, textAlign: 'center' as const } },
+                React.createElement(Text, {
+                  style: { fontSize: '32px', margin: '0 0 10px 0', lineHeight: '1' }
+                }, feature.icon || '\u2726'),
+                React.createElement(Text, {
+                  style: {
+                    fontFamily: config.fontFamily,
+                    fontSize: '15px',
+                    fontWeight: '700',
+                    color: config.bodyColor,
+                    margin: '0 0 6px 0',
+                  }
+                }, feature.title),
+                React.createElement(Text, {
+                  style: {
+                    fontFamily: config.fontFamily,
+                    fontSize: '13px',
+                    color: config.bodyColor + '99',
+                    lineHeight: '1.5',
+                    margin: '0',
+                  }
+                }, feature.description)
+              )
+            )
+            )
+          )
+        )
+      )
+    );
+  }
+
+  // Default vertical list (numbered badges or icon bullets)
+  return React.createElement(Section, { style: { padding: config.sectionPadding } },
+    headingEl,
+    ...features.map((feature, i) =>
       React.createElement(Section, { key: i, style: { marginBottom: '16px', display: 'table', width: '100%' } },
         React.createElement(Row, null,
           React.createElement(Column, { style: { width: '40px', verticalAlign: 'top' } },
-            React.createElement(Text, {
-              style: {
-                fontSize: '20px',
-                margin: '0',
-                color: primaryColor,
-              }
-            }, feature.icon || '✓')
+            isNumbered
+              ? React.createElement('div', {
+                  style: {
+                    width: '28px',
+                    height: '28px',
+                    borderRadius: '50%',
+                    backgroundColor: primaryColor,
+                    color: '#ffffff',
+                    fontFamily: config.fontFamily,
+                    fontSize: '13px',
+                    fontWeight: '700',
+                    lineHeight: '28px',
+                    textAlign: 'center' as const,
+                    display: 'inline-block',
+                  }
+                }, String(i + 1))
+              : React.createElement(Text, {
+                  style: { fontSize: '20px', margin: '0', color: primaryColor }
+                }, feature.icon || '\u2713')
           ),
           React.createElement(Column, { style: { verticalAlign: 'top' } },
             React.createElement(Text, {
@@ -519,31 +674,40 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
         React.createElement(Column, {
           key: i,
           className: 'em-col',
-          style: { textAlign: 'center' as const, padding: '12px' }
+          style: { verticalAlign: 'top', padding: '6px' }
         },
-          stat.icon
-            ? React.createElement(Text, { style: { fontSize: '28px', margin: '0 0 8px 0' } }, stat.icon)
-            : null,
-          React.createElement(Text, {
+          React.createElement('div', {
             style: {
-              fontFamily: config.fontFamily,
-              fontSize: '36px',
-              fontWeight: '900',
-              color: primaryColor,
-              margin: '0 0 4px 0',
-              lineHeight: '1',
+              ...config.cardStyle,
+              textAlign: 'center' as const,
+              borderTop: `3px solid ${primaryColor}`,
+              padding: '20px 12px',
             }
-          }, stat.value),
-          React.createElement(Text, {
-            style: {
-              fontFamily: config.fontFamily,
-              fontSize: '13px',
-              color: config.bodyColor + '88',
-              margin: '0',
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-            }
-          }, stat.label)
+          },
+            stat.icon
+              ? React.createElement(Text, { style: { fontSize: '28px', margin: '0 0 8px 0' } }, stat.icon)
+              : null,
+            React.createElement(Text, {
+              style: {
+                fontFamily: config.fontFamily,
+                fontSize: '36px',
+                fontWeight: '900',
+                color: primaryColor,
+                margin: '0 0 4px 0',
+                lineHeight: '1',
+              }
+            }, stat.value),
+            React.createElement(Text, {
+              style: {
+                fontFamily: config.fontFamily,
+                fontSize: '13px',
+                color: config.bodyColor + '88',
+                margin: '0',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+              }
+            }, stat.label)
+          )
         )
       )
     )
@@ -552,7 +716,11 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
 
 function renderGallery(section: EmailSection, config: StyleConfig): React.ReactElement {
   const images = section.images || [];
-  const perRow = Math.min(images.length, 3);
+  // 2 per row for exactly 4 images (2×2 grid), otherwise 3 per row
+  const perRow = images.length === 4 ? 2 : Math.min(images.length, 3);
+  const rows: typeof images[] = [];
+  for (let i = 0; i < images.length; i += perRow) rows.push(images.slice(i, i + perRow));
+
   return React.createElement(Section, {
     style: { padding: config.sectionPadding }
   },
@@ -568,30 +736,44 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
           }
         }, section.heading)
       : null,
-    React.createElement(Row, null,
-      ...images.slice(0, perRow).map((img, i) =>
-        React.createElement(Column, {
-          key: i,
-          className: 'em-col',
-          style: { padding: '4px' }
-        },
-          React.createElement(Img, {
-            src: img.url,
-            alt: img.alt,
-            width: '180',
-            style: { width: '100%', borderRadius: config.borderRadius, display: 'block' }
-          }),
-          img.caption
-            ? React.createElement(Text, {
-                style: {
-                  fontFamily: config.fontFamily,
-                  fontSize: '11px',
-                  color: config.bodyColor + '88',
-                  textAlign: 'center',
-                  margin: '4px 0 0 0',
-                }
-              }, img.caption)
-            : null
+    ...rows.map((rowImages, rowIdx) =>
+      React.createElement(Section, { key: rowIdx, style: { marginBottom: rowIdx < rows.length - 1 ? '8px' : '0' } },
+        React.createElement(Row, null,
+          ...rowImages.map((img, i) =>
+            React.createElement(Column, {
+            key: i,
+            className: 'em-col',
+            style: { padding: '4px', verticalAlign: 'top' }
+          },
+            React.createElement(Img, {
+              src: img.url,
+              alt: img.alt,
+              width: perRow === 2 ? '280' : '180',
+              style: { width: '100%', borderRadius: config.borderRadius, display: 'block' }
+            }),
+            React.createElement(Text, {
+              style: {
+                fontFamily: config.fontFamily,
+                fontSize: '12px',
+                fontWeight: '600',
+                color: config.bodyColor,
+                textAlign: 'center' as const,
+                margin: '6px 0 0 0',
+              }
+            }, img.alt),
+            img.caption
+              ? React.createElement(Text, {
+                  style: {
+                    fontFamily: config.fontFamily,
+                    fontSize: '11px',
+                    color: config.bodyColor + '88',
+                    textAlign: 'center' as const,
+                    margin: '2px 0 0 0',
+                  }
+                }, img.caption)
+              : null
+          )
+          )
         )
       )
     )
@@ -699,6 +881,21 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
             textDecoration: 'none',
           }
         }, section.buttonText)
+      : null,
+    // Optional secondary action link below the primary CTA button
+    section.secondaryButtonText
+      ? React.createElement(Text, { style: { margin: '14px 0 0 0' } },
+          React.createElement(Link, {
+            href: section.secondaryButtonUrl || '#',
+            style: {
+              fontFamily: config.fontFamily,
+              fontSize: '14px',
+              color: primaryColor,
+              textDecoration: 'underline',
+              fontWeight: '600',
+            }
+          }, section.secondaryButtonText)
+        )
       : null
   );
 }
@@ -784,7 +981,7 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
               }
             }, section.logoAlt || 'Brand')
       ),
-      section.tagline
+      section.tagline && !section.columns?.length
         ? React.createElement(Column, { style: { verticalAlign: 'middle', textAlign: 'right' as const } },
             React.createElement(Text, {
               style: {
@@ -799,7 +996,31 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
             }, section.tagline)
           )
         : null
-    )
+    ),
+    // Optional nav links row — supply section.columns: [{heading:'About', buttonUrl:'/about'}, ...]
+    section.columns?.length
+      ? React.createElement(Row, null,
+          React.createElement(Column, { style: { textAlign: 'center' as const, paddingTop: '12px' } },
+            ...(section.columns).map((nav, i) =>
+              React.createElement(Link, {
+                key: i,
+                href: nav.buttonUrl || '#',
+                style: {
+                  fontFamily: config.fontFamily,
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  color: secondaryColor,
+                  textDecoration: 'none',
+                  margin: '0 10px',
+                  textTransform: 'uppercase' as const,
+                  letterSpacing: '0.06em',
+                  display: 'inline-block',
+                }
+              }, nav.heading || '')
+            )
+          )
+        )
+      : null
   );
 }
 
@@ -867,6 +1088,20 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
             textDecoration: 'none',
           }
         }, section.buttonText)
+      : null,
+    // Article-style author byline below text/button
+    section.author
+      ? React.createElement(Text, {
+          style: {
+            fontFamily: config.fontFamily,
+            fontSize: '12px',
+            color: config.bodyColor + '77',
+            margin: '12px 0 0 0',
+            lineHeight: '1.4',
+          }
+        }, section.authorTitle
+          ? `${section.author} \u00B7 ${section.authorTitle}`
+          : section.author)
       : null
   );
 
@@ -1227,7 +1462,7 @@ function renderSection(
   switch (section.type) {
     case 'header':        return renderHeader(section, config, primaryColor, secondaryColor);
     case 'hero':          return renderHero(section, config, primaryColor);
-    case 'content':       return renderContent(section, config);
+    case 'content':       return renderContent(section, config, primaryColor);
     case 'testimonial':   return renderTestimonial(section, config, primaryColor, secondaryColor);
     case 'feature-list':  return renderFeatureList(section, config, primaryColor);
     case 'pricing-table': return renderPricingTable(section, config, primaryColor);
