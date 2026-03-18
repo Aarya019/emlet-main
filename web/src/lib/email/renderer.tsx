@@ -179,8 +179,11 @@ const styleConfigs: Record<string, StyleConfig> = {
 // ─────────────────────────────────────────────
 
 function renderHero(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const bg  = section.backgroundColor || config.bodyBg;
+  const fg  = section.textColor || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, textAlign: config.heroAlign, backgroundColor: config.bodyBg }
+    style: { padding: config.sectionPadding, textAlign: config.heroAlign, backgroundColor: bg }
   },
     section.imageUrl
       ? React.createElement(Img, {
@@ -199,7 +202,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
             fontWeight: '700',
             textTransform: 'uppercase' as const,
             letterSpacing: '0.12em',
-            color: primaryColor,
+            color: btn,
             margin: '0 0 10px 0',
           }
         }, section.eyebrow)
@@ -212,7 +215,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
             fontSize: '36px',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
-            color: config.bodyColor,
+            color: fg,
             margin: '0 0 16px 0',
             lineHeight: '1.2',
           }
@@ -223,7 +226,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
           style: {
             fontFamily: config.fontFamily,
             fontSize: '18px',
-            color: config.bodyColor + '99',
+            color: fg + '99',
             margin: '0 0 24px 0',
             lineHeight: '1.6',
           }
@@ -238,7 +241,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
             display: 'inline-block',
             marginTop: '8px',
             padding: config.buttonPadding,
-            backgroundColor: primaryColor,
+            backgroundColor: btn,
             color: '#ffffff',
             fontFamily: config.fontFamily,
             fontWeight: '700',
@@ -258,7 +261,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
             style: {
               fontFamily: config.fontFamily,
               fontSize: '14px',
-              color: primaryColor,
+              color: btn,
               textDecoration: 'underline',
               fontWeight: '600',
             }
@@ -269,10 +272,13 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
 }
 
 function renderContent(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const bg  = section.backgroundColor;
+  const fg  = section.textColor || config.bodyColor;
+  const accent = section.buttonColor || primaryColor;
   // Split text on double-newline to create multiple paragraphs
   const paragraphs = (section.text || '').split(/\n\n+/).filter(Boolean);
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, ...config.sectionBorderStyle }
+    style: { padding: config.sectionPadding, ...config.sectionBorderStyle, ...(bg ? { backgroundColor: bg } : {}) }
   },
     // Optional eyebrow label — small uppercase coloured category tag above heading
     section.eyebrow
@@ -283,7 +289,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
             fontWeight: '700',
             textTransform: 'uppercase' as const,
             letterSpacing: '0.12em',
-            color: primaryColor,
+            color: accent,
             margin: '0 0 8px 0',
           }
         }, section.eyebrow)
@@ -296,7 +302,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
             fontSize: '24px',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
-            color: config.bodyColor,
+            color: fg,
             margin: '0 0 12px 0',
           }
         }, section.heading)
@@ -308,7 +314,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
             fontFamily: config.fontFamily,
             fontSize: '19px',
             fontWeight: '600',
-            color: config.bodyColor,
+            color: fg,
             lineHeight: '1.6',
             margin: '0 0 16px 0',
           }
@@ -321,7 +327,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
         style: {
           fontFamily: config.fontFamily,
           fontSize: '16px',
-          color: config.bodyColor,
+          color: fg,
           lineHeight: '1.75',
           margin: i < paragraphs.length - 1 ? '0 0 14px 0' : '0',
         }
@@ -781,6 +787,8 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
 }
 
 function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const accent = section.buttonColor || primaryColor;
+  const fg = section.textColor || config.bodyColor;
   return React.createElement(Section, {
     style: {
       padding: config.sectionPadding,
@@ -788,8 +796,8 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
   },
     React.createElement('div', {
       style: {
-        backgroundColor: primaryColor + '15',
-        border: `2px solid ${primaryColor}`,
+        backgroundColor: (section.backgroundColor) || (accent + '15'),
+        border: `2px solid ${accent}`,
         borderRadius: config.borderRadius,
         padding: '24px',
         textAlign: 'center' as const,
@@ -802,7 +810,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
               fontFamily: config.headingFontFamily,
               fontSize: '22px',
               fontWeight: config.headingWeight,
-              color: primaryColor,
+              color: accent,
               margin: '0 0 12px 0',
             }
           }, section.heading)
@@ -812,7 +820,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
             style: {
               fontFamily: config.fontFamily,
               fontSize: '15px',
-              color: config.bodyColor,
+              color: fg,
               margin: '0 0 16px 0',
               lineHeight: '1.6',
             }
@@ -824,7 +832,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
             className: 'em-btn',
             style: {
               padding: config.buttonPadding,
-              backgroundColor: primaryColor,
+              backgroundColor: accent,
               color: '#ffffff',
               fontFamily: config.fontFamily,
               fontWeight: '700',
@@ -839,8 +847,11 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
 }
 
 function renderCta(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const bg  = section.backgroundColor;
+  const fg  = section.textColor || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, textAlign: 'center' as const }
+    style: { padding: config.sectionPadding, textAlign: 'center' as const, ...(bg ? { backgroundColor: bg } : {}) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -850,7 +861,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
             fontSize: '26px',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
-            color: config.bodyColor,
+            color: fg,
             margin: '0 0 12px 0',
           }
         }, section.heading)
@@ -860,7 +871,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
           style: {
             fontFamily: config.fontFamily,
             fontSize: '16px',
-            color: config.bodyColor + '99',
+            color: fg + '99',
             margin: '0 0 24px 0',
             lineHeight: '1.6',
           }
@@ -872,7 +883,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
           className: 'em-btn',
           style: {
             padding: config.buttonPadding,
-            backgroundColor: primaryColor,
+            backgroundColor: btn,
             color: '#ffffff',
             fontFamily: config.fontFamily,
             fontWeight: '700',
@@ -890,7 +901,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
             style: {
               fontFamily: config.fontFamily,
               fontSize: '14px',
-              color: primaryColor,
+              color: btn,
               textDecoration: 'underline',
               fontWeight: '600',
             }

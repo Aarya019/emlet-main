@@ -92,6 +92,13 @@ export interface EmailSection {
     buttonText?: string;
     buttonUrl?: string;
   }>;
+  // Per-section color overrides
+  /** Override the section background color (hex, e.g. "#f0f4ff") */
+  backgroundColor?: string;
+  /** Override the main text/heading color for this section */
+  textColor?: string;
+  /** Override the CTA button background color for this section */
+  buttonColor?: string;
 }
 
 export interface GeneratedEmail {

@@ -580,6 +580,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                             <div className="px-4 pb-4 space-y-3 border-t border-white/10 pt-3">
 
                               {/* ── Common fields ── */}
+                              {['hero','content','cta','announcement','feature-list','testimonial','quote'].includes(section.type) && (
+                                <div>
+                                  <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Eyebrow <span className="normal-case text-white/20 font-normal">(small label above heading)</span></label>
+                                  <input type="text" value={section.eyebrow || ''} onChange={e => updateSection(index, { eyebrow: e.target.value })}
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="e.g. New Feature, Announcement…" />
+                                </div>
+                              )}
                               {section.heading !== undefined && (
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Heading</label>
@@ -592,6 +599,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Subheading</label>
                                   <input type="text" value={section.subheading || ''} onChange={e => updateSection(index, { subheading: e.target.value })}
                                     className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Enter subheading…" />
+                                </div>
+                              )}
+                              {['hero','content','cta','announcement'].includes(section.type) && (
+                                <div>
+                                  <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Intro <span className="normal-case text-white/20 font-normal">(large lead paragraph)</span></label>
+                                  <textarea value={section.intro || ''} onChange={e => updateSection(index, { intro: e.target.value })} rows={2}
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Opening statement or key summary…" />
                                 </div>
                               )}
                               {section.text !== undefined && (
@@ -615,6 +629,20 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   </div>
                                 </div>
                               )}
+                              {section.buttonText !== undefined && ['cta', 'hero', 'announcement'].includes(section.type) && (
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Secondary Button</label>
+                                    <input type="text" value={section.secondaryButtonText || ''} onChange={e => updateSection(index, { secondaryButtonText: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Learn more" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Secondary URL</label>
+                                    <input type="text" value={section.secondaryButtonUrl || ''} onChange={e => updateSection(index, { secondaryButtonUrl: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                  </div>
+                                </div>
+                              )}
                               {section.imageUrl !== undefined && (
                                 <ImageUploadInput
                                   label="Image URL"
@@ -622,6 +650,20 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   onChange={url => updateSection(index, { imageUrl: url })}
                                   onRemove={section.imageUrl ? () => updateSection(index, { imageUrl: '' }) : undefined}
                                 />
+                              )}
+                              {section.imageUrl !== undefined && (
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Image Alt Text</label>
+                                    <input type="text" value={section.imageAlt || ''} onChange={e => updateSection(index, { imageAlt: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Describe the image…" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Pexels Keyword <span className="normal-case text-white/20 font-normal">(auto-fetch)</span></label>
+                                    <input type="text" value={section.imageKeyword || ''} onChange={e => updateSection(index, { imageKeyword: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="e.g. coffee shop, team meeting…" />
+                                  </div>
+                                </div>
                               )}
 
                               {/* ── image-text: position toggle ── */}
@@ -636,6 +678,19 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       </button>
                                     ))}
                                   </div>
+                                </div>
+                              )}
+
+                              {/* ── code-block ── */}
+                              {section.type === 'code-block' && (
+                                <div>
+                                  <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Language</label>
+                                  <select value={section.language || 'javascript'} onChange={e => updateSection(index, { language: e.target.value })}
+                                    className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors">
+                                    {['javascript','typescript','python','bash','json','html','css','sql','yaml','rust','go'].map(lang => (
+                                      <option key={lang} value={lang} className="bg-[#0a0a0a]">{lang}</option>
+                                    ))}
+                                  </select>
                                 </div>
                               )}
 
@@ -690,6 +745,22 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 </>
                               )}
 
+                              {/* ── quote: author attribution ── */}
+                              {section.type === 'quote' && (
+                                <div className="grid grid-cols-2 gap-3">
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Author Name</label>
+                                    <input type="text" value={section.author || ''} onChange={e => updateSection(index, { author: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Jane Doe" />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Author Title</label>
+                                    <input type="text" value={section.authorTitle || ''} onChange={e => updateSection(index, { authorTitle: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="CEO, Acme" />
+                                  </div>
+                                </div>
+                              )}
+
                               {/* ── coupon ── */}
                               {section.type === 'coupon' && (
                                 <div className="grid grid-cols-2 gap-3">
@@ -735,6 +806,32 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                               {/* ── feature-list ── */}
                               {section.type === 'feature-list' && (
                                 <div className="space-y-2">
+                                  <div className="flex items-center gap-4 pb-1">
+                                    <div>
+                                      <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Layout</label>
+                                      <div className="flex gap-1.5">
+                                        {(['list', 'grid'] as const).map(opt => (
+                                          <button key={opt} onClick={() => updateSection(index, { layout: opt })}
+                                            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${(section.layout ?? 'list') === opt ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                            {opt.charAt(0).toUpperCase() + opt.slice(1)}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Style</label>
+                                      <div className="flex gap-1.5">
+                                        <button onClick={() => updateSection(index, { numbered: false })}
+                                          className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${!section.numbered ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                          Icons
+                                        </button>
+                                        <button onClick={() => updateSection(index, { numbered: true })}
+                                          className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${section.numbered ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                          Numbered
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Features</label>
                                     <button onClick={() => updateSection(index, { features: [...(section.features || []), { title: '', description: '' }] })}
@@ -772,20 +869,29 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     </button>
                                   </div>
                                   {(section.images || []).map((img, ii) => (
-                                    <div key={ii} className="flex gap-2 items-center">
+                                    <div key={ii} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1.5">
+                                      <div className="flex gap-2 items-center">
+                                        <span className="text-[10px] text-white/30 uppercase tracking-wider w-5 flex-shrink-0">{ii + 1}</span>
+                                        <button onClick={() => updateSection(index, { images: (section.images || []).filter((_, i) => i !== ii) })}
+                                          className="ml-auto text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                      </div>
                                       <ImageUploadInput
                                         label=""
                                         value={img.url}
                                         onChange={url => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, url } : x); updateSection(index, { images: imgs }); }}
                                         compact
-                                        placeholder="URL"
+                                        placeholder="Image URL"
                                       />
-                                      <input type="text" value={img.alt} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, alt: e.target.value } : x); updateSection(index, { images: imgs }); }}
-                                        className="w-1/3 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Alt" />
-                                      <button onClick={() => updateSection(index, { images: (section.images || []).filter((_, i) => i !== ii) })}
-                                        className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
-                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                      </button>
+                                      <div className="grid grid-cols-2 gap-1.5">
+                                        <input type="text" value={img.alt} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, alt: e.target.value } : x); updateSection(index, { images: imgs }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Alt text" />
+                                        <input type="text" value={img.keyword || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, keyword: e.target.value } : x); updateSection(index, { images: imgs }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Pexels keyword" />
+                                      </div>
+                                      <input type="text" value={img.caption || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, caption: e.target.value } : x); updateSection(index, { images: imgs }); }}
+                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Caption (optional)" />
                                     </div>
                                   ))}
                                 </div>
@@ -873,6 +979,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Column heading" />
                                       <textarea value={col.text || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, text: e.target.value } : x); updateSection(index, { columns: c }); }} rows={2}
                                         className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white/70 text-xs focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Column text…" />
+                                      <ImageUploadInput
+                                        label=""
+                                        value={col.imageUrl || ''}
+                                        onChange={url => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, imageUrl: url } : x); updateSection(index, { columns: c }); }}
+                                        compact
+                                        placeholder="Column image URL (optional)"
+                                      />
                                       <div className="grid grid-cols-2 gap-2">
                                         <input type="text" value={col.buttonText || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, buttonText: e.target.value } : x); updateSection(index, { columns: c }); }}
                                           className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button text" />
@@ -942,6 +1055,81 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <p className="text-[11px] text-white/25 mt-1">Leave blank to use your ESP's merge tag</p>
                                   </div>
                                 </>
+                              )}
+
+                              {/* ── Color overrides ── */}
+                              {section.type !== 'divider' && (
+                                <div className="pt-3 mt-1 border-t border-white/10">
+                                  <label className="block text-xs text-white/40 mb-2 uppercase tracking-wider">Colors <span className="normal-case text-white/20 font-normal">(override brand defaults)</span></label>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    <div>
+                                      <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Background</label>
+                                      <div className="flex items-center gap-1.5">
+                                        <input
+                                          type="color"
+                                          value={section.backgroundColor || '#ffffff'}
+                                          onChange={e => updateSection(index, { backgroundColor: e.target.value })}
+                                          className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5 flex-shrink-0"
+                                        />
+                                        <input
+                                          type="text"
+                                          value={section.backgroundColor || ''}
+                                          onChange={e => updateSection(index, { backgroundColor: e.target.value || undefined })}
+                                          className="flex-1 min-w-0 px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
+                                          placeholder="default"
+                                        />
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Text</label>
+                                      <div className="flex items-center gap-1.5">
+                                        <input
+                                          type="color"
+                                          value={section.textColor || '#000000'}
+                                          onChange={e => updateSection(index, { textColor: e.target.value })}
+                                          className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5 flex-shrink-0"
+                                        />
+                                        <input
+                                          type="text"
+                                          value={section.textColor || ''}
+                                          onChange={e => updateSection(index, { textColor: e.target.value || undefined })}
+                                          className="flex-1 min-w-0 px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
+                                          placeholder="default"
+                                        />
+                                      </div>
+                                    </div>
+                                    {section.buttonText !== undefined || ['cta','hero','announcement'].includes(section.type) ? (
+                                      <div>
+                                        <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Button</label>
+                                        <div className="flex items-center gap-1.5">
+                                          <input
+                                            type="color"
+                                            value={section.buttonColor || '#5c5cf0'}
+                                            onChange={e => updateSection(index, { buttonColor: e.target.value })}
+                                            className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5 flex-shrink-0"
+                                          />
+                                          <input
+                                            type="text"
+                                            value={section.buttonColor || ''}
+                                            onChange={e => updateSection(index, { buttonColor: e.target.value || undefined })}
+                                            className="flex-1 min-w-0 px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
+                                            placeholder="default"
+                                          />
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div />
+                                    )}
+                                  </div>
+                                  {(section.backgroundColor || section.textColor || section.buttonColor) && (
+                                    <button
+                                      onClick={() => updateSection(index, { backgroundColor: undefined, textColor: undefined, buttonColor: undefined })}
+                                      className="mt-2 text-[11px] text-white/30 hover:text-red-400 transition-colors"
+                                    >
+                                      Reset to defaults
+                                    </button>
+                                  )}
+                                </div>
                               )}
 
                             </div>
