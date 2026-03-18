@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { EmailGeneration } from '@/lib/db/types';
 import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
@@ -31,6 +31,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [sendToEmail, setSendToEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [previewKey, setPreviewKey] = useState(0);
+
+  // Live preview state
+  const [livePreviewHtml, setLivePreviewHtml] = useState<string | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+  const previewDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previewAbortRef = useRef<AbortController | null>(null);
 
   const BLOCK_TYPES: Array<{ type: EmailSection['type']; label: string; description: string; icon: string }> = [
     { type: 'hero',          label: 'Hero',          description: 'Large banner with heading & image',   icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
@@ -84,6 +91,38 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       setEditedEmail(email.content_json as GeneratedEmail);
     }
   }, [email, editedEmail]);
+
+  // Debounced live preview: re-render on every edit with 700ms debounce
+  useEffect(() => {
+    if (!editedEmail) return;
+    if (previewDebounceRef.current) clearTimeout(previewDebounceRef.current);
+    previewDebounceRef.current = setTimeout(async () => {
+      if (previewAbortRef.current) previewAbortRef.current.abort();
+      const controller = new AbortController();
+      previewAbortRef.current = controller;
+      setPreviewing(true);
+      try {
+        const res = await fetch(`/api/email-generations/${emailId}/preview`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content_json: editedEmail }),
+          signal: controller.signal,
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setLivePreviewHtml(data.html);
+          setPreviewKey(k => k + 1);
+        }
+      } catch (e) {
+        if ((e as Error).name !== 'AbortError') console.error('Preview error:', e);
+      } finally {
+        setPreviewing(false);
+      }
+    }, 700);
+    return () => {
+      if (previewDebounceRef.current) clearTimeout(previewDebounceRef.current);
+    };
+  }, [editedEmail, emailId]);
 
   const loadEmail = async () => {
     setLoading(true);
@@ -186,6 +225,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       }
       const data = await res.json();
       setEmail(data.generation);
+      setPreviewKey(k => k + 1);
       setIsDirty(false);
     } catch (err) {
       console.error('Save error:', err);
@@ -374,7 +414,15 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
             <div className="h-[calc(100vh-73px)] overflow-y-auto p-6">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-white mb-1">Live Preview</h3>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-white mb-1">Live Preview</h3>
+                    {previewing && (
+                      <span className="flex items-center gap-1 text-xs text-cyan-400 animate-pulse">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block" />
+                        Updating…
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-white/60">See how your email looks</p>
                 </div>
                 
@@ -416,7 +464,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   // Use generated HTML for accurate design-style preview
                   <div className="rounded-lg overflow-hidden shadow-2xl border border-white/20">
                     <iframe
-                      srcDoc={email.html_code}
+                      key={previewKey}
+                      srcDoc={livePreviewHtml ?? email.html_code}
                       title="Email Preview"
                       className="w-full border-0"
                       style={{ height: '700px' }}
