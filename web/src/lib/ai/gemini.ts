@@ -110,25 +110,59 @@ export interface EmailContext {
 /**
  * Generate email content using Gemini 2.0 Flash
  */
+const MODEL_PRIMARY = 'gemini-3.1-pro-preview';
+const MODEL_FALLBACK = 'gemini-2.5-pro';
+
+async function tryGenerateWithModel(modelName: string, fullPrompt: string): Promise<GeneratedEmail> {
+  const model = genAI.getGenerativeModel({
+    model: modelName,
+    generationConfig: {
+      temperature: 1.0,
+      topP: 0.95,
+      topK: 40,
+      maxOutputTokens: 8192,
+    }
+  });
+
+  const result = await model.generateContent(fullPrompt);
+  const text = result.response.text();
+
+  const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+  const jsonMatch = stripped.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error('Gemini raw response (no JSON found):', text.slice(0, 500));
+    throw new Error('Failed to extract JSON from response');
+  }
+
+  let emailData: GeneratedEmail;
+  try {
+    emailData = JSON.parse(jsonMatch[0]) as GeneratedEmail;
+  } catch (parseErr) {
+    console.error('JSON parse error:', parseErr, '\nRaw match:', jsonMatch[0].slice(0, 500));
+    throw new Error('Failed to parse JSON from response');
+  }
+
+  if (!emailData.subject || !emailData.sections || emailData.sections.length === 0) {
+    throw new Error('Invalid email structure returned');
+  }
+
+  return emailData;
+}
+
+function isRetryableError(error: unknown): boolean {
+  if (error && typeof error === 'object' && 'status' in error) {
+    const status = (error as { status: number }).status;
+    return status === 503 || status === 429 || status === 500;
+  }
+  return false;
+}
+
 export async function generateEmailContent(
   prompt: string,
   brandProfile: BrandProfile | null,
   designStyle: string = 'minimalist'
 ): Promise<GeneratedEmail> {
-  const model = genAI.getGenerativeModel({ 
-    model: 'gemini-3.1-pro-preview',
-    generationConfig: {
-      temperature: 1.0, // Balanced creativity — high enough for varied copy, low enough for reliable JSON
-      topP: 0.95,
-      topK: 40,
-      maxOutputTokens: 8192, // Ensure long, multi-section emails are never cut short
-    }
-  });
-
-  // Build system prompt with brand context
   const systemPrompt = buildSystemPrompt(brandProfile, designStyle);
-  
-  // Build user prompt
   const userPrompt = `Generate an email for the following request:
 
 ${prompt}
@@ -141,35 +175,28 @@ Remember to:
 
   const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
-  try {
-    const result = await model.generateContent(fullPrompt);
-    const response = result.response;
-    const text = response.text();
-
-    // Strip markdown code fences if Gemini wrapped the JSON
-    const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
-
-    // Try to extract the outermost JSON object
-    const jsonMatch = stripped.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('Gemini raw response (no JSON found):', text.slice(0, 500));
-      throw new Error('Failed to extract JSON from response');
-    }
-
-    let emailData: GeneratedEmail;
+  // Try primary model with up to 3 attempts (exponential backoff on 503/429/500)
+  for (let attempt = 0; attempt < 3; attempt++) {
     try {
-      emailData = JSON.parse(jsonMatch[0]) as GeneratedEmail;
-    } catch (parseErr) {
-      console.error('JSON parse error:', parseErr, '\nRaw match:', jsonMatch[0].slice(0, 500));
-      throw new Error('Failed to parse JSON from response');
+      if (attempt > 0) {
+        const delay = Math.pow(2, attempt) * 1000; // 2s, 4s
+        console.log(`Retrying with ${MODEL_PRIMARY} (attempt ${attempt + 1}) after ${delay}ms...`);
+        await new Promise(res => setTimeout(res, delay));
+      }
+      return await tryGenerateWithModel(MODEL_PRIMARY, fullPrompt);
+    } catch (error) {
+      console.error(`Error with ${MODEL_PRIMARY} (attempt ${attempt + 1}):`, error);
+      if (!isRetryableError(error) || attempt === 2) {
+        // Non-retryable error or exhausted retries — fall through to fallback
+        break;
+      }
     }
+  }
 
-    // Validate required fields
-    if (!emailData.subject || !emailData.sections || emailData.sections.length === 0) {
-      throw new Error('Invalid email structure returned');
-    }
-
-    return emailData;
+  // Fallback to stable model
+  console.log(`Falling back to ${MODEL_FALLBACK}...`);
+  try {
+    return await tryGenerateWithModel(MODEL_FALLBACK, fullPrompt);
   } catch (error) {
     console.error('Error generating email with Gemini:', error);
     throw error instanceof Error ? error : new Error('Failed to generate email content');
