@@ -34,6 +34,15 @@ const FEATURES = [
   { title: 'Brand profiles', desc: 'Save your colors, voice & logo — every email stays on-brand, every time.' },
 ];
 
+const FAQS = [
+  { q: 'How does Emlet generate emails?', a: "You describe your campaign in plain English. Emlet's AI (powered by Gemini) writes the copy, selects a layout, applies your brand colors, and outputs production-ready HTML and TSX — all in seconds." },
+  { q: 'What email platforms does Emlet work with?', a: 'Any platform that accepts HTML. Export your email and drop it straight into Mailchimp, SendGrid, Resend, ConvertKit, HubSpot, or any other ESP.' },
+  { q: 'Do I need design or coding skills?', a: 'Not at all. Type what you want and Emlet handles the design and code. Every block is also editable in the visual editor — no code required.' },
+  { q: 'How many emails can I generate for free?', a: '5 emails per month on the free plan — no credit card required. Upgrade anytime for unlimited generation, priority AI, and advanced export options.' },
+  { q: 'Can I use my own brand colors and logo?', a: 'Yes. Create a Brand Profile with your colors, typography, and logo. Every email you generate automatically stays on-brand.' },
+  { q: 'What does "React Email powered" mean?', a: 'Emlet builds emails using React Email under the hood, ensuring pixel-perfect rendering in Gmail, Outlook, Apple Mail, and every major inbox.' },
+];
+
 export default function Home() {
   const router = useRouter();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
@@ -42,6 +51,7 @@ export default function Home() {
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [userInput, setUserInput] = useState('');
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const examples = [
     "Product launch with 40% discount...",
@@ -129,16 +139,17 @@ export default function Home() {
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-3 items-center px-6 py-4">
           <a href="/" className="flex items-center gap-2 group">
             <img src="/logo.png" alt="Emlet" className="h-8 w-auto" />
           </a>
-          <nav className="hidden items-center gap-8 text-sm text-white/70 md:flex">
+          <nav className="hidden items-center justify-center gap-8 text-sm text-white/70 md:flex">
             <a href="#how-it-works" className="transition-colors hover:text-white">How it works</a>
             <a href="#features" className="transition-colors hover:text-white">Features</a>
+            <a href="#faq" className="transition-colors hover:text-white">FAQ</a>
             <a href="/pricing" className="transition-colors hover:text-white">Pricing</a>
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-end gap-3">
             <a href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
               Sign in
             </a>
@@ -330,6 +341,39 @@ export default function Home() {
 
               <h3 className="text-base font-bold text-white mb-1 group-hover:text-[#00ffff] transition-colors">{f.title}</h3>
               <p className="text-sm text-white/50 leading-relaxed">{f.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── FAQ ─────────────────────────────────────────────────────────────── */}
+      <section id="faq" className="relative z-10 mx-auto max-w-3xl px-4 sm:px-6 py-20 md:py-28">
+        <div className="text-center mb-14">
+          <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">FAQ</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
+            Common questions
+          </h2>
+          <p className="text-base text-white/50 max-w-xl mx-auto">
+            Everything you need to know before you start generating.
+          </p>
+        </div>
+        <div className="divide-y divide-white/8">
+          {FAQS.map((faq, i) => (
+            <div key={i}>
+              <button
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                className="flex w-full items-center justify-between py-5 text-left gap-6 group"
+              >
+                <span className="text-base font-semibold text-white group-hover:text-[#00ffff] transition-colors">{faq.q}</span>
+                <span className={`flex-shrink-0 text-[#00ffff]/60 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </span>
+              </button>
+              {openFaq === i && (
+                <p className="pb-5 text-sm text-white/55 leading-relaxed">{faq.a}</p>
+              )}
             </div>
           ))}
         </div>
