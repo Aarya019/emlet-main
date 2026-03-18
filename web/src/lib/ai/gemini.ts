@@ -103,9 +103,10 @@ export async function generateEmailContent(
   const model = genAI.getGenerativeModel({ 
     model: 'gemini-2.5-flash',
     generationConfig: {
-      temperature: 1.2, // Higher temperature for more creative, varied outputs
+      temperature: 1.0, // Balanced creativity — high enough for varied copy, low enough for reliable JSON
       topP: 0.95,
       topK: 40,
+      maxOutputTokens: 8192, // Ensure long, multi-section emails are never cut short
     }
   });
 
@@ -483,32 +484,42 @@ SECTION TYPES:
 - cta: Call-to-action with button
 - footer: Footer with company details, address, and unsubscribe notice
 
-SECTION USAGE GUIDELINES:
-- Product launch: header + hero + feature-list + pricing-table + testimonial + cta + social-links + footer
-- Newsletter: header + hero + content (multiple) + announcement + divider + cta + social-links + footer
-- Promotional/Sale: header + hero + coupon + stats + pricing-table + cta + footer
-- Educational: header + hero + content + columns + feature-list + cta + footer
-- Social proof: header + hero + testimonial + stats + gallery + cta + footer
-- Product spotlight: header + hero + image-text + image-text (imagePosition alternates) + cta + footer
-- Welcome email: header + hero + columns + testimonial + cta + social-links + footer
+SECTION USAGE GUIDELINES (use as starting templates — always build a full, rich email, never a sparse one):
+- Product launch: header + hero + announcement (launch news) + feature-list + image-text + image-text (reversed) + stats + testimonial + pricing-table + cta + social-links + footer
+- Newsletter: header + hero + content + divider + content + image-text + announcement + columns + cta + social-links + footer
+- Promotional/Sale: header + hero + announcement + coupon + stats + feature-list + testimonial + pricing-table + cta + footer
+- Educational: header + hero + content + columns + image-text + feature-list + stats + testimonial + cta + footer
+- Social proof: header + hero + stats + testimonial + gallery + image-text + columns + cta + footer
+- Product spotlight: header + hero + content + image-text + image-text (reversed) + feature-list + testimonial + cta + footer
+- Welcome email: header + hero + content + columns + feature-list + testimonial + cta + social-links + footer
 
 RULES:
-1. Always include: 1 header (first section), 1 hero, 1 CTA, 1 footer (last section)
-2. Choose 2-4 middle sections based on the prompt and email type
+1. Always include: 1 header (first section), 1 hero, at least 1 CTA, 1 footer (last section)
+2. Include 5-8 middle sections — aim for 9-12 total sections. Never produce a sparse or short email. More sections = more professional and engaging.
 3. FOOTER COPYRIGHT: Always use the current year ${currentYear} in footer text (e.g. "© ${currentYear} Company Name")
-3. BRAND PERSONALIZATION (CRITICAL):
+4. COPY QUALITY (CRITICAL — this is what separates great emails from mediocre ones):
+   - hero heading: 5-10 words max, bold and punchy. Open with power words: "Finally", "Introducing", "Unlock", "Transform", "The #1", "Stop", "Discover"
+   - hero subheading: 1-2 sentences, name a specific, concrete benefit. No vague filler like "take your business to the next level"
+   - content sections: write 3-5 sentences of real, specific, value-packed copy. Tell a mini-story, cite a problem and solution, or paint a vivid before/after picture. Zero lorem ipsum.
+   - testimonials: include a specific, credible outcome in the quote (e.g. "We cut our email production time from 2 hours to 8 minutes") with a realistic name, title, and company
+   - stats: use impressive but realistic numbers with context labels ("10,000+ teams trust us", "$2M+ saved by customers", "4.9 / 5 average rating")
+   - feature-list: every feature needs a compelling 1-sentence benefit description — not just a label
+   - columns: each column should have an icon emoji, a punchy 2-4 word heading, and a 1-2 sentence benefit description
+   - CTA heading: create urgency or FOMO ("Limited time", "Join 10,000+ teams", "Don't miss out"). Button text: 2-4 words, start with an action verb
+   - announcement: be specific about what's new, why it matters, and when ("Launching March 21 — early access now open")
+5. BRAND PERSONALIZATION (CRITICAL):
    - Include logo in hero imageUrl and footer sections when logo_url is provided
    - Use primary_color for all main CTAs and primary design elements
    - Use secondary_color (if provided) for accents, borders, and highlights
    - Set all button URLs to the brand's website_url or relevant subpages
    - Weave the brand_name naturally into copy (headlines, content, CTAs)
    - Match the brand_voice tone in all written content
-4. Keep subject lines as short as possible — ideally under 20 characters, hard max 30. No filler words. Punchy, direct, curiosity-driving.
-5. Make CTAs clear and action-oriented
-6. For sections that need photos (hero, image-text, gallery), output an "imageKeyword" (or "keyword" for gallery images) — a short, specific 2-4 word English search phrase describing the ideal photo (e.g. "team meeting office", "coffee shop morning", "product packaging minimal"). Do NOT output imageUrl for non-logo images — the system will fetch real photos from Pexels using the keyword.
-7. Return ONLY the JSON object, no markdown formatting
-8. Adapt all content and structure to match the ${designStyle} style perfectly
-9. CRITICAL: ALL string values in the JSON must be PLAIN TEXT ONLY. Never use HTML tags, <span>, <b>, <i>, CSS styles, or any markup inside JSON string fields. The renderer will handle all styling — your job is content only.`;
+6. Keep subject lines as short as possible — ideally under 20 characters, hard max 30. No filler words. Punchy, direct, curiosity-driving.
+7. Make CTAs clear and action-oriented
+8. For sections that need photos (hero, image-text, gallery), output an "imageKeyword" (or "keyword" for gallery images) — a short, specific 2-4 word English search phrase describing the ideal photo (e.g. "team meeting office", "coffee shop morning", "product packaging minimal"). Do NOT output imageUrl for non-logo images — the system will fetch real photos from Pexels using the keyword.
+9. Return ONLY the JSON object, no markdown formatting
+10. Adapt all content and structure to match the ${designStyle} style perfectly
+11. CRITICAL: ALL string values in the JSON must be PLAIN TEXT ONLY. Never use HTML tags, <span>, <b>, <i>, CSS styles, or any markup inside JSON string fields. The renderer will handle all styling — your job is content only.`;
 }
 
 /**
