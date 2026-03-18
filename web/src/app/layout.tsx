@@ -14,20 +14,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Emlet — AI Email Generator | Create Pro Emails in Seconds",
-  description: "Generate production-ready marketing emails with AI. Describe your campaign, get beautiful HTML emails instantly. Export to Mailchimp, SendGrid, Resend and more.",
-  keywords: ["AI email generator", "email marketing", "React Email", "email template builder", "HTML email"],
+  title: "Emlet — Generate High Converting Marketing Emails in Seconds",
+  description: "Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send. No design skills needed.",
+  keywords: ["AI email generator", "high converting emails", "email marketing", "marketing email generator", "email template builder", "HTML email", "email campaigns"],
   openGraph: {
-    title: "Emlet — AI Email Generator",
-    description: "Describe your email. Get beautiful, production-ready HTML in seconds.",
+    title: "Emlet — Generate High Converting Marketing Emails in Seconds",
+    description: "Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send.",
     url: "https://emlet.app",
     siteName: "Emlet",
     type: "website",
+    images: [
+      {
+        url: "https://emlet.app/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Emlet — Generate High Converting Marketing Emails in Seconds",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Emlet — AI Email Generator",
-    description: "Describe your email. Get beautiful, production-ready HTML in seconds.",
+    title: "Emlet — Generate High Converting Marketing Emails in Seconds",
+    description: "Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send.",
+    images: ["https://emlet.app/og-image.png"],
   },
 };
 
