@@ -26,12 +26,12 @@ const STEPS = [
 ];
 
 const FEATURES = [
-  { icon: '⚡', title: 'AI copywriting', desc: 'Brand-aware copy that converts, written in seconds.' },
-  { icon: '🎨', title: '10+ design styles', desc: 'Minimalist, editorial, retro, brutalist, cyberpunk and more.' },
-  { icon: '📦', title: 'Block-based editor', desc: 'Hero, CTA, testimonial, stats — every block fully editable.' },
-  { icon: '🔧', title: 'React Email powered', desc: 'Production HTML that works in Gmail, Outlook, Apple Mail.' },
-  { icon: '🚀', title: 'Export anywhere', desc: 'One-click HTML & TSX export for any ESP.' },
-  { icon: '🏢', title: 'Brand profiles', desc: 'Save colors, voice & logo for consistent emails every time.' },
+  { icon: '⚡', title: 'Converts, not just looks good', desc: 'AI-written copy engineered to drive clicks, opens, and revenue — not just pretty words.' },
+  { icon: '🎨', title: '10+ design styles', desc: 'Minimalist, editorial, retro, brutalist, cyberpunk and more — all optimised for inboxes.' },
+  { icon: '📦', title: 'Block-based editor', desc: 'Hero, CTA, testimonial, stats — every block fully editable without touching code.' },
+  { icon: '🔧', title: 'React Email powered', desc: 'Production HTML that renders perfectly in Gmail, Outlook, and Apple Mail.' },
+  { icon: '🚀', title: 'Export anywhere', desc: 'One-click HTML & TSX export for Mailchimp, SendGrid, Resend, or any ESP.' },
+  { icon: '🏢', title: 'Brand profiles', desc: 'Save your colors, voice & logo — every email stays on-brand, every time.' },
 ];
 
 export default function Home() {
@@ -105,6 +105,12 @@ export default function Home() {
 
   return (
 <div className="relative min-h-screen bg-black text-zinc-50 font-sans overflow-x-hidden">
+      {/* ── Try for free announcement pill ──────────────────────────────────── */}
+      <div className="relative z-50 flex items-center justify-center gap-3 bg-gradient-to-r from-[#00ffff]/10 via-[#00ff00]/10 to-[#ff00ff]/10 border-b border-white/5 px-4 py-2 text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 px-3 py-0.5 text-xs font-semibold text-[#00ffff] tracking-wide uppercase">Free</span>
+        <span className="text-xs text-white/60">Get 5 high-converting marketing emails every month — no credit card required.</span>
+        <a href="/sign-up" className="text-xs font-semibold text-white underline underline-offset-2 hover:text-[#00ffff] transition-colors whitespace-nowrap">Start free →</a>
+      </div>
       {/* Animated gradient blobs with magnetic effect */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <div
@@ -152,18 +158,20 @@ export default function Home() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ffff] opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00ffff]" />
               </span>
-              AI-powered email generation
+              AI-powered · results in seconds
             </div>
             <h1 className="text-4xl font-black tracking-tight text-white sm:text-5xl md:text-6xl lg:text-7xl leading-[1.05]">
-              Create better emails,
+              Generate high converting
               <br />
               <span className="bg-gradient-to-r from-[#00ffff] via-[#00ff00] to-[#ff00ff] bg-clip-text text-transparent">
-                10× faster.
+                marketing emails
               </span>
+              <br />
+              in seconds.
             </h1>
             <p className="mx-auto max-w-2xl text-base text-white/60 sm:text-lg md:text-xl leading-relaxed">
-              Describe the email you want. Emlet's AI writes the copy, designs the layout, and outputs
-              production-ready HTML — in seconds.
+              Describe your campaign. Emlet's AI writes copy that converts, designs the layout, and outputs
+              production-ready HTML — faster than writing a single subject line.
             </p>
           </div>
 
@@ -214,7 +222,6 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Social proof */}
           <p className="text-xs text-white/25">
             No credit card required · 5 free emails per month · Cancel anytime
           </p>
@@ -259,7 +266,7 @@ export default function Home() {
             From idea to inbox in 3 steps
           </h2>
           <p className="text-base text-white/50 max-w-xl mx-auto">
-            No design skills needed. No blank-page anxiety. Just describe what you need.
+            No design skills needed. No blank-page anxiety. Just describe your campaign and get a high-converting email, ready to send.
           </p>
         </div>
 
@@ -310,10 +317,10 @@ export default function Home() {
         <div className="text-center mb-14">
           <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Features</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
-            Everything you need to ship fast
+            Everything you need to convert
           </h2>
           <p className="text-base text-white/50 max-w-xl mx-auto">
-            Professional emails without the design headaches. Idea to inbox in minutes.
+            High-converting emails, production-ready designs, and brand consistency — all generated in seconds.
           </p>
         </div>
 
@@ -333,11 +340,11 @@ export default function Home() {
         <div className="rounded-3xl border border-white/10 bg-white/[0.02] px-8 py-16 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-[#00ffff]/5 via-transparent to-[#00ff00]/5 pointer-events-none" />
           <h2 className="relative text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
-            Start generating emails<br />
-            <span className="bg-gradient-to-r from-[#00ffff] to-[#00ff00] bg-clip-text text-transparent">for free today</span>
+            Start generating high converting<br />
+            <span className="bg-gradient-to-r from-[#00ffff] to-[#00ff00] bg-clip-text text-transparent">marketing emails today</span>
           </h2>
           <p className="relative text-base text-white/50 mb-8 max-w-lg mx-auto">
-            5 emails free every month. No credit card. Upgrade when you're ready.
+            5 emails free every month. No credit card. Get your first high-converting email in under 60 seconds.
           </p>
           <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4">
             <a href="/sign-up" className="rounded-full bg-white px-8 py-3 text-base font-bold text-black transition-all hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5">
@@ -360,7 +367,7 @@ export default function Home() {
                 <img src="/logo.png" alt="Emlet" className="h-8 w-auto" />
               </a>
               <p className="text-sm text-white/40 leading-relaxed">
-                AI-powered email studio.<br />Idea to inbox in seconds.
+                Generate high converting marketing emails in seconds.<br />Idea to inbox, instantly.
               </p>
             </div>
 
