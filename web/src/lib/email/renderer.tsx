@@ -15,6 +15,9 @@ import {
   Link,
   Img,
   Hr,
+  CodeBlock,
+  atomDark,
+  oneDark,
 } from '@react-email/components';
 import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
 import type { BrandProfile } from '@/lib/db/types';
@@ -207,15 +210,36 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
             fontFamily: config.fontFamily,
             fontSize: '18px',
             color: config.bodyColor + '99',
-            margin: '0',
+            margin: '0 0 24px 0',
             lineHeight: '1.6',
           }
         }, section.subheading)
+      : null,
+    // Hero CTA button
+    section.buttonText
+      ? React.createElement(Button, {
+          href: section.buttonUrl || '#',
+          className: 'em-btn',
+          style: {
+            display: 'inline-block',
+            marginTop: '8px',
+            padding: config.buttonPadding,
+            backgroundColor: primaryColor,
+            color: '#ffffff',
+            fontFamily: config.fontFamily,
+            fontWeight: '700',
+            fontSize: '16px',
+            borderRadius: config.buttonBorderRadius,
+            textDecoration: 'none',
+          }
+        }, section.buttonText)
       : null
   );
 }
 
 function renderContent(section: EmailSection, config: StyleConfig): React.ReactElement {
+  // Split text on double-newline to create multiple paragraphs
+  const paragraphs = (section.text || '').split(/\n\n+/).filter(Boolean);
   return React.createElement(Section, {
     style: { padding: config.sectionPadding, ...config.sectionBorderStyle }
   },
@@ -232,17 +256,32 @@ function renderContent(section: EmailSection, config: StyleConfig): React.ReactE
           }
         }, section.heading)
       : null,
-    section.text
+    // Optional intro line — rendered larger, slightly bolder
+    section.intro
       ? React.createElement(Text, {
           style: {
             fontFamily: config.fontFamily,
-            fontSize: '16px',
+            fontSize: '19px',
+            fontWeight: '600',
             color: config.bodyColor,
-            lineHeight: '1.7',
-            margin: '0',
+            lineHeight: '1.6',
+            margin: '0 0 16px 0',
           }
-        }, section.text)
-      : null
+        }, section.intro)
+      : null,
+    // Multi-paragraph body text
+    ...paragraphs.map((para, i) =>
+      React.createElement(Text, {
+        key: i,
+        style: {
+          fontFamily: config.fontFamily,
+          fontSize: '16px',
+          color: config.bodyColor,
+          lineHeight: '1.75',
+          margin: i < paragraphs.length - 1 ? '0 0 14px 0' : '0',
+        }
+      }, para)
+    )
   );
 }
 
@@ -1068,6 +1107,92 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
   );
 }
 
+function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  return React.createElement(Section, {
+    style: { padding: config.sectionPadding }
+  },
+    React.createElement('div', {
+      style: {
+        borderLeft: `4px solid ${primaryColor}`,
+        paddingLeft: '24px',
+        margin: '0',
+      }
+    },
+      section.text
+        ? React.createElement(Text, {
+            style: {
+              fontFamily: config.headingFontFamily,
+              fontSize: '22px',
+              fontStyle: 'italic',
+              fontWeight: config.headingWeight,
+              color: config.bodyColor,
+              lineHeight: '1.5',
+              margin: '0 0 12px 0',
+            }
+          }, `\u201C${section.text}\u201D`)
+        : null,
+      section.author
+        ? React.createElement(Text, {
+            style: {
+              fontFamily: config.fontFamily,
+              fontSize: '13px',
+              fontWeight: '700',
+              textTransform: 'uppercase' as const,
+              letterSpacing: '0.08em',
+              color: primaryColor,
+              margin: '0',
+            }
+          }, `\u2014 ${section.author}${section.authorTitle ? `, ${section.authorTitle}` : ''}`)
+        : null
+    )
+  );
+}
+
+function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  // Pick a theme based on design style background
+  const isDark = config.bodyBg === '#0a0a0f' || config.bodyBg === '#ffffff' && config.bodyColor === '#000000';
+  const theme = isDark ? oneDark : atomDark;
+  return React.createElement(Section, {
+    style: { padding: config.sectionPadding }
+  },
+    section.heading
+      ? React.createElement(Heading, {
+          as: 'h3',
+          style: {
+            fontFamily: config.headingFontFamily,
+            fontSize: '18px',
+            fontWeight: config.headingWeight,
+            color: config.bodyColor,
+            margin: '0 0 12px 0',
+          }
+        }, section.heading)
+      : null,
+    section.text
+      ? React.createElement(CodeBlock, {
+          code: section.text,
+          language: (section.language as any) || 'javascript',
+          theme: theme,
+          style: {
+            borderRadius: config.borderRadius,
+            fontSize: '13px',
+            lineHeight: '1.6',
+          }
+        })
+      : null,
+    section.subheading
+      ? React.createElement(Text, {
+          style: {
+            fontFamily: config.fontFamily,
+            fontSize: '13px',
+            color: config.bodyColor + '88',
+            margin: '10px 0 0 0',
+            lineHeight: '1.5',
+          }
+        }, section.subheading)
+      : null
+  );
+}
+
 function renderDivider(section: EmailSection, config: StyleConfig): React.ReactElement {
   return React.createElement(Section, {
     style: { padding: '4px 0' }
@@ -1114,6 +1239,8 @@ function renderSection(
     case 'social-links':  return renderSocialLinks(section, config, primaryColor);
     case 'columns':       return renderColumns(section, config, primaryColor);
     case 'divider':       return renderDivider(section, config);
+    case 'quote':         return renderQuote(section, config, primaryColor);
+    case 'code-block':    return renderCodeBlock(section, config, primaryColor);
     case 'cta':           return renderCta(section, config, primaryColor);
     case 'footer':        return renderFooter(section, config, secondaryColor);
     default:              return null;

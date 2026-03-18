@@ -6,9 +6,11 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Email content structure
 export interface EmailSection {
-  type: 'hero' | 'content' | 'cta' | 'footer' | 'testimonial' | 'feature-list' | 'pricing-table' | 'gallery' | 'stats' | 'announcement' | 'header' | 'image-text' | 'coupon' | 'social-links' | 'columns' | 'divider';
+  type: 'hero' | 'content' | 'cta' | 'footer' | 'testimonial' | 'feature-list' | 'pricing-table' | 'gallery' | 'stats' | 'announcement' | 'header' | 'image-text' | 'coupon' | 'social-links' | 'columns' | 'divider' | 'quote' | 'code-block';
   heading?: string;
   subheading?: string;
+  /** Large lead paragraph rendered at a bigger, bolder size above the body text. Use for strong opening statements or key summaries. */
+  intro?: string;
   text?: string;
   buttonText?: string;
   buttonUrl?: string;
@@ -59,6 +61,9 @@ export interface EmailSection {
   // For coupon sections
   code?: string;
   expiryText?: string;
+  // For code-block sections
+  /** Programming language for syntax highlighting: 'javascript', 'typescript', 'python', 'bash', 'json', 'html', 'css', 'sql', 'yaml', 'rust', 'go' */
+  language?: string;
   // For footer sections
   unsubscribeUrl?: string;
   // For social-links sections
@@ -449,6 +454,19 @@ Return a JSON object with this exact structure:
       ]
     },
     {
+      "type": "quote",
+      "text": "This is the most memorable insight or pull-quote of the email.",
+      "author": "Jane Smith",
+      "authorTitle": "CEO, Acme Corp"
+    },
+    {
+      "type": "code-block",
+      "heading": "Quick start",
+      "text": "npm install @acme/sdk\n\nconst client = require('@acme/sdk');\nconst result = await client.run({ prompt: 'Hello world' });\nconsole.log(result.output);",
+      "language": "javascript",
+      "subheading": "Install the SDK and make your first API call in under 2 minutes."
+    },
+    {
       "type": "divider",
       "text": "optional label"
     },
@@ -481,6 +499,8 @@ SECTION TYPES:
 - columns: 2–4 equal-width blocks each with icon/heading/text/optional button
 - social-links: Row of social media icons/links (use emoji as icon)
 - divider: Decorative separator with optional centered label text
+- quote: Pull-quote block — a memorable single sentence or excerpt set in large italic type with a coloured left border. Use 'text' for the quote text (no explicit quotation marks needed), and optionally 'author' + 'authorTitle' for attribution.
+- code-block: Syntax-highlighted code snippet. Use 'text' for the raw code, 'language' for the language (e.g. 'javascript', 'typescript', 'python', 'bash', 'json', 'html', 'sql'), 'heading' for an optional label above the block, and 'subheading' for an optional caption/explanation below.
 - cta: Call-to-action with button
 - footer: Footer with company details, address, and unsubscribe notice
 
@@ -488,7 +508,8 @@ SECTION USAGE GUIDELINES (use as starting templates — always build a full, ric
 - Product launch: header + hero + announcement (launch news) + feature-list + image-text + image-text (reversed) + stats + testimonial + pricing-table + cta + social-links + footer
 - Newsletter: header + hero + content + divider + content + image-text + announcement + columns + cta + social-links + footer
 - Promotional/Sale: header + hero + announcement + coupon + stats + feature-list + testimonial + pricing-table + cta + footer
-- Educational: header + hero + content + columns + image-text + feature-list + stats + testimonial + cta + footer
+- Educational: header + hero + content + quote + columns + image-text + feature-list + stats + testimonial + cta + footer
+- Software/Dev: header + hero + content + code-block + feature-list + image-text + quote + stats + testimonial + cta + footer
 - Social proof: header + hero + stats + testimonial + gallery + image-text + columns + cta + footer
 - Product spotlight: header + hero + content + image-text + image-text (reversed) + feature-list + testimonial + cta + footer
 - Welcome email: header + hero + content + columns + feature-list + testimonial + cta + social-links + footer
@@ -500,7 +521,10 @@ RULES:
 4. COPY QUALITY (CRITICAL — this is what separates great emails from mediocre ones):
    - hero heading: 5-10 words max, bold and punchy. Open with power words: "Finally", "Introducing", "Unlock", "Transform", "The #1", "Stop", "Discover"
    - hero subheading: 1-2 sentences, name a specific, concrete benefit. No vague filler like "take your business to the next level"
-   - content sections: write 3-5 sentences of real, specific, value-packed copy. Tell a mini-story, cite a problem and solution, or paint a vivid before/after picture. Zero lorem ipsum.
+   - hero button (buttonText + buttonUrl): always add a CTA button on the hero — use the brand's website_url. Button text should be punchy ("Get started free", "Start building", "Claim your spot")
+   - content intro field: use for a single powerful lead sentence (1 sentence max) that punches above the body text. Then use 'text' for 2-4 paragraphs separated by double-newlines (\n\n). Each paragraph should be 2-3 sentences. Total content block should feel like a magazine article — no filler.
+   - quote sections: the quote 'text' should be a pithy, memorable statement — either from a real-sounding customer, a thought leader, or a key insight distilled into one sentence. Make it quotable.
+   - code-block sections: provide clean, real, runnable code relevant to the email topic. No pseudocode. Comment the key parts.
    - testimonials: include a specific, credible outcome in the quote (e.g. "We cut our email production time from 2 hours to 8 minutes") with a realistic name, title, and company
    - stats: use impressive but realistic numbers with context labels ("10,000+ teams trust us", "$2M+ saved by customers", "4.9 / 5 average rating")
    - feature-list: every feature needs a compelling 1-sentence benefit description — not just a label
