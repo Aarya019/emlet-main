@@ -55,9 +55,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '500',
     headingLetterSpacing: '-0.02em',
     borderRadius: '4px',
-    sectionPadding: '32px 0',
+    sectionPadding: '52px 0',
     buttonBorderRadius: '4px',
-    buttonPadding: '12px 28px',
+    buttonPadding: '14px 44px',
     containerBorder: '1px solid #e8e8e8',
     heroAlign: 'center',
     hrStyle: { borderColor: '#eeeeee', borderWidth: '1px', margin: '24px 0' },
@@ -73,9 +73,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '700',
     headingLetterSpacing: '0',
     borderRadius: '0',
-    sectionPadding: '28px 0',
+    sectionPadding: '48px 0',
     buttonBorderRadius: '0',
-    buttonPadding: '12px 28px',
+    buttonPadding: '14px 44px',
     containerBorder: '1px solid #ddd',
     heroAlign: 'left',
     hrStyle: { borderColor: '#1a1a1a', borderWidth: '2px', margin: '24px 0' },
@@ -91,9 +91,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '700',
     headingLetterSpacing: '0.02em',
     borderRadius: '12px',
-    sectionPadding: '28px 0',
+    sectionPadding: '48px 0',
     buttonBorderRadius: '20px',
-    buttonPadding: '12px 28px',
+    buttonPadding: '14px 44px',
     containerBorder: '2px solid #c8a96e',
     heroAlign: 'center',
     hrStyle: { borderColor: '#c8a96e', borderWidth: '2px', borderStyle: 'dashed', margin: '24px 0' },
@@ -109,9 +109,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '900',
     headingLetterSpacing: '-0.03em',
     borderRadius: '0',
-    sectionPadding: '32px 0',
+    sectionPadding: '52px 0',
     buttonBorderRadius: '0',
-    buttonPadding: '14px 32px',
+    buttonPadding: '16px 52px',
     containerBorder: '4px solid #000000',
     heroAlign: 'left',
     hrStyle: { borderColor: '#000000', borderWidth: '4px', margin: '24px 0' },
@@ -127,9 +127,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '700',
     headingLetterSpacing: '0.05em',
     borderRadius: '2px',
-    sectionPadding: '28px 0',
+    sectionPadding: '48px 0',
     buttonBorderRadius: '2px',
-    buttonPadding: '12px 28px',
+    buttonPadding: '14px 44px',
     containerBorder: '1px solid #00ffff',
     heroAlign: 'center',
     hrStyle: { borderColor: '#00ffff', borderWidth: '1px', margin: '24px 0' },
@@ -145,9 +145,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '600',
     headingLetterSpacing: '0.01em',
     borderRadius: '8px',
-    sectionPadding: '24px 0',
+    sectionPadding: '44px 0',
     buttonBorderRadius: '8px',
-    buttonPadding: '12px 28px',
+    buttonPadding: '14px 44px',
     containerBorder: '2px solid #d4c5a9',
     heroAlign: 'center',
     hrStyle: { borderColor: '#d4c5a9', borderWidth: '1px', borderStyle: 'dashed', margin: '20px 0' },
@@ -163,9 +163,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '900',
     headingLetterSpacing: '-0.02em',
     borderRadius: '0',
-    sectionPadding: '32px 0',
+    sectionPadding: '52px 0',
     buttonBorderRadius: '0',
-    buttonPadding: '14px 32px',
+    buttonPadding: '16px 52px',
     containerBorder: '3px solid #000000',
     heroAlign: 'left',
     hrStyle: { borderColor: '#cc0000', borderWidth: '4px', margin: '24px 0' },
@@ -179,18 +179,22 @@ export const styleConfigs: Record<string, StyleConfig> = {
 // ─────────────────────────────────────────────
 
 function renderHero(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
-  const bg  = section.backgroundColor || config.bodyBg;
   const fg  = section.textColor || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
+  const heroBgStyle: React.CSSProperties = section.backgroundGradient
+    ? { background: section.backgroundGradient }
+    : section.backgroundColor
+    ? { backgroundColor: section.backgroundColor }
+    : { background: `linear-gradient(150deg, ${primaryColor}22 0%, ${primaryColor}08 100%)` };
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, textAlign: config.heroAlign, backgroundColor: bg }
+    style: { padding: '72px 0', textAlign: config.heroAlign, ...heroBgStyle }
   },
     section.imageUrl
       ? React.createElement(Img, {
           src: section.imageUrl,
           alt: section.imageAlt || '',
           width: '600',
-          style: { width: '100%', maxWidth: '600px', marginBottom: '24px', borderRadius: config.borderRadius }
+          style: { width: '100%', maxWidth: '600px', marginBottom: '32px', borderRadius: config.borderRadius, display: 'block' }
         })
       : null,
     // Optional eyebrow label above the hero heading
@@ -248,6 +252,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
             fontSize: '16px',
             borderRadius: config.buttonBorderRadius,
             textDecoration: 'none',
+            boxShadow: `0 4px 20px ${btn}55`,
           }
         }, section.buttonText)
       : null,
@@ -401,9 +406,20 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
       style: {
         ...config.cardStyle,
         textAlign: 'center' as const,
-        borderTop: `4px solid ${secondaryColor}`,
+        borderTop: `4px solid ${btn}`,
       }
     },
+      // Large decorative opening quotation mark
+      React.createElement(Text, {
+        style: {
+          fontFamily: 'Georgia, serif',
+          fontSize: '80px',
+          color: btn,
+          lineHeight: '0.6',
+          margin: '0 0 20px 0',
+          opacity: 0.35,
+        }
+      }, '\u201C'),
       section.quote
         ? React.createElement(Text, {
             style: {
@@ -414,7 +430,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
               lineHeight: '1.6',
               margin: '0 0 16px 0',
             }
-          }, `\u201C${section.quote}\u201D`)
+          }, section.quote)
         : null,
       section.author
         ? React.createElement(Text, {
@@ -704,7 +720,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
             React.createElement(Text, {
               style: {
                 fontFamily: config.fontFamily,
-                fontSize: '36px',
+                fontSize: '48px',
                 fontWeight: '900',
                 color: btn,
                 margin: '0 0 4px 0',
@@ -856,11 +872,14 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
 }
 
 function renderCta(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
-  const bg  = section.backgroundColor;
-  const fg  = section.textColor || config.bodyColor;
-  const btn = section.buttonColor || primaryColor;
+  // CTA defaults to brand primary background for maximum visual impact
+  const ctaBgStyle: React.CSSProperties = section.backgroundGradient
+    ? { background: section.backgroundGradient }
+    : { backgroundColor: section.backgroundColor || primaryColor };
+  const fg  = section.textColor || '#ffffff';
+  const btn = section.buttonColor || '#ffffff';
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, textAlign: 'center' as const, ...(bg ? { backgroundColor: bg } : {}) }
+    style: { padding: config.sectionPadding, textAlign: 'center' as const, ...ctaBgStyle }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -893,12 +912,13 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
           style: {
             padding: config.buttonPadding,
             backgroundColor: btn,
-            color: '#ffffff',
+            color: btn === '#ffffff' ? primaryColor : '#ffffff',
             fontFamily: config.fontFamily,
             fontWeight: '700',
             fontSize: '16px',
             borderRadius: config.buttonBorderRadius,
             textDecoration: 'none',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
           }
         }, section.buttonText)
       : null,
@@ -1611,6 +1631,7 @@ export async function generateEmailHtml(
           borderRadius: config.borderRadius,
           overflow: 'hidden',
           padding: '0 32px',
+          borderTop: `4px solid ${primaryColor}`,
         }
       },
         ...sectionElements

@@ -99,6 +99,8 @@ export interface EmailSection {
   textColor?: string;
   /** Override the CTA button background color for this section */
   buttonColor?: string;
+  /** CSS gradient string for section background — e.g. "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" — takes precedence over backgroundColor */
+  backgroundGradient?: string;
 }
 
 export interface GeneratedEmail {
@@ -377,6 +379,25 @@ VARIETY GUIDELINES (CRITICAL - Make each email unique):
 - Vary section lengths: some short and punchy, others detailed
 - Use different emotional triggers: excitement, relief, curiosity, belonging, achievement
 
+MANDATORY EMAIL COMPOSITION RULES (non-negotiable):
+1. STRUCTURE: Always generate 6–8 sections minimum. Required sequence: header → hero → [2–4 body sections] → cta → footer. Body sections must include a mix of at least one feature-list or stats, one content or image-text, and optionally a testimonial or quote.
+2. VISUAL RHYTHM — set backgroundColor on EVERY section to create light/dark/accent alternation:
+   - Light sections: '#ffffff' or a very light brand tint (e.g. '#f5f9ff', '#f8f8f8')
+   - Dark/accent sections: deep navy like '#0d1117', '#1a1a2e', deep teal, or the brand primary darkened significantly
+   - When a section uses a dark backgroundColor, ALWAYS also set textColor: '#ffffff' and buttonColor: '#ffffff'
+3. HERO must always include: eyebrow + heading + intro (2 sentences) + subheading + buttonText + buttonUrl + backgroundGradient + textColor: '#ffffff'.
+   Use backgroundGradient for a rich dark gradient (e.g. "linear-gradient(135deg, #0d1117 0%, #1a1a2e 100%)") unless the brand has a specific vivid primary color, in which case incorporate it (e.g. "linear-gradient(135deg, #0d1117 0%, {primaryColor}cc 100%)").
+4. CTA section must always set backgroundColor (brand primary or dark variant) and textColor: '#ffffff'.
+5. Use feature-list with layout: "grid" and at least 4 features for product/feature emails.
+6. Use stats section with 3–4 concrete metric numbers for emails about growth, performance, or social proof.
+
+COPY QUALITY RULES (non-negotiable):
+1. Use SPECIFIC numbers, percentages, and timeframes — never vague claims. Write "Reduce churn by 34%" not "reduce churn significantly".
+2. Every hero heading must be outcome-focused and under 8 words.
+3. Every content section intro must open with a compelling hook — a surprising fact, bold claim, or direct benefit statement.
+4. Every CTA button must use a value-verb: "Start Free Trial", "Claim Your Discount", "See Live Demo", "Get Instant Access" — never just "Click Here" or "Learn More" alone.
+5. eyebrow labels must be 2–4 words: "New Release", "Case Study", "Limited Offer", "Just Launched", "Behind The Scenes".
+
 OUTPUT FORMAT:
 Return a JSON object with this exact structure:
 {
@@ -386,10 +407,16 @@ Return a JSON object with this exact structure:
   "sections": [
     {
       "type": "hero",
-      "heading": "Main headline",
-      "subheading": "Supporting text",
-      "imageKeyword": "relevant search keyword for hero image (e.g. 'modern office team')",
-      "imageAlt": "Descriptive alt text for the image"
+      "eyebrow": "New Release",
+      "heading": "Outcome-focused headline under 8 words",
+      "intro": "A compelling 1-2 sentence hook that states the core benefit or insight directly.",
+      "subheading": "Supporting detail that reinforces the heading value prop.",
+      "backgroundGradient": "linear-gradient(135deg, #0d1117 0%, #1a1a2e 100%)",
+      "textColor": "#ffffff",
+      "buttonText": "Start Free Trial",
+      "buttonUrl": "#",
+      "secondaryButtonText": "See how it works",
+      "secondaryButtonUrl": "#"
     },
     {
       "type": "content",
@@ -519,8 +546,10 @@ Return a JSON object with this exact structure:
       "type": "cta",
       "heading": "Call to action heading",
       "text": "Supporting text for CTA",
-      "buttonText": "Action Button",
-      "buttonUrl": "#"
+      "buttonText": "Get Started Free",
+      "buttonUrl": "#",
+      "backgroundColor": "#1a1a2e",
+      "textColor": "#ffffff"
     },
     {
       "type": "footer",
@@ -531,7 +560,7 @@ Return a JSON object with this exact structure:
 
 SECTION TYPES:
 - header: Brand logo bar with optional tagline — ALWAYS the very first section. Optionally supply 'columns' as an array of nav links [{heading:'About', buttonUrl:'/about'}, ...] to add a centered nav row below the logo.
-- hero: Main banner with heading, subheading, optional image. Always add 'buttonText'+'buttonUrl'. Add 'eyebrow' for a small category badge above the heading. Add 'secondaryButtonText'+'secondaryButtonUrl' for a ghost/text secondary action.
+- hero: Main banner. MUST include: eyebrow + heading + intro + subheading + buttonText + buttonUrl. MUST set backgroundGradient (e.g. "linear-gradient(135deg, #0d1117 0%, #1a1a2e 100%)") and textColor: "#ffffff". Add secondaryButtonText+secondaryButtonUrl for a ghost/text secondary action. Always include imageKeyword for a contextual image.
 - content: Text content block. Add 'eyebrow' (e.g. "Behind The Scenes") for a small coloured label above the heading.
 - testimonial: Customer quote with author info. Include 'authorImage' URL to render a side-by-side avatar layout instead of centered card.
 - feature-list: List of product/service features with icons and descriptions. Set 'numbered: true' for step-by-step numbered badges. Set 'layout: "grid"' for a 2-column centered card grid.
@@ -546,7 +575,7 @@ SECTION TYPES:
 - divider: Decorative separator with optional centered label text
 - quote: Pull-quote block — a memorable single sentence or excerpt set in large italic type with a coloured left border. Use 'text' for the quote text (no explicit quotation marks needed), and optionally 'author' + 'authorTitle' for attribution.
 - code-block: Syntax-highlighted code snippet. Use 'text' for the raw code, 'language' for the language (e.g. 'javascript', 'typescript', 'python', 'bash', 'json', 'html', 'sql'), 'heading' for an optional label above the block, and 'subheading' for an optional caption/explanation below.
-- cta: Call-to-action with heading + button. Add 'secondaryButtonText'+'secondaryButtonUrl' for a secondary link below the main button.
+- cta: Call-to-action with heading + button. MUST set backgroundColor (brand primary or dark color) and textColor: "#ffffff". Add secondaryButtonText+secondaryButtonUrl for a secondary link below the main button.
 - footer: Footer with company details, address, and unsubscribe notice
 
 SECTION USAGE GUIDELINES (use as starting templates — always build a full, rich email, never a sparse one):
