@@ -7,6 +7,9 @@ import { createEmailGeneration } from '@/lib/db/queries';
 import { generateEmailHtml } from '@/lib/email/renderer';
 import { batchFetchPexelsImages, styleImageConfig } from '@/lib/images/pexels';
 
+// Vercel max function duration (Pro plan allows up to 300s; target well under that)
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   
@@ -152,12 +155,29 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      let pexelsMap: Record<string, string | null> = {};
-      if (keywordsToFetch.length > 0) {
-        pexelsMap = await batchFetchPexelsImages(keywordsToFetch);
+      // Collect background image keywords
+      const bgKeywordsToFetch: KeywordEntry[] = [];
+      for (const section of emailContent.sections) {
+        if (section.backgroundImageKeyword) {
+          bgKeywordsToFetch.push({
+            keyword: section.backgroundImageKeyword,
+            orientation: 'landscape',
+            preferPanoramic: true,
+          });
+        }
       }
 
-      // Inject resolved URLs back into sections
+      // ── Fetch both sets in parallel ──────────────────────────────────────
+      const [pexelsMap, bgPexelsMap] = await Promise.all([
+        keywordsToFetch.length > 0
+          ? batchFetchPexelsImages(keywordsToFetch)
+          : Promise.resolve({} as Record<string, string | null>),
+        bgKeywordsToFetch.length > 0
+          ? batchFetchPexelsImages(bgKeywordsToFetch)
+          : Promise.resolve({} as Record<string, string | null>),
+      ]);
+
+      // Inject resolved content image URLs back into sections
       emailContent.sections = emailContent.sections.map(section => {
         const updated = { ...section };
 
@@ -178,33 +198,14 @@ export async function POST(request: NextRequest) {
           });
         }
 
+        // Inject background image URL
+        if (updated.backgroundImageKeyword) {
+          const resolved = bgPexelsMap[updated.backgroundImageKeyword];
+          if (resolved) updated.backgroundImageUrl = resolved;
+        }
+
         return updated;
       });
-
-      // ── Pexels background-image resolution ──────────────────────────────
-      // Background images are natural photorealistic photos — no style tint/modifier.
-      // preferPanoramic=true so the selector favours wide atmospheric shots.
-      const bgKeywordsToFetch: KeywordEntry[] = [];
-      for (const section of emailContent.sections) {
-        if (section.backgroundImageKeyword) {
-          bgKeywordsToFetch.push({
-            keyword: section.backgroundImageKeyword,
-            orientation: 'landscape',
-            preferPanoramic: true,
-          });
-        }
-      }
-      if (bgKeywordsToFetch.length > 0) {
-        const bgPexelsMap = await batchFetchPexelsImages(bgKeywordsToFetch);
-        emailContent.sections = emailContent.sections.map(section => {
-          if (section.backgroundImageKeyword) {
-            const resolved = bgPexelsMap[section.backgroundImageKeyword];
-            if (resolved) return { ...section, backgroundImageUrl: resolved };
-          }
-          return section;
-        });
-      }
-      // ─────────────────────────────────────────────────────────────────────
 
       // Generate HTML and React code from JSON
       const { html: htmlCode, reactCode } = await generateEmailHtml(

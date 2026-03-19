@@ -138,8 +138,8 @@ export interface EmailContext {
 /**
  * Generate email content using Gemini 2.0 Flash
  */
-const MODEL_PRIMARY = 'gemini-3.1-pro-preview';
-const MODEL_FALLBACK = 'gemini-2.5-pro';
+const MODEL_PRIMARY  = 'gemini-2.5-pro';
+const MODEL_FALLBACK = 'gemini-2.5-flash';
 
 async function tryGenerateWithModel(modelName: string, fullPrompt: string): Promise<GeneratedEmail> {
   const model = genAI.getGenerativeModel({
@@ -204,8 +204,8 @@ Remember to:
 
   const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
 
-  // Try primary model with up to 3 attempts (exponential backoff on 503/429/500)
-  for (let attempt = 0; attempt < 3; attempt++) {
+  // Try primary model with up to 2 attempts (exponential backoff on 503/429/500)
+  for (let attempt = 0; attempt < 2; attempt++) {
     try {
       if (attempt > 0) {
         const delay = Math.pow(2, attempt) * 1000; // 2s, 4s
