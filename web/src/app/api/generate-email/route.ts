@@ -52,10 +52,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's brand profile (use specified one, or fall back to default)
+    // Get user's brand profile:
+    // - brandProfileId = a UUID  → use that specific profile
+    // - brandProfileId = null (explicitly sent) → user chose "No brand", generate generic
+    // - brandProfileId = undefined (key absent) → use default brand profile
     const brandProfile = brandProfileId
       ? await getBrandProfile(brandProfileId, user.id)
-      : await getDefaultBrandProfile(user.id);
+      : brandProfileId === undefined
+        ? await getDefaultBrandProfile(user.id)
+        : null;
 
     // Create initial generation record with 'generating' status
     const initialGeneration = await createEmailGeneration({

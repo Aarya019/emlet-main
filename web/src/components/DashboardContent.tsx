@@ -87,6 +87,7 @@ export default function DashboardContent() {
 
   // Brand selector for generation
   const [generateBrandId, setGenerateBrandId] = useState<string | null>(null);
+  const [brandIdUserSet, setBrandIdUserSet] = useState(false);
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
 
   useEffect(() => {
@@ -158,8 +159,8 @@ export default function DashboardContent() {
         const data = await res.json();
         const profiles: BrandProfile[] = data.profiles || [];
         setBrandProfiles(profiles);
-        // Auto-select default brand (or first one) for generation
-        if (profiles.length > 0 && !generateBrandId) {
+        // Auto-select default brand (or first one) only if user hasn't made an explicit choice yet
+        if (profiles.length > 0 && !brandIdUserSet) {
           const defaultProfile = profiles.find(p => p.is_default) || profiles[0];
           setGenerateBrandId(defaultProfile.id);
         }
@@ -811,7 +812,7 @@ export default function DashboardContent() {
                                   <>
                                     <button
                                       type="button"
-                                      onClick={() => { setGenerateBrandId(null); setBrandDropdownOpen(false); }}
+                                      onClick={() => { setGenerateBrandId(null); setBrandIdUserSet(true); setBrandDropdownOpen(false); }}
                                       className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 ${
                                         generateBrandId === null ? 'bg-[#00ffff]/10 text-[#00ffff]' : 'text-white/50'
                                       }`}
@@ -823,7 +824,7 @@ export default function DashboardContent() {
                                       <button
                                         key={brand.id}
                                         type="button"
-                                        onClick={() => { setGenerateBrandId(brand.id); setBrandDropdownOpen(false); }}
+                                        onClick={() => { setGenerateBrandId(brand.id); setBrandIdUserSet(true); setBrandDropdownOpen(false); }}
                                         className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${
                                           generateBrandId === brand.id ? 'bg-[#00ffff]/10 text-[#00ffff]' : 'text-white'
                                         }`}
