@@ -43,6 +43,8 @@ export interface EmailSection {
   // For feature-list sections
   features?: Array<{
     icon?: string;
+    /** Phosphor icon name for email clients — e.g. "rocket", "check-circle", "lightning", "chart-bar" */
+    iconName?: string;
     title: string;
     description: string;
   }>;
@@ -68,6 +70,8 @@ export interface EmailSection {
     value: string;
     label: string;
     icon?: string;
+    /** Phosphor icon name for email clients — e.g. "chart-bar", "users", "star", "trend-up" */
+    iconName?: string;
   }>;
   // For header sections
   logoUrl?: string;
@@ -95,6 +99,8 @@ export interface EmailSection {
     heading?: string;
     text?: string;
     icon?: string;
+    /** Phosphor icon name for email clients — e.g. "rocket", "shield-check", "lightning", "globe" */
+    iconName?: string;
     imageUrl?: string;
     buttonText?: string;
     buttonUrl?: string;
@@ -430,6 +436,11 @@ MANDATORY EMAIL COMPOSITION RULES (non-negotiable):
 6. Use stats section with 3–4 concrete metric numbers for emails about growth, performance, or social proof.
 7. BACKGROUND IMAGES: Hero sections MUST set backgroundImageKeyword — a cinematic 5–8 word wide-angle descriptor (e.g. "aerial city lights highway night exposure", "misty mountain valley golden sunrise fog", "minimal concrete office architecture overhead"). CTA sections MAY include backgroundImageKeyword for visual/lifestyle brands. When set, ALWAYS pair with textColor: '#ffffff'. The renderer applies a dark gradient overlay automatically. Do NOT also set backgroundGradient.
    MINIMAL OVERLAY TEXT RULE: When a section has a background image, keep ALL overlaid content to an absolute minimum — the photo must breathe. Limit to: eyebrow (optional, 2–3 words max) + heading (5 words max) + one single-sentence subheading OR intro (not both) + one CTA button. Do NOT include secondaryButtonText on photo backgrounds. No long paragraphs, no lists, no extra fields — the image carries the visual weight, text is just a caption.
+8. ICONS: For every feature in feature-list, every stat in stats, and every column in columns, set BOTH fields:
+   - "icon": an emoji fallback (renders in basic clients)
+   - "iconName": a Phosphor Icons name (renders as a crisp SVG in modern clients)
+   Valid Phosphor icon names are lowercase kebab-case, e.g.: rocket, check-circle, lightning, chart-bar, users, shield-check, clock, star, arrow-right, code, globe, lock, chat-circle, gear, trophy, chart-line-up, currency-dollar, envelope, bell, image-square, device-mobile, hand-heart, leaf, magnifying-glass, paint-brush, person, planet, plug, question, sparkle, tag, target, thumbs-up, timer, translate, vault, warning, wifi, wrench
+   Full icon set: https://phosphoricons.com (use the base name without weight suffix, lowercase kebab-case)
 
 IMAGE KEYWORD RULES (non-negotiable):
 1. All imageKeyword and gallery image keyword values MUST be 5–8 specific, descriptive words: subject + setting + mood/lighting. NEVER use single words or vague category names.
@@ -487,6 +498,7 @@ Return a JSON object with this exact structure:
       "features": [
         {
           "icon": "✓",
+          "iconName": "check-circle",
           "title": "Feature name",
           "description": "Feature description"
         }
@@ -524,7 +536,8 @@ Return a JSON object with this exact structure:
         {
           "value": "10K+",
           "label": "Happy Customers",
-          "icon": "👥"
+          "icon": "👥",
+          "iconName": "users"
         }
       ]
     },
@@ -571,9 +584,9 @@ Return a JSON object with this exact structure:
       "type": "columns",
       "heading": "Why choose us",
       "columns": [
-        { "icon": "\uD83D\uDE80", "heading": "Fast", "text": "Quick and reliable service" },
-        { "icon": "\uD83D\uDD12", "heading": "Secure", "text": "Your data is always protected" },
-        { "icon": "\uD83D\uDCA1", "heading": "Smart", "text": "Intelligent solutions for your needs" }
+        { "icon": "🚀", "iconName": "rocket", "heading": "Fast", "text": "Quick and reliable service" },
+        { "icon": "🔒", "iconName": "lock", "heading": "Secure", "text": "Your data is always protected" },
+        { "icon": "💡", "iconName": "lightbulb", "heading": "Smart", "text": "Intelligent solutions for your needs" }
       ]
     },
     {

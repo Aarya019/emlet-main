@@ -183,6 +183,36 @@ export const styleConfigs: Record<string, StyleConfig> = {
 };
 
 // ─────────────────────────────────────────────
+// Icon helper
+// ─────────────────────────────────────────────
+
+/**
+ * Renders a Phosphor icon via the Iconify API as an <img> tag (works in all modern email clients).
+ * Falls back to an emoji/unicode Text element when no iconName is provided.
+ */
+function renderPhosphorIcon(
+  iconName: string | undefined,
+  emojiFallback: string | undefined,
+  color: string,
+  size: number,
+): React.ReactElement {
+  if (iconName) {
+    const encodedColor = encodeURIComponent(color);
+    const url = `https://api.iconify.design/ph/${iconName}.svg?color=${encodedColor}&width=${size}&height=${size}`;
+    return React.createElement(Img, {
+      src: url,
+      alt: iconName,
+      width: String(size),
+      height: String(size),
+      style: { width: `${size}px`, height: `${size}px`, display: 'block', margin: '0 auto' },
+    });
+  }
+  return React.createElement(Text, {
+    style: { fontSize: `${Math.round(size * 0.85)}px`, margin: '0', lineHeight: '1', textAlign: 'center' as const },
+  }, emojiFallback || '\u2726');
+}
+
+// ─────────────────────────────────────────────
 // Section renderers
 // ─────────────────────────────────────────────
 
@@ -605,9 +635,9 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
                     display: 'inline-block',
                   }
                 }, String(i + 1))
-              : React.createElement(Text, {
-                  style: { fontSize: '20px', margin: '0', color: btn }
-                }, feature.icon || '\u2713')
+              : React.createElement('div', { style: { margin: '0' } },
+                  renderPhosphorIcon(feature.iconName, feature.icon, btn, 24)
+                )
           ),
           React.createElement(Column, { style: { verticalAlign: 'top' } },
             React.createElement(Text, {
@@ -772,8 +802,10 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
               padding: '20px 12px',
             }
           },
-            stat.icon
-              ? React.createElement(Text, { style: { fontSize: '28px', margin: '0 0 8px 0' } }, stat.icon)
+            (stat.icon || stat.iconName)
+              ? React.createElement('div', { style: { margin: '0 0 8px 0' } },
+                  renderPhosphorIcon(stat.iconName, stat.icon, btn, 28)
+                )
               : null,
             React.createElement(Text, {
               style: {
@@ -1417,10 +1449,10 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
           React.createElement('div', {
             style: { ...config.cardStyle, textAlign: 'center' as const }
           },
-            col.icon
-              ? React.createElement(Text, {
-                  style: { fontSize: '36px', margin: '0 0 12px 0', lineHeight: '1' }
-                }, col.icon)
+            (col.icon || col.iconName)
+              ? React.createElement('div', { style: { margin: '0 0 12px 0' } },
+                  renderPhosphorIcon(col.iconName, col.icon, btn, 36)
+                )
               : null,
             col.imageUrl
               ? React.createElement(Img, {
