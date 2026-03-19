@@ -213,9 +213,27 @@ function renderPhosphorIcon(
 }
 
 // ─────────────────────────────────────────────
-// Section renderers
+// Contrast helper — picks readable text color for a given card bg
 // ─────────────────────────────────────────────
 
+/**
+ * Returns a text color (dark or light) that contrasts well against `bgHex`.
+ * Used to ensure card text is readable regardless of the section's textColor override.
+ */
+function cardTextColor(bgHex: string | undefined): string {
+  if (!bgHex) return '#1a1a1a';
+  const hex = bgHex.replace(/^#/, '');
+  if (hex.length !== 6) return '#1a1a1a';
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.45 ? '#1a1a1a' : '#f0f0f0';
+}
+
+// ─────────────────────────────────────────────
+// Section renderers
+// ─────────────────────────────────────────────
 function renderHero(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
   const hasBgImage = !!section.backgroundImageUrl;
   // When a background image is present, always force white text for readability
@@ -548,6 +566,9 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
 function renderFeatureList(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
+  // Card text must contrast the card's own background, not the section override
+  const cFg = cardTextColor(config.cardStyle.backgroundColor as string | undefined);
+  const cFgMuted = cFg + '99';
   const features = section.features || [];
   const isGrid = section.layout === 'grid';
   const isNumbered = !!section.numbered;
@@ -582,15 +603,15 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
               style: { verticalAlign: 'top', padding: '0 8px' }
             },
               React.createElement('div', { style: { ...config.cardStyle, textAlign: 'center' as const } },
-                React.createElement(Text, {
-                  style: { fontSize: '32px', margin: '0 0 10px 0', lineHeight: '1' }
-                }, feature.icon || '\u2726'),
+                React.createElement('div', { style: { margin: '0 0 10px 0' } },
+                  renderPhosphorIcon(feature.iconName, feature.icon, btn, 32)
+                ),
                 React.createElement(Text, {
                   style: {
                     fontFamily: config.fontFamily,
                     fontSize: '15px',
                     fontWeight: '700',
-                    color: fg,
+                    color: cFg,
                     margin: '0 0 6px 0',
                   }
                 }, feature.title),
@@ -598,7 +619,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
                   style: {
                     fontFamily: config.fontFamily,
                     fontSize: '13px',
-                    color: fg + '99',
+                    color: cFgMuted,
                     lineHeight: '1.5',
                     margin: '0',
                   }
@@ -770,6 +791,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
 function renderStats(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
+  const cFg = cardTextColor(config.cardStyle.backgroundColor as string | undefined);
   const stats = section.stats || [];
   return React.createElement(Section, {
     style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
@@ -821,7 +843,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
               style: {
                 fontFamily: config.fontFamily,
                 fontSize: '13px',
-                color: fg + '88',
+                color: cFg + '88',
                 margin: '0',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
@@ -1421,6 +1443,7 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
 function renderColumns(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
+  const cFg = cardTextColor(config.cardStyle.backgroundColor as string | undefined);
   const colItems = section.columns || [];
   return React.createElement(Section, {
     style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
@@ -1469,7 +1492,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
                     fontFamily: config.fontFamily,
                     fontSize: '15px',
                     fontWeight: '700',
-                    color: fg,
+                    color: cFg,
                     margin: '0 0 8px 0',
                   }
                 }, col.heading)
@@ -1479,7 +1502,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
                   style: {
                     fontFamily: config.fontFamily,
                     fontSize: '13px',
-                    color: fg + '99',
+                    color: cFg + '99',
                     lineHeight: '1.5',
                     margin: '0 0 12px 0',
                   }
