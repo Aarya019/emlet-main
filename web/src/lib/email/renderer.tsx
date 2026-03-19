@@ -35,6 +35,7 @@ interface StyleConfig {
   headingWeight: string;
   headingLetterSpacing: string;
   borderRadius: string;
+  sectionBorderRadius: string;
   sectionPadding: string;
   buttonBorderRadius: string;
   buttonPadding: string;
@@ -55,6 +56,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '500',
     headingLetterSpacing: '-0.02em',
     borderRadius: '4px',
+    sectionBorderRadius: '12px',
     sectionPadding: '52px 40px',
     buttonBorderRadius: '4px',
     buttonPadding: '14px 44px',
@@ -62,7 +64,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     heroAlign: 'center',
     hrStyle: { borderColor: '#eeeeee', borderWidth: '1px', margin: '24px 0' },
     sectionBorderStyle: {},
-    cardStyle: { backgroundColor: '#ffffff', borderRadius: '4px', padding: '24px', border: '1px solid #f0f0f0' },
+    cardStyle: { backgroundColor: '#ffffff', borderRadius: '10px', padding: '24px', border: '1px solid #f0f0f0' },
   },
   editorial: {
     fontFamily: "'Lora', Georgia, 'Times New Roman', serif",
@@ -73,6 +75,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '700',
     headingLetterSpacing: '0',
     borderRadius: '0',
+    sectionBorderRadius: '0',
     sectionPadding: '48px 40px',
     buttonBorderRadius: '0',
     buttonPadding: '14px 44px',
@@ -91,6 +94,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '700',
     headingLetterSpacing: '0.02em',
     borderRadius: '12px',
+    sectionBorderRadius: '20px',
     sectionPadding: '48px 40px',
     buttonBorderRadius: '20px',
     buttonPadding: '14px 44px',
@@ -98,7 +102,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     heroAlign: 'center',
     hrStyle: { borderColor: '#c8a96e', borderWidth: '2px', borderStyle: 'dashed', margin: '24px 0' },
     sectionBorderStyle: {},
-    cardStyle: { backgroundColor: '#fffbf0', borderRadius: '12px', padding: '24px', border: '2px solid #c8a96e' },
+    cardStyle: { backgroundColor: '#fffbf0', borderRadius: '16px', padding: '24px', border: '2px solid #c8a96e' },
   },
   brutalist: {
     fontFamily: "'Space Grotesk', 'Arial Black', Helvetica, sans-serif",
@@ -109,6 +113,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '900',
     headingLetterSpacing: '-0.03em',
     borderRadius: '0',
+    sectionBorderRadius: '0',
     sectionPadding: '52px 40px',
     buttonBorderRadius: '0',
     buttonPadding: '16px 52px',
@@ -127,6 +132,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '700',
     headingLetterSpacing: '0.05em',
     borderRadius: '2px',
+    sectionBorderRadius: '8px',
     sectionPadding: '48px 40px',
     buttonBorderRadius: '2px',
     buttonPadding: '14px 44px',
@@ -134,7 +140,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     heroAlign: 'center',
     hrStyle: { borderColor: '#00ffff', borderWidth: '1px', margin: '24px 0' },
     sectionBorderStyle: { borderLeft: '3px solid #00ffff', paddingLeft: '16px' },
-    cardStyle: { backgroundColor: '#0f0f1a', padding: '20px', border: '1px solid #00ffff', borderRadius: '2px' },
+    cardStyle: { backgroundColor: '#0f0f1a', padding: '20px', border: '1px solid #00ffff', borderRadius: '6px' },
   },
   handwritten: {
     fontFamily: "'Nunito', Georgia, serif",
@@ -145,6 +151,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '600',
     headingLetterSpacing: '0.01em',
     borderRadius: '8px',
+    sectionBorderRadius: '16px',
     sectionPadding: '44px 40px',
     buttonBorderRadius: '8px',
     buttonPadding: '14px 44px',
@@ -152,7 +159,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     heroAlign: 'center',
     hrStyle: { borderColor: '#d4c5a9', borderWidth: '1px', borderStyle: 'dashed', margin: '20px 0' },
     sectionBorderStyle: {},
-    cardStyle: { backgroundColor: '#fffef9', padding: '24px', borderRadius: '8px', border: '1px dashed #d4c5a9' },
+    cardStyle: { backgroundColor: '#fffef9', padding: '24px', borderRadius: '14px', border: '1px dashed #d4c5a9' },
   },
   bauhaus: {
     fontFamily: "'Work Sans', Arial, Helvetica, sans-serif",
@@ -163,6 +170,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '900',
     headingLetterSpacing: '-0.02em',
     borderRadius: '0',
+    sectionBorderRadius: '0',
     sectionPadding: '52px 40px',
     buttonBorderRadius: '0',
     buttonPadding: '16px 52px',
@@ -220,7 +228,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
   const btnShadow    = hasBgImage ? '0 4px 24px rgba(0,0,0,0.35)' : `0 4px 20px ${btn}55`;
   const linkColor    = hasBgImage ? 'rgba(255,255,255,0.88)' : btn;
 
-  return React.createElement(Section, { style: sectionBgStyle },
+  return React.createElement(Section, { style: { ...sectionBgStyle, borderRadius: config.sectionBorderRadius, ...(hasBgImage ? { overflow: 'hidden' as const } : {}) } },
     React.createElement('div', { style: innerStyle },
       // Show inline image only when there is no background photo
       !hasBgImage && section.imageUrl
@@ -333,7 +341,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
   // Split text on double-newline to create multiple paragraphs
   const paragraphs = (section.text || '').split(/\n\n+/).filter(Boolean);
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, ...config.sectionBorderStyle, ...(bg ? { backgroundColor: bg } : {}) }
+    style: { padding: config.sectionPadding, ...config.sectionBorderStyle, ...(bg ? { backgroundColor: bg, borderRadius: config.sectionBorderRadius } : {}) }
   },
     // Optional eyebrow label — small uppercase coloured category tag above heading
     section.eyebrow
@@ -396,7 +404,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
   const btn = section.buttonColor || primaryColor;
   // Side-by-side layout: circular avatar on the left, quote + author on the right
   if (section.authorImage) {
-    return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) } },
+    return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
       React.createElement('div', { style: { ...config.cardStyle } },
         React.createElement(Row, null,
           React.createElement(Column, { style: { width: '76px', verticalAlign: 'top' } },
@@ -450,7 +458,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
 
   // Centered card layout (no avatar)
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     React.createElement('div', {
       style: {
@@ -532,7 +540,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
   if (isGrid) {
     const pairs: typeof features[] = [];
     for (let i = 0; i < features.length; i += 2) pairs.push(features.slice(i, i + 2));
-    return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) } },
+    return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
       headingEl,
       ...pairs.map((pair, rowIdx) =>
         React.createElement(Section, { key: rowIdx, style: { marginBottom: '16px' } },
@@ -575,7 +583,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
   }
 
   // Default vertical list (numbered badges or icon bullets)
-  return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) } },
+  return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
     headingEl,
     ...features.map((feature, i) =>
       React.createElement(Section, { key: i, style: { marginBottom: '16px', display: 'table', width: '100%' } },
@@ -632,7 +640,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
   const btn = section.buttonColor || primaryColor;
   const plans = section.plans || [];
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -734,7 +742,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
   const btn = section.buttonColor || primaryColor;
   const stats = section.stats || [];
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -803,7 +811,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
   for (let i = 0; i < images.length; i += perRow) rows.push(images.slice(i, i + perRow));
 
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -873,7 +881,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
       style: {
         backgroundColor: (section.backgroundColor) || (accent + '15'),
         border: `2px solid ${accent}`,
-        borderRadius: config.borderRadius,
+        borderRadius: config.sectionBorderRadius,
         padding: '24px',
         textAlign: 'center' as const,
       }
@@ -952,7 +960,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
         textAlign: 'center' as const,
       };
 
-  return React.createElement(Section, { style: sectionBgStyle },
+  return React.createElement(Section, { style: { ...sectionBgStyle, borderRadius: config.sectionBorderRadius, ...(hasBgImage ? { overflow: 'hidden' as const } : {}) } },
     React.createElement('div', { style: innerStyle },
       section.heading
         ? React.createElement(Heading, {
@@ -1018,7 +1026,7 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || secondaryColor;
   return React.createElement(Section, {
-    style: { padding: '24px 0 20px 0', textAlign: 'center' as const, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: '24px 0 20px 0', textAlign: 'center' as const, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     React.createElement(Hr, { style: config.hrStyle }),
     section.logoUrl
@@ -1077,7 +1085,7 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
   const btn = section.buttonColor || secondaryColor;  // tagline + nav links
   const borderVal = `${config.hrStyle.borderWidth ?? '1px'} ${config.hrStyle.borderStyle ?? 'solid'} ${config.hrStyle.borderColor ?? '#e0e0e0'}`;
   return React.createElement(Section, {
-    style: { padding: '20px 0', borderBottom: borderVal, marginBottom: '8px', ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: '20px 0', borderBottom: borderVal, marginBottom: '8px', ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     React.createElement(Row, null,
       React.createElement(Column, { style: { verticalAlign: 'middle' } },
@@ -1226,7 +1234,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
   );
 
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     hasImage
       ? React.createElement(Row, null,
@@ -1245,7 +1253,7 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
     React.createElement('div', {
       style: {
         border: `2px dashed ${btn}`,
-        borderRadius: config.borderRadius,
+        borderRadius: config.sectionBorderRadius,
         padding: '32px 24px',
         textAlign: 'center' as const,
         backgroundColor: btn + '0d',
@@ -1329,7 +1337,7 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
   const btn = section.buttonColor || primaryColor;
   const links = section.socialLinks || [];
   return React.createElement(Section, {
-    style: { padding: '16px 0', textAlign: 'center' as const, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: '16px 0', textAlign: 'center' as const, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     section.heading
       ? React.createElement(Text, {
@@ -1383,7 +1391,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
   const btn = section.buttonColor || primaryColor;
   const colItems = section.columns || [];
   return React.createElement(Section, {
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     section.heading
       ? React.createElement(Heading, {

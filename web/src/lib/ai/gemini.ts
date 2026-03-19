@@ -411,6 +411,7 @@ MANDATORY EMAIL COMPOSITION RULES (non-negotiable):
 5. Use feature-list with layout: "grid" and at least 4 features for product/feature emails.
 6. Use stats section with 3–4 concrete metric numbers for emails about growth, performance, or social proof.
 7. BACKGROUND IMAGES: Hero sections MUST set backgroundImageKeyword — a cinematic 5–8 word wide-angle descriptor (e.g. "aerial city lights highway night exposure", "misty mountain valley golden sunrise fog", "minimal concrete office architecture overhead"). CTA sections MAY include backgroundImageKeyword for visual/lifestyle brands. When set, ALWAYS pair with textColor: '#ffffff'. The renderer applies a dark gradient overlay automatically. Do NOT also set backgroundGradient.
+   MINIMAL OVERLAY TEXT RULE: When a section has a background image, keep ALL overlaid content to an absolute minimum — the photo must breathe. Limit to: eyebrow (optional, 2–3 words max) + heading (5 words max) + one single-sentence subheading OR intro (not both) + one CTA button. Do NOT include secondaryButtonText on photo backgrounds. No long paragraphs, no lists, no extra fields — the image carries the visual weight, text is just a caption.
 
 IMAGE KEYWORD RULES (non-negotiable):
 1. All imageKeyword and gallery image keyword values MUST be 5–8 specific, descriptive words: subject + setting + mood/lighting. NEVER use single words or vague category names.
