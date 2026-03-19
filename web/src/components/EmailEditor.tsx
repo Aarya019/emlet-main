@@ -727,6 +727,34 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 </div>
                               )}
 
+                              {/* ── Background image (hero & cta sections) ── */}
+                              {['hero', 'cta'].includes(section.type) && (
+                                <div className="pt-2 border-t border-white/10">
+                                  <ImageUploadInput
+                                    label="Background Image"
+                                    value={section.backgroundImageUrl || ''}
+                                    onChange={url => updateSection(index, { backgroundImageUrl: url || undefined })}
+                                    onRemove={section.backgroundImageUrl ? () => updateSection(index, { backgroundImageUrl: undefined }) : undefined}
+                                  />
+                                  {section.backgroundImageUrl && (
+                                    <div className="mt-2">
+                                      <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Background Keyword <span className="normal-case text-white/20 font-normal">(auto-fetch)</span></label>
+                                      <input type="text" value={section.backgroundImageKeyword || ''} onChange={e => updateSection(index, { backgroundImageKeyword: e.target.value || undefined })}
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="e.g. mountain sunrise horizon…" />
+                                      <p className="text-[11px] text-white/25 mt-1">Regenerate to fetch a new photo, or paste a URL above.</p>
+                                    </div>
+                                  )}
+                                  {!section.backgroundImageUrl && (
+                                    <div className="mt-2">
+                                      <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Background Keyword <span className="normal-case text-white/20 font-normal">(auto-fetch)</span></label>
+                                      <input type="text" value={section.backgroundImageKeyword || ''} onChange={e => updateSection(index, { backgroundImageKeyword: e.target.value || undefined })}
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="e.g. city lights panorama…" />
+                                      <p className="text-[11px] text-white/25 mt-1">A Pexels photo will be used as the full-width background with a dark gradient overlay for readability.</p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
                               {/* ── image-text: position toggle ── */}
                               {section.type === 'image-text' && (
                                 <div>

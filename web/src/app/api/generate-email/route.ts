@@ -180,6 +180,28 @@ export async function POST(request: NextRequest) {
 
         return updated;
       });
+
+      // ── Pexels background-image resolution ──────────────────────────────
+      // Background images are natural photorealistic photos — no style tint/modifier.
+      const bgKeywordsToFetch: KeywordEntry[] = [];
+      for (const section of emailContent.sections) {
+        if (section.backgroundImageKeyword) {
+          bgKeywordsToFetch.push({
+            keyword: section.backgroundImageKeyword,
+            orientation: 'landscape',
+          });
+        }
+      }
+      if (bgKeywordsToFetch.length > 0) {
+        const bgPexelsMap = await batchFetchPexelsImages(bgKeywordsToFetch);
+        emailContent.sections = emailContent.sections.map(section => {
+          if (section.backgroundImageKeyword) {
+            const resolved = bgPexelsMap[section.backgroundImageKeyword];
+            if (resolved) return { ...section, backgroundImageUrl: resolved };
+          }
+          return section;
+        });
+      }
       // ─────────────────────────────────────────────────────────────────────
 
       // Generate HTML and React code from JSON

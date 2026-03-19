@@ -101,6 +101,12 @@ export interface EmailSection {
   buttonColor?: string;
   /** CSS gradient string for section background — e.g. "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" — takes precedence over backgroundColor */
   backgroundGradient?: string;
+  /** Short 2–5 word vivid landscape descriptor used to fetch a full-width Pexels background photo for this section (e.g. "mountain sunrise horizon", "city lights at night", "tech office minimal"). MUST be set on hero sections. When set, always pair with textColor: '#ffffff'. */
+  backgroundImageKeyword?: string;
+  /** Resolved Pexels URL for the section background image — populated by the server, not by the AI. */
+  backgroundImageUrl?: string;
+  /** Optional CSS color/rgba overlay rendered on top of the background image (e.g. "rgba(0,0,0,0.55)"). When omitted, a default cinematic dark gradient is applied automatically. */
+  backgroundImageOverlay?: string;
 }
 
 export interface GeneratedEmail {
@@ -390,6 +396,7 @@ MANDATORY EMAIL COMPOSITION RULES (non-negotiable):
 4. CTA section must always set backgroundColor (brand primary or dark variant) and textColor: '#ffffff'.
 5. Use feature-list with layout: "grid" and at least 4 features for product/feature emails.
 6. Use stats section with 3–4 concrete metric numbers for emails about growth, performance, or social proof.
+7. BACKGROUND IMAGES: Hero sections MUST set backgroundImageKeyword — a vivid, wide 2–5 word landscape descriptor (e.g. "mountain sunrise horizon", "city lights panorama", "tech office minimal", "dark abstract texture"). CTA sections MAY include backgroundImageKeyword when the brand is visual or lifestyle-oriented. When backgroundImageKeyword is set, ALWAYS also set textColor: '#ffffff'. The renderer automatically applies a dark gradient overlay for text readability. Do NOT set backgroundGradient when you set backgroundImageKeyword.
 
 COPY QUALITY RULES (non-negotiable):
 1. Use SPECIFIC numbers, percentages, and timeframes — never vague claims. Write "Reduce churn by 34%" not "reduce churn significantly".
@@ -411,6 +418,7 @@ Return a JSON object with this exact structure:
       "heading": "Outcome-focused headline under 8 words",
       "intro": "A compelling 1-2 sentence hook that states the core benefit or insight directly.",
       "subheading": "Supporting detail that reinforces the heading value prop.",
+      "backgroundImageKeyword": "city lights panorama",
       "backgroundGradient": "linear-gradient(135deg, #0d1117 0%, #1a1a2e 100%)",
       "textColor": "#ffffff",
       "buttonText": "Start Free Trial",

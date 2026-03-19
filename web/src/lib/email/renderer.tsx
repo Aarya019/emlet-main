@@ -55,7 +55,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '500',
     headingLetterSpacing: '-0.02em',
     borderRadius: '4px',
-    sectionPadding: '52px 0',
+    sectionPadding: '52px 40px',
     buttonBorderRadius: '4px',
     buttonPadding: '14px 44px',
     containerBorder: '1px solid #e8e8e8',
@@ -73,7 +73,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '700',
     headingLetterSpacing: '0',
     borderRadius: '0',
-    sectionPadding: '48px 0',
+    sectionPadding: '48px 40px',
     buttonBorderRadius: '0',
     buttonPadding: '14px 44px',
     containerBorder: '1px solid #ddd',
@@ -91,7 +91,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '700',
     headingLetterSpacing: '0.02em',
     borderRadius: '12px',
-    sectionPadding: '48px 0',
+    sectionPadding: '48px 40px',
     buttonBorderRadius: '20px',
     buttonPadding: '14px 44px',
     containerBorder: '2px solid #c8a96e',
@@ -109,7 +109,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '900',
     headingLetterSpacing: '-0.03em',
     borderRadius: '0',
-    sectionPadding: '52px 0',
+    sectionPadding: '52px 40px',
     buttonBorderRadius: '0',
     buttonPadding: '16px 52px',
     containerBorder: '4px solid #000000',
@@ -127,7 +127,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '700',
     headingLetterSpacing: '0.05em',
     borderRadius: '2px',
-    sectionPadding: '48px 0',
+    sectionPadding: '48px 40px',
     buttonBorderRadius: '2px',
     buttonPadding: '14px 44px',
     containerBorder: '1px solid #00ffff',
@@ -145,7 +145,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '600',
     headingLetterSpacing: '0.01em',
     borderRadius: '8px',
-    sectionPadding: '44px 0',
+    sectionPadding: '44px 40px',
     buttonBorderRadius: '8px',
     buttonPadding: '14px 44px',
     containerBorder: '2px solid #d4c5a9',
@@ -163,7 +163,7 @@ export const styleConfigs: Record<string, StyleConfig> = {
     headingWeight: '900',
     headingLetterSpacing: '-0.02em',
     borderRadius: '0',
-    sectionPadding: '52px 0',
+    sectionPadding: '52px 40px',
     buttonBorderRadius: '0',
     buttonPadding: '16px 52px',
     containerBorder: '3px solid #000000',
@@ -179,100 +179,150 @@ export const styleConfigs: Record<string, StyleConfig> = {
 // ─────────────────────────────────────────────
 
 function renderHero(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
-  const fg  = section.textColor || config.bodyColor;
+  const hasBgImage = !!section.backgroundImageUrl;
+  // When a background image is present, always force white text for readability
+  const fg  = section.textColor || (hasBgImage ? '#ffffff' : config.bodyColor);
   const btn = section.buttonColor || primaryColor;
-  const heroBgStyle: React.CSSProperties = section.backgroundGradient
+
+  // Section-level background: photo → gradient → solid color → faint brand tint
+  const sectionBgStyle: React.CSSProperties = hasBgImage
+    ? {
+        backgroundImage: `url(${section.backgroundImageUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        // Solid-color fallback for Outlook desktop which ignores CSS background-image
+        backgroundColor: section.backgroundColor || primaryColor,
+      }
+    : section.backgroundGradient
     ? { background: section.backgroundGradient }
     : section.backgroundColor
     ? { backgroundColor: section.backgroundColor }
     : { background: `linear-gradient(150deg, ${primaryColor}22 0%, ${primaryColor}08 100%)` };
-  return React.createElement(Section, {
-    style: { padding: '72px 0', textAlign: config.heroAlign, ...heroBgStyle }
-  },
-    section.imageUrl
-      ? React.createElement(Img, {
-          src: section.imageUrl,
-          alt: section.imageAlt || '',
-          width: '600',
-          style: { width: '100%', maxWidth: '600px', marginBottom: '32px', borderRadius: config.borderRadius, display: 'block' }
-        })
-      : null,
-    // Optional eyebrow label above the hero heading
-    section.eyebrow
-      ? React.createElement(Text, {
-          style: {
-            fontFamily: config.fontFamily,
-            fontSize: '11px',
-            fontWeight: '700',
-            textTransform: 'uppercase' as const,
-            letterSpacing: '0.12em',
-            color: btn,
-            margin: '0 0 10px 0',
-          }
-        }, section.eyebrow)
-      : null,
-    section.heading
-      ? React.createElement(Heading, {
-          as: 'h1',
-          style: {
-            fontFamily: config.headingFontFamily,
-            fontSize: '36px',
-            fontWeight: config.headingWeight,
-            letterSpacing: config.headingLetterSpacing,
-            color: fg,
-            margin: '0 0 16px 0',
-            lineHeight: '1.2',
-          }
-        }, section.heading)
-      : null,
-    section.subheading
-      ? React.createElement(Text, {
-          style: {
-            fontFamily: config.fontFamily,
-            fontSize: '18px',
-            color: fg + '99',
-            margin: '0 0 24px 0',
-            lineHeight: '1.6',
-          }
-        }, section.subheading)
-      : null,
-    // Hero CTA button
-    section.buttonText
-      ? React.createElement(Button, {
-          href: section.buttonUrl || '#',
-          className: 'em-btn',
-          style: {
-            display: 'inline-block',
-            marginTop: '8px',
-            padding: config.buttonPadding,
-            backgroundColor: btn,
-            color: '#ffffff',
-            fontFamily: config.fontFamily,
-            fontWeight: '700',
-            fontSize: '16px',
-            borderRadius: config.buttonBorderRadius,
-            textDecoration: 'none',
-            boxShadow: `0 4px 20px ${btn}55`,
-          }
-        }, section.buttonText)
-      : null,
-    // Optional secondary ghost/text action below the primary button
-    section.secondaryButtonText
-      ? React.createElement(Text, {
-          style: { margin: '14px 0 0 0', textAlign: config.heroAlign }
-        },
-          React.createElement(Link, {
-            href: section.secondaryButtonUrl || '#',
+
+  // Inner wrapper: overlay gradient + padding (replaces Section padding)
+  const innerStyle: React.CSSProperties = hasBgImage
+    ? {
+        background: section.backgroundImageOverlay ||
+          'linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.62) 100%)',
+        padding: '80px 48px',
+        textAlign: config.heroAlign,
+      }
+    : {
+        padding: '72px 40px',
+        textAlign: config.heroAlign,
+      };
+
+  const eyebrowColor = hasBgImage ? 'rgba(255,255,255,0.75)' : btn;
+  const subColor     = hasBgImage ? 'rgba(255,255,255,0.82)' : fg + '99';
+  const btnBg        = hasBgImage ? '#ffffff' : btn;
+  const btnFg        = hasBgImage ? primaryColor : '#ffffff';
+  const btnShadow    = hasBgImage ? '0 4px 24px rgba(0,0,0,0.35)' : `0 4px 20px ${btn}55`;
+  const linkColor    = hasBgImage ? 'rgba(255,255,255,0.88)' : btn;
+
+  return React.createElement(Section, { style: sectionBgStyle },
+    React.createElement('div', { style: innerStyle },
+      // Show inline image only when there is no background photo
+      !hasBgImage && section.imageUrl
+        ? React.createElement(Img, {
+            src: section.imageUrl,
+            alt: section.imageAlt || '',
+            width: '520',
+            style: { width: '100%', maxWidth: '520px', marginBottom: '32px', borderRadius: config.borderRadius, display: 'block', margin: '0 auto 32px auto' }
+          })
+        : null,
+      // Eyebrow label
+      section.eyebrow
+        ? React.createElement(Text, {
             style: {
               fontFamily: config.fontFamily,
-              fontSize: '14px',
-              color: btn,
-              textDecoration: 'underline',
-              fontWeight: '600',
+              fontSize: '11px',
+              fontWeight: '700',
+              textTransform: 'uppercase' as const,
+              letterSpacing: '0.14em',
+              color: eyebrowColor,
+              margin: '0 0 12px 0',
             }
-          }, section.secondaryButtonText)
-        )
-      : null
+          }, section.eyebrow)
+        : null,
+      // Main headline — 42px for cinematic impact
+      section.heading
+        ? React.createElement(Heading, {
+            as: 'h1',
+            style: {
+              fontFamily: config.headingFontFamily,
+              fontSize: '42px',
+              fontWeight: config.headingWeight,
+              letterSpacing: config.headingLetterSpacing,
+              color: fg,
+              margin: '0 0 16px 0',
+              lineHeight: '1.15',
+            }
+          }, section.heading)
+        : null,
+      // Intro — large bold lead statement rendered below the headline
+      section.intro
+        ? React.createElement(Text, {
+            style: {
+              fontFamily: config.fontFamily,
+              fontSize: '19px',
+              fontWeight: '600',
+              color: fg,
+              lineHeight: '1.6',
+              margin: '0 0 14px 0',
+            }
+          }, section.intro)
+        : null,
+      // Subheading
+      section.subheading
+        ? React.createElement(Text, {
+            style: {
+              fontFamily: config.fontFamily,
+              fontSize: '17px',
+              color: subColor,
+              margin: '0 0 28px 0',
+              lineHeight: '1.65',
+            }
+          }, section.subheading)
+        : null,
+      // Primary CTA button
+      section.buttonText
+        ? React.createElement(Button, {
+            href: section.buttonUrl || '#',
+            className: 'em-btn',
+            style: {
+              display: 'inline-block',
+              marginTop: '4px',
+              padding: config.buttonPadding,
+              backgroundColor: btnBg,
+              color: btnFg,
+              fontFamily: config.fontFamily,
+              fontWeight: '700',
+              fontSize: '16px',
+              borderRadius: config.buttonBorderRadius,
+              textDecoration: 'none',
+              boxShadow: btnShadow,
+            }
+          }, section.buttonText)
+        : null,
+      // Optional secondary text link below the primary button
+      section.secondaryButtonText
+        ? React.createElement(Text, {
+            style: { margin: '16px 0 0 0', textAlign: config.heroAlign }
+          },
+            React.createElement(Link, {
+              href: section.secondaryButtonUrl || '#',
+              style: {
+                fontFamily: config.fontFamily,
+                fontSize: '14px',
+                color: linkColor,
+                textDecoration: 'underline',
+                fontWeight: '600',
+              }
+            }, section.secondaryButtonText)
+          )
+        : null
+    ) // end inner div
   );
 }
 
@@ -872,71 +922,95 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
 }
 
 function renderCta(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const hasBgImage = !!section.backgroundImageUrl;
   // CTA defaults to brand primary background for maximum visual impact
-  const ctaBgStyle: React.CSSProperties = section.backgroundGradient
+  const sectionBgStyle: React.CSSProperties = hasBgImage
+    ? {
+        backgroundImage: `url(${section.backgroundImageUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundColor: section.backgroundColor || primaryColor,
+      }
+    : section.backgroundGradient
     ? { background: section.backgroundGradient }
     : { backgroundColor: section.backgroundColor || primaryColor };
+
   const fg  = section.textColor || '#ffffff';
   const btn = section.buttonColor || '#ffffff';
-  return React.createElement(Section, {
-    style: { padding: config.sectionPadding, textAlign: 'center' as const, ...ctaBgStyle }
-  },
-    section.heading
-      ? React.createElement(Heading, {
-          as: 'h2',
-          style: {
-            fontFamily: config.headingFontFamily,
-            fontSize: '26px',
-            fontWeight: config.headingWeight,
-            letterSpacing: config.headingLetterSpacing,
-            color: fg,
-            margin: '0 0 12px 0',
-          }
-        }, section.heading)
-      : null,
-    section.text
-      ? React.createElement(Text, {
-          style: {
-            fontFamily: config.fontFamily,
-            fontSize: '16px',
-            color: fg + '99',
-            margin: '0 0 24px 0',
-            lineHeight: '1.6',
-          }
-        }, section.text)
-      : null,
-    section.buttonText
-      ? React.createElement(Button, {
-          href: section.buttonUrl || '#',
-          className: 'em-btn',
-          style: {
-            padding: config.buttonPadding,
-            backgroundColor: btn,
-            color: btn === '#ffffff' ? primaryColor : '#ffffff',
-            fontFamily: config.fontFamily,
-            fontWeight: '700',
-            fontSize: '16px',
-            borderRadius: config.buttonBorderRadius,
-            textDecoration: 'none',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.25)',
-          }
-        }, section.buttonText)
-      : null,
-    // Optional secondary action link below the primary CTA button
-    section.secondaryButtonText
-      ? React.createElement(Text, { style: { margin: '14px 0 0 0' } },
-          React.createElement(Link, {
-            href: section.secondaryButtonUrl || '#',
+
+  // Inner overlay + padding wrapper
+  const innerStyle: React.CSSProperties = hasBgImage
+    ? {
+        background: section.backgroundImageOverlay ||
+          'linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.65) 100%)',
+        padding: config.sectionPadding,
+        textAlign: 'center' as const,
+      }
+    : {
+        padding: config.sectionPadding,
+        textAlign: 'center' as const,
+      };
+
+  return React.createElement(Section, { style: sectionBgStyle },
+    React.createElement('div', { style: innerStyle },
+      section.heading
+        ? React.createElement(Heading, {
+            as: 'h2',
+            style: {
+              fontFamily: config.headingFontFamily,
+              fontSize: '26px',
+              fontWeight: config.headingWeight,
+              letterSpacing: config.headingLetterSpacing,
+              color: fg,
+              margin: '0 0 12px 0',
+            }
+          }, section.heading)
+        : null,
+      section.text
+        ? React.createElement(Text, {
             style: {
               fontFamily: config.fontFamily,
-              fontSize: '14px',
-              color: btn,
-              textDecoration: 'underline',
-              fontWeight: '600',
+              fontSize: '16px',
+              color: hasBgImage ? 'rgba(255,255,255,0.85)' : fg + '99',
+              margin: '0 0 24px 0',
+              lineHeight: '1.6',
             }
-          }, section.secondaryButtonText)
-        )
-      : null
+          }, section.text)
+        : null,
+      section.buttonText
+        ? React.createElement(Button, {
+            href: section.buttonUrl || '#',
+            className: 'em-btn',
+            style: {
+              padding: config.buttonPadding,
+              backgroundColor: btn,
+              color: btn === '#ffffff' ? primaryColor : '#ffffff',
+              fontFamily: config.fontFamily,
+              fontWeight: '700',
+              fontSize: '16px',
+              borderRadius: config.buttonBorderRadius,
+              textDecoration: 'none',
+              boxShadow: hasBgImage ? '0 4px 24px rgba(0,0,0,0.4)' : '0 4px 20px rgba(0,0,0,0.25)',
+            }
+          }, section.buttonText)
+        : null,
+      // Optional secondary action link below the primary CTA button
+      section.secondaryButtonText
+        ? React.createElement(Text, { style: { margin: '14px 0 0 0' } },
+            React.createElement(Link, {
+              href: section.secondaryButtonUrl || '#',
+              style: {
+                fontFamily: config.fontFamily,
+                fontSize: '14px',
+                color: btn,
+                textDecoration: 'underline',
+                fontWeight: '600',
+              }
+            }, section.secondaryButtonText)
+          )
+        : null
+    ) // end inner div
   );
 }
 
@@ -1630,7 +1704,7 @@ export async function generateEmailHtml(
           border: config.containerBorder,
           borderRadius: config.borderRadius,
           overflow: 'hidden',
-          padding: '0 32px',
+          padding: '0 40px',
           borderTop: `4px solid ${primaryColor}`,
         }
       },
