@@ -6,11 +6,12 @@ import { useEffect, useRef, useState } from 'react';
 // Mini infinite runner game
 // ─────────────────────────────────────────────
 
-const CW = 380, CH = 104;
-const FLOOR = 84;
-const PX = 52, PW = 22, PH = 22;
-const GRAVITY = 0.62, JUMP_V = -12.5;
+const CW = 560, CH = 160;
+const FLOOR = 130;
+const PX = 70, PW = 32, PH = 28;
+const GRAVITY = 0.72, JUMP_V = -14.5;
 
+// ── rounded-rect helper ──
 function rr(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
@@ -25,6 +26,138 @@ function rr(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: n
   ctx.closePath();
 }
 
+// ── draw the cat character ──
+function drawCat(ctx: CanvasRenderingContext2D, x: number, y: number, alive: boolean, frame: number) {
+  const bodyColor  = alive ? '#f0c060' : '#ff5566';
+  const darkColor  = alive ? '#c8983a' : '#cc3344';
+  const eyeColor   = '#1a1a2e';
+  const noseColor  = alive ? '#ff9988' : '#dd2233';
+
+  // walking leg bob (only when alive & grounded)
+  const legSwing = alive ? Math.sin(frame * 0.22) * 3 : 0;
+  // tail wag
+  const tailWag  = Math.sin(frame * 0.18) * 12;
+
+  // tail
+  ctx.save();
+  ctx.strokeStyle = darkColor;
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(x + 2, y + PH - 6);
+  ctx.quadraticCurveTo(x - 10, y + PH - 14 + tailWag * 0.4, x - 4, y - 6 + tailWag);
+  ctx.stroke();
+  ctx.restore();
+
+  // body
+  ctx.fillStyle = bodyColor;
+  rr(ctx, x, y + 4, PW, PH - 4, 8);
+  ctx.fill();
+
+  // belly stripe
+  ctx.fillStyle = 'rgba(255,255,255,0.28)';
+  rr(ctx, x + 8, y + 10, PW - 16, PH - 14, 5);
+  ctx.fill();
+
+  // head
+  ctx.fillStyle = bodyColor;
+  ctx.beginPath();
+  ctx.ellipse(x + PW * 0.62, y + 2, 12, 11, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // ears (triangles)
+  ctx.fillStyle = darkColor;
+  const hcx = x + PW * 0.62;
+  ctx.beginPath();
+  ctx.moveTo(hcx - 10, y - 2);
+  ctx.lineTo(hcx - 5,  y - 12);
+  ctx.lineTo(hcx - 1,  y - 2);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(hcx + 2,  y - 2);
+  ctx.lineTo(hcx + 7,  y - 11);
+  ctx.lineTo(hcx + 11, y - 2);
+  ctx.closePath(); ctx.fill();
+  // inner ear
+  ctx.fillStyle = noseColor;
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath();
+  ctx.moveTo(hcx - 9, y - 3);
+  ctx.lineTo(hcx - 5, y - 10);
+  ctx.lineTo(hcx - 2, y - 3);
+  ctx.closePath(); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(hcx + 3,  y - 3);
+  ctx.lineTo(hcx + 7,  y - 10);
+  ctx.lineTo(hcx + 10, y - 3);
+  ctx.closePath(); ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // eyes
+  ctx.fillStyle = eyeColor;
+  ctx.beginPath();
+  ctx.ellipse(hcx - 4, y + 3, alive ? 2.5 : 1.5, alive ? 3 : 1, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(hcx + 4, y + 3, alive ? 2.5 : 1.5, alive ? 3 : 1, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // eye shine
+  if (alive) {
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(hcx - 3, y + 2, 0.9, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(hcx + 5, y + 2, 0.9, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // nose
+  ctx.fillStyle = noseColor;
+  ctx.beginPath();
+  ctx.ellipse(hcx, y + 7, 2, 1.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // whiskers
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+  ctx.lineWidth = 0.9;
+  for (const [dx, dy, len, dir] of [[-3, 7, 10, -1], [-3, 9, 9, -1], [3, 7, 10, 1], [3, 9, 9, 1]] as [number,number,number,number][]) {
+    ctx.beginPath();
+    ctx.moveTo(hcx + dx, y + dy);
+    ctx.lineTo(hcx + dx + len * dir, y + dy - 1);
+    ctx.stroke();
+  }
+
+  // legs
+  ctx.fillStyle = darkColor;
+  const legY = y + PH - 1;
+  ctx.beginPath(); rr(ctx, x + 4,       legY + legSwing,  8, 7, 3); ctx.fill();
+  ctx.beginPath(); rr(ctx, x + PW - 12, legY - legSwing,  8, 7, 3); ctx.fill();
+}
+
+// ── draw one obstacle (spam email column) ──
+function drawObstacle(ctx: CanvasRenderingContext2D, ob: { x: number; w: number; h: number }) {
+  const x = ob.x, y = FLOOR - ob.h, w = ob.w, h = ob.h;
+  // column body
+  ctx.fillStyle = 'rgba(180,40,80,0.82)';
+  rr(ctx, x, y, w, h, 4);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,100,140,0.35)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  // glowing top
+  const grd = ctx.createLinearGradient(x, y, x, y + 10);
+  grd.addColorStop(0, 'rgba(255,80,130,0.95)');
+  grd.addColorStop(1, 'rgba(180,40,80,0)');
+  ctx.fillStyle = grd;
+  rr(ctx, x, y, w, 10, 4);
+  ctx.fill();
+  // tiny envelope icon on obstacle
+  ctx.fillStyle = 'rgba(255,200,210,0.5)';
+  const ex = x + w / 2 - 6, ey = y + 6;
+  rr(ctx, ex, ey, 12, 9, 2);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,180,200,0.6)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath(); ctx.moveTo(ex + 1, ey + 1); ctx.lineTo(ex + 6, ey + 4); ctx.lineTo(ex + 11, ey + 1); ctx.stroke();
+}
+
 function RunnerGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const sRef = useRef({
@@ -36,8 +169,23 @@ function RunnerGame() {
     velY: 0,
     grounded: true,
     obstacles: [] as { x: number; w: number; h: number }[],
-    nextObs: 85,
+    nextObs: 90,
     trackOff: 0,
+    cloudOff: 0,
+    frame: 0,
+    // parallax stars / particles
+    stars: Array.from({ length: 28 }, () => ({
+      x: Math.random() * CW,
+      y: 10 + Math.random() * 70,
+      r: 0.5 + Math.random() * 1.5,
+      spd: 0.4 + Math.random() * 0.8,
+    })),
+    // ground pebbles
+    pebbles: Array.from({ length: 14 }, (_, i) => ({
+      x: (i / 14) * CW + Math.random() * 20,
+      y: FLOOR + 6 + Math.random() * 8,
+      r: 1 + Math.random() * 2,
+    })),
   });
 
   useEffect(() => {
@@ -48,77 +196,120 @@ function RunnerGame() {
     const s = sRef.current;
 
     function draw() {
-      ctx!.clearRect(0, 0, CW, CH);
+      // sky gradient background
+      const sky = ctx!.createLinearGradient(0, 0, 0, CH);
+      sky.addColorStop(0, '#0d0d1f');
+      sky.addColorStop(1, '#111128');
+      ctx!.fillStyle = sky;
+      ctx!.fillRect(0, 0, CW, CH);
 
-      // floor
-      ctx!.strokeStyle = 'rgba(255,255,255,0.18)';
-      ctx!.lineWidth = 1.5;
-      ctx!.setLineDash([]);
-      ctx!.beginPath();
-      ctx!.moveTo(0, FLOOR + 2); ctx!.lineTo(CW, FLOOR + 2);
-      ctx!.stroke();
-
-      // scrolling ground dashes
-      ctx!.strokeStyle = 'rgba(0,255,200,0.13)';
-      ctx!.lineWidth = 1;
-      ctx!.setLineDash([12, 8]);
-      ctx!.lineDashOffset = -s.trackOff;
-      ctx!.beginPath();
-      ctx!.moveTo(0, FLOOR + 10); ctx!.lineTo(CW, FLOOR + 10);
-      ctx!.stroke();
-      ctx!.setLineDash([]);
-
-      // player — envelope body
-      const py = s.playerY;
-      const alive = s.phase !== 'dead';
-      ctx!.fillStyle = alive ? '#00ffc8' : '#ff5566';
-      rr(ctx!, PX, py, PW, PH, 3);
-      ctx!.fill();
-      // envelope V flap
-      ctx!.strokeStyle = alive ? 'rgba(0,180,140,0.85)' : 'rgba(255,70,90,0.75)';
-      ctx!.lineWidth = 1.5;
-      ctx!.beginPath();
-      ctx!.moveTo(PX + 2, py + 2);
-      ctx!.lineTo(PX + PW / 2, py + PH * 0.44);
-      ctx!.lineTo(PX + PW - 2, py + 2);
-      ctx!.stroke();
-
-      // obstacles — spam columns
-      s.obstacles.forEach(ob => {
-        ctx!.fillStyle = 'rgba(255,55,95,0.82)';
-        rr(ctx!, ob.x, FLOOR - ob.h, ob.w, ob.h, 3);
-        ctx!.fill();
-        ctx!.strokeStyle = 'rgba(255,100,130,0.4)';
-        ctx!.lineWidth = 1;
-        ctx!.stroke();
-        // top cap glow
-        ctx!.fillStyle = 'rgba(255,110,145,0.95)';
-        rr(ctx!, ob.x, FLOOR - ob.h, ob.w, 4, 2);
+      // parallax stars
+      s.stars.forEach(st => {
+        ctx!.fillStyle = `rgba(200,220,255,${0.25 + st.r * 0.12})`;
+        ctx!.beginPath();
+        ctx!.arc(st.x, st.y, st.r * 0.7, 0, Math.PI * 2);
         ctx!.fill();
       });
 
+      // distant city silhouette (static)
+      ctx!.fillStyle = 'rgba(80,60,140,0.18)';
+      const buildings = [
+        [20,  50, 18, 40], [42,  55, 14, 35], [60,  45, 22, 45],
+        [86,  58, 12, 32], [102, 48, 20, 42], [126, 52, 16, 38],
+        [146, 44, 24, 46], [174, 56, 14, 34], [192, 46, 18, 44],
+        [480, 50, 18, 40], [502, 42, 24, 48], [528, 55, 15, 35],
+      ];
+      buildings.forEach(([bx, by, bw, bh]) => {
+        ctx!.fillRect(bx, FLOOR - bh, bw, bh);
+        // window dots
+        ctx!.fillStyle = 'rgba(200,180,255,0.2)';
+        for (let wx = bx + 3; wx < bx + bw - 3; wx += 5) {
+          for (let wy = FLOOR - bh + 4; wy < FLOOR - 4; wy += 6) {
+            ctx!.fillRect(wx, wy, 2, 3);
+          }
+        }
+        ctx!.fillStyle = 'rgba(80,60,140,0.18)';
+      });
+
+      // neon ground strip
+      const groundGrd = ctx!.createLinearGradient(0, FLOOR, 0, CH);
+      groundGrd.addColorStop(0, 'rgba(0,255,180,0.12)');
+      groundGrd.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx!.fillStyle = groundGrd;
+      ctx!.fillRect(0, FLOOR, CW, CH - FLOOR);
+
+      // floor line
+      ctx!.strokeStyle = 'rgba(0,255,200,0.55)';
+      ctx!.lineWidth = 1.5;
+      ctx!.setLineDash([]);
+      ctx!.shadowColor = '#00ffc8';
+      ctx!.shadowBlur = 6;
+      ctx!.beginPath();
+      ctx!.moveTo(0, FLOOR); ctx!.lineTo(CW, FLOOR);
+      ctx!.stroke();
+      ctx!.shadowBlur = 0;
+
+      // scrolling dashes
+      ctx!.strokeStyle = 'rgba(0,255,160,0.18)';
+      ctx!.lineWidth = 1;
+      ctx!.setLineDash([14, 10]);
+      ctx!.lineDashOffset = -s.trackOff;
+      ctx!.beginPath();
+      ctx!.moveTo(0, FLOOR + 12); ctx!.lineTo(CW, FLOOR + 12);
+      ctx!.stroke();
+      ctx!.setLineDash([]);
+
+      // scrolling pebbles
+      s.pebbles.forEach(p => {
+        ctx!.fillStyle = 'rgba(0,200,140,0.18)';
+        ctx!.beginPath();
+        ctx!.ellipse(p.x, p.y, p.r * 1.5, p.r, 0, 0, Math.PI * 2);
+        ctx!.fill();
+      });
+
+      // obstacles
+      s.obstacles.forEach(ob => drawObstacle(ctx!, ob));
+
+      // cat
+      drawCat(ctx!, PX, s.playerY, s.phase !== 'dead', s.frame);
+
+      // HUD
+      ctx!.shadowBlur = 0;
       ctx!.textBaseline = 'middle';
       if (s.phase === 'playing') {
-        ctx!.fillStyle = 'rgba(255,255,255,0.38)';
-        ctx!.font = '600 12px ui-monospace, monospace';
+        ctx!.fillStyle = 'rgba(0,255,200,0.55)';
+        ctx!.font = '700 13px ui-monospace, monospace';
         ctx!.textAlign = 'right';
-        ctx!.fillText(String(Math.floor(s.score)), CW - 10, 14);
+        ctx!.fillText(String(Math.floor(s.score)).padStart(5, '0'), CW - 12, 16);
       }
       if (s.phase === 'idle') {
-        ctx!.fillStyle = 'rgba(255,255,255,0.28)';
-        ctx!.font = '500 12px system-ui, sans-serif';
+        // frosted pill
+        ctx!.fillStyle = 'rgba(255,255,255,0.06)';
+        rr(ctx!, CW / 2 - 120, CH / 2 - 16, 240, 32, 16);
+        ctx!.fill();
+        ctx!.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx!.lineWidth = 1;
+        ctx!.stroke();
+        ctx!.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx!.font = '500 13px system-ui, sans-serif';
         ctx!.textAlign = 'center';
-        ctx!.fillText('Press Space or tap to play', CW / 2, CH / 2 + 4);
+        ctx!.fillText('Space / tap to start  •  help the cat dodge spam!', CW / 2, CH / 2 + 1);
       }
       if (s.phase === 'dead') {
-        ctx!.fillStyle = 'rgba(255,255,255,0.78)';
-        ctx!.font = '700 13px system-ui, sans-serif';
+        ctx!.fillStyle = 'rgba(0,0,0,0.52)';
+        ctx!.fillRect(0, 0, CW, CH);
+        ctx!.fillStyle = '#ff5566';
+        ctx!.font = '800 18px system-ui, sans-serif';
         ctx!.textAlign = 'center';
-        ctx!.fillText('Game Over — tap to retry', CW / 2, CH / 2 + 4);
+        ctx!.fillText('GAME OVER', CW / 2, CH / 2 - 10);
+        ctx!.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx!.font = '500 12px system-ui, sans-serif';
+        ctx!.fillText(`Score: ${Math.floor(s.score)}   •   tap or Space to retry`, CW / 2, CH / 2 + 12);
       }
     }
 
     function loop() {
+      s.frame++;
       if (s.phase === 'dead') { draw(); return; }
 
       s.velY += GRAVITY;
@@ -129,26 +320,44 @@ function RunnerGame() {
         s.grounded = true;
       }
 
-      s.trackOff = (s.trackOff + s.speed * 0.65) % 20;
+      s.trackOff = (s.trackOff + s.speed * 0.7) % 24;
+      s.cloudOff = (s.cloudOff + s.speed * 0.15) % CW;
 
+      // scroll stars
+      s.stars.forEach(st => {
+        st.x -= st.spd;
+        if (st.x < -4) { st.x = CW + 4; st.y = 10 + Math.random() * 70; }
+      });
+
+      // scroll pebbles
+      s.pebbles.forEach(p => {
+        p.x -= s.speed * 0.9;
+        if (p.x < -10) { p.x = CW + 10; p.y = FLOOR + 6 + Math.random() * 8; }
+      });
+
+      // spawn obstacles
       s.nextObs--;
       if (s.nextObs <= 0) {
-        s.obstacles.push({ x: CW + 10, w: 14 + Math.random() * 10, h: 20 + Math.random() * 28 });
-        s.nextObs = Math.max(40, 78 + Math.random() * 48 - s.score / 200);
+        // occasionally double obstacle
+        const n = Math.random() < 0.18 ? 2 : 1;
+        for (let i = 0; i < n; i++) {
+          s.obstacles.push({ x: CW + 10 + i * 28, w: 16 + Math.random() * 14, h: 22 + Math.random() * 36 });
+        }
+        s.nextObs = Math.max(45, 88 + Math.random() * 52 - s.score / 180);
       }
       s.obstacles.forEach(ob => { ob.x -= s.speed; });
-      s.obstacles = s.obstacles.filter(ob => ob.x + ob.w > -4);
+      s.obstacles = s.obstacles.filter(ob => ob.x + ob.w > -6);
 
-      s.speed = Math.min(10, 4.5 + s.score / 500);
-      s.score += 0.14 * (s.speed / 4.5);
+      s.speed = Math.min(11, 4.5 + s.score / 480);
+      s.score += 0.16 * (s.speed / 4.5);
 
-      // collision with 4 px forgiveness
+      // collision — 5 px forgiveness
       for (const ob of s.obstacles) {
         if (
-          PX + 4 < ob.x + ob.w &&
-          PX + PW - 4 > ob.x &&
-          s.playerY + 4 < FLOOR &&
-          s.playerY + PH - 4 > FLOOR - ob.h
+          PX + 5         < ob.x + ob.w &&
+          PX + PW - 5    > ob.x &&
+          s.playerY + 5  < FLOOR &&
+          s.playerY + PH - 5 > FLOOR - ob.h
         ) {
           s.phase = 'dead';
           draw();
@@ -164,9 +373,9 @@ function RunnerGame() {
       if (s.phase === 'dead') {
         s.phase = 'playing';
         s.score = 0; s.speed = 4.5;
-        s.obstacles = []; s.nextObs = 85;
+        s.obstacles = []; s.nextObs = 90;
         s.playerY = FLOOR - PH; s.velY = 0;
-        s.grounded = true; s.trackOff = 0;
+        s.grounded = true; s.trackOff = 0; s.frame = 0;
         cancelAnimationFrame(s.raf);
         s.raf = requestAnimationFrame(loop);
         return;
@@ -201,10 +410,7 @@ function RunnerGame() {
   }, []);
 
   return (
-    <div style={{ marginTop: 22, textAlign: 'center' }}>
-      <p style={{ color: 'rgba(255,255,255,0.24)', fontSize: 11, margin: '0 0 8px', letterSpacing: '0.07em', textTransform: 'uppercase' }}>
-        🎮 Play while you wait
-      </p>
+    <div style={{ width: '100%', maxWidth: CW, margin: '0 auto', textAlign: 'center' }}>
       <canvas
         ref={canvasRef}
         width={CW}
@@ -212,8 +418,9 @@ function RunnerGame() {
         style={{
           display: 'block',
           margin: '0 auto',
-          borderRadius: 10,
-          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 14,
+          border: '1px solid rgba(0,255,180,0.15)',
+          boxShadow: '0 0 32px rgba(0,255,180,0.06), 0 0 1px rgba(0,255,180,0.3)',
           cursor: 'pointer',
           maxWidth: '100%',
         }}
@@ -221,6 +428,7 @@ function RunnerGame() {
     </div>
   );
 }
+
 
 // ─────────────────────────────────────────────
 // Overlay
@@ -379,13 +587,13 @@ export default function EmailGeneratingOverlay() {
       <div className="gen-bg-blob" style={{ width: 300, height: 300, top: '50%', left: '50%', transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle, rgba(0,255,128,1) 0%, transparent 70%)', animationDelay: '1s' }} />
 
       {/* 3D cube + orbiting dots */}
-      <div style={{ position: 'relative', width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 22 }}>
+      <div style={{ position: 'relative', width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
         <div className="gen-orbit-dot gen-dot-a" />
         <div className="gen-orbit-dot gen-dot-b" />
         <div className="gen-orbit-dot gen-dot-c" />
         <div className="gen-cube-scene">
           <div className="gen-cube">
-            <div className="gen-face gen-face-front">✉️</div>
+            <div className="gen-face gen-face-front">🐈</div>
             <div className="gen-face gen-face-back">🎨</div>
             <div className="gen-face gen-face-right">⚡</div>
             <div className="gen-face gen-face-left">✨</div>
@@ -393,6 +601,14 @@ export default function EmailGeneratingOverlay() {
             <div className="gen-face gen-face-bottom">🚀</div>
           </div>
         </div>
+      </div>
+
+      {/* Runner game — below cube, above heading */}
+      <div style={{ width: '100%', maxWidth: 560, margin: '0 auto 20px' }}>
+        <p style={{ color: 'rgba(255,255,255,0.22)', fontSize: 11, margin: '0 0 7px', letterSpacing: '0.08em', textTransform: 'uppercase', textAlign: 'center' }}>
+          🐱 Help the cat dodge spam while you wait
+        </p>
+        <RunnerGame />
       </div>
 
       {/* Heading */}
@@ -436,9 +652,6 @@ export default function EmailGeneratingOverlay() {
       <p style={{ color: 'rgba(255,255,255,0.18)', fontSize: 11, marginTop: 14, textAlign: 'center' }}>
         Please don't close or refresh — your email is on its way
       </p>
-
-      {/* Mini runner game */}
-      <RunnerGame />
     </div>
   );
 }
