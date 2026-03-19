@@ -277,7 +277,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
   const linkColor    = hasBgImage ? 'rgba(255,255,255,0.88)' : btn;
 
   return React.createElement(Section, { style: { ...sectionBgStyle, borderRadius: config.sectionBorderRadius, ...(hasBgImage ? { overflow: 'hidden' as const } : {}) } },
-    React.createElement('div', { style: innerStyle },
+    React.createElement('div', { className: 'em-section', style: innerStyle },
       // Show inline image only when there is no background photo
       !hasBgImage && section.imageUrl
         ? React.createElement(Img, {
@@ -389,6 +389,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
   // Split text on double-newline to create multiple paragraphs
   const paragraphs = (section.text || '').split(/\n\n+/).filter(Boolean);
   return React.createElement(Section, {
+    className: 'em-section',
     style: { padding: config.sectionPadding, ...config.sectionBorderStyle, ...(bg ? { backgroundColor: bg, borderRadius: config.sectionBorderRadius } : {}) }
   },
     // Optional eyebrow label — small uppercase coloured category tag above heading
@@ -452,7 +453,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
   const btn = section.buttonColor || primaryColor;
   // Side-by-side layout: circular avatar on the left, quote + author on the right
   if (section.authorImage) {
-    return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
+    return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
       React.createElement('div', { style: { ...config.cardStyle } },
         React.createElement(Row, null,
           React.createElement(Column, { style: { width: '76px', verticalAlign: 'top' } },
@@ -506,6 +507,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
 
   // Centered card layout (no avatar)
   return React.createElement(Section, {
+    className: 'em-section',
     style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     React.createElement('div', {
@@ -591,7 +593,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
   if (isGrid) {
     const pairs: typeof features[] = [];
     for (let i = 0; i < features.length; i += 2) pairs.push(features.slice(i, i + 2));
-    return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
+    return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
       headingEl,
       ...pairs.map((pair, rowIdx) =>
         React.createElement(Section, { key: rowIdx, style: { marginBottom: '16px' } },
@@ -634,7 +636,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
   }
 
   // Default vertical list (numbered badges or icon bullets)
-  return React.createElement(Section, { style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
+  return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
     headingEl,
     ...features.map((feature, i) =>
       React.createElement(Section, { key: i, style: { marginBottom: '16px', display: 'table', width: '100%' } },
@@ -691,6 +693,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
   const btn = section.buttonColor || primaryColor;
   const plans = section.plans || [];
   return React.createElement(Section, {
+    className: 'em-section',
     style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     section.heading
@@ -794,6 +797,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
   const cFg = cardTextColor(config.cardStyle.backgroundColor as string | undefined);
   const stats = section.stats || [];
   return React.createElement(Section, {
+    className: 'em-section',
     style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     section.heading
@@ -830,6 +834,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
                 )
               : null,
             React.createElement(Text, {
+              className: 'em-stat-value',
               style: {
                 fontFamily: config.fontFamily,
                 fontSize: '48px',
@@ -865,6 +870,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
   for (let i = 0; i < images.length; i += perRow) rows.push(images.slice(i, i + perRow));
 
   return React.createElement(Section, {
+    className: 'em-section',
     style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     section.heading
@@ -927,6 +933,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
   const accent = section.buttonColor || primaryColor;
   const fg = section.textColor || config.bodyColor;
   return React.createElement(Section, {
+    className: 'em-section',
     style: {
       padding: config.sectionPadding,
     }
@@ -1015,7 +1022,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
       };
 
   return React.createElement(Section, { style: { ...sectionBgStyle, borderRadius: config.sectionBorderRadius, ...(hasBgImage ? { overflow: 'hidden' as const } : {}) } },
-    React.createElement('div', { style: innerStyle },
+    React.createElement('div', { className: 'em-section', style: innerStyle },
       section.heading
         ? React.createElement(Heading, {
             as: 'h2',
@@ -1288,6 +1295,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
   );
 
   return React.createElement(Section, {
+    className: 'em-section',
     style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     hasImage
@@ -1302,6 +1310,7 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   return React.createElement(Section, {
+    className: 'em-section',
     style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     React.createElement('div', {
@@ -1446,6 +1455,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
   const cFg = cardTextColor(config.cardStyle.backgroundColor as string | undefined);
   const colItems = section.columns || [];
   return React.createElement(Section, {
+    className: 'em-section',
     style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
   },
     section.heading
@@ -1535,6 +1545,7 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   return React.createElement(Section, {
+    className: 'em-section',
     style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     React.createElement('div', {
@@ -1580,6 +1591,7 @@ function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColo
   const isDark = config.bodyBg === '#0a0a0f' || config.bodyBg === '#ffffff' && config.bodyColor === '#000000';
   const theme = isDark ? oneDark : atomDark;
   return React.createElement(Section, {
+    className: 'em-section',
     style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
   },
     section.heading
@@ -1740,13 +1752,15 @@ export async function generateEmailHtml(
       }),
       React.createElement('style', null,
         '@media only screen and (max-width:620px){' +
-        '.em-wrap{width:100%!important;padding:0 20px!important;border-left:none!important;border-right:none!important;border-radius:0!important;box-sizing:border-box!important}' +
+        '.em-wrap{width:100%!important;padding:0 16px!important;border-left:none!important;border-right:none!important;border-radius:0!important;box-sizing:border-box!important}' +
         '.em-col{display:block!important;width:100%!important;max-width:100%!important;padding-left:0!important;padding-right:0!important;box-sizing:border-box!important;margin-bottom:12px!important}' +
-        'h1{font-size:26px!important;line-height:1.25!important}' +
-        'h2{font-size:20px!important;line-height:1.3!important}' +
+        '.em-section{padding-left:16px!important;padding-right:16px!important}' +
+        'h1{font-size:28px!important;line-height:1.2!important}' +
+        'h2{font-size:21px!important;line-height:1.3!important}' +
         'img{max-width:100%!important;height:auto!important}' +
         '.em-logo{height:32px!important;max-width:120px!important;width:auto!important}' +
         '.em-btn{display:block!important;width:100%!important;text-align:center!important;box-sizing:border-box!important}' +
+        '.em-stat-value{font-size:28px!important;line-height:1.1!important}' +
         '}'
       )
     ),
