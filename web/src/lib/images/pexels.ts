@@ -37,28 +37,34 @@ type ImageSize = 'large' | 'medium' | 'small';
 
 /**
  * Per design style: a 1-2 word aesthetic modifier appended to the keyword
- * and a Pexels-accepted color name to filter results by palette.
+ * and an optional Pexels-accepted color name to filter results by palette.
  * Pexels accepted color names: red orange yellow green turquoise blue violet pink brown black gray white
+ * Leave color empty ("") to skip the filter where it would be too restrictive.
  */
 export const styleImageConfig: Record<string, { modifier: string; color: string }> = {
-  minimalist:  { modifier: 'minimal clean',       color: 'white'     },
-  editorial:   { modifier: 'editorial magazine',   color: 'gray'      },
-  retro:       { modifier: 'vintage warm',         color: 'orange'    },
-  brutalist:   { modifier: 'bold graphic',         color: 'black'     },
-  cyberpunk:   { modifier: 'dark neon futuristic', color: 'blue'      },
-  handwritten: { modifier: 'cozy lifestyle',       color: 'gray'      },
-  bauhaus:     { modifier: 'geometric modern',     color: 'red'       },
+  minimalist:  { modifier: 'minimal bright clean',       color: 'white'  },
+  editorial:   { modifier: 'editorial film grain',        color: 'gray'   },
+  retro:       { modifier: 'vintage warm sunlight',       color: 'orange' },
+  brutalist:   { modifier: 'bold high contrast',          color: ''       },
+  cyberpunk:   { modifier: 'neon dark futuristic rain',   color: 'blue'   },
+  handwritten: { modifier: 'cozy warm natural light',     color: 'gray'   },
+  bauhaus:     { modifier: 'geometric architectural flat', color: ''       },
 };
 
 /**
  * Search Pexels for a photo matching the keyword.
  * Returns a permanent CDN URL suitable for embedding in emails.
+ *
+ * @param preferPanoramic - When true (background images), favour very wide
+ *   aspect ratios (1.6–3:1). When false (content images), favour well-composed
+ *   editorial shots peaking around 1.5:1.
  */
 export async function fetchPexelsImage(
   keyword: string,
   orientation: ImageOrientation = 'landscape',
   size: ImageSize = 'large',
   color?: string,
+  preferPanoramic = false,
 ): Promise<string | null> {
   const apiKey = process.env.PEXELS_API_KEY;
   if (!apiKey) {
@@ -69,7 +75,7 @@ export async function fetchPexelsImage(
   try {
     const params = new URLSearchParams({
       query: keyword,
-      per_page: '5',   // fetch 5 so we can pick best aspect ratio
+      per_page: '15',  // fetch 15 so we can pick the best quality/composition
       page: '1',
       orientation,
       size,
@@ -100,12 +106,25 @@ export async function fetchPexelsImage(
       return null;
     }
 
-    // For landscape/hero sections, pick the photo with the widest aspect ratio.
-    // For square/portrait, pick the one closest to 1:1. Falls back to first.
+    // Select the best photo based on a quality score.
+    // Score = resolution (width × height) × aspect-ratio bonus.
+    //
+    // Content images (preferPanoramic=false): bonus peaks at ~1.5:1 (editorial
+    //   landscape proportions). Penalises extreme panoramas or near-square shots.
+    // Background images (preferPanoramic=true): bonus peaks at ~1.9:1 and stays
+    //   high for wider panoramics (good full-width section backgrounds).
     let photo: PexelsPhoto;
     if (orientation === 'landscape') {
+      const idealRatio = preferPanoramic ? 1.9 : 1.5;
+      const tolerance  = preferPanoramic ? 0.08 : 0.12;
+      const scorePhoto = (p: PexelsPhoto) => {
+        const ratio = p.width / p.height;
+        if (ratio < 1.1) return 0; // skip near-square photos
+        const ratioBonus = Math.max(0.2, 1 - Math.abs(ratio - idealRatio) * tolerance);
+        return (p.width * p.height) * ratioBonus;
+      };
       photo = data.photos.reduce((best, p) =>
-        p.width / p.height > best.width / best.height ? p : best
+        scorePhoto(p) > scorePhoto(best) ? p : best
       );
     } else if (orientation === 'square') {
       photo = data.photos.reduce((best, p) => {
@@ -130,13 +149,13 @@ export async function fetchPexelsImage(
  * Returns a map of keyword → URL (or null if fetch failed).
  */
 export async function batchFetchPexelsImages(
-  keywords: Array<{ keyword: string; orientation?: ImageOrientation; color?: string }>
+  keywords: Array<{ keyword: string; orientation?: ImageOrientation; color?: string; preferPanoramic?: boolean }>
 ): Promise<Record<string, string | null>> {
   const uniqueKeywords = [...new Map(keywords.map(k => [k.keyword, k])).values()];
 
   const results = await Promise.all(
-    uniqueKeywords.map(async ({ keyword, orientation = 'landscape', color }) => {
-      const url = await fetchPexelsImage(keyword, orientation, 'large', color);
+    uniqueKeywords.map(async ({ keyword, orientation = 'landscape', color, preferPanoramic = false }) => {
+      const url = await fetchPexelsImage(keyword, orientation, 'large', color, preferPanoramic);
       return [keyword, url] as [string, string | null];
     })
   );

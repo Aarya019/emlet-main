@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
       // match the aesthetic (e.g. "team meeting" → "team meeting dark neon")
       const enrichKeyword = (kw: string) => `${kw} ${styleImg.modifier}`.trim();
 
-      type KeywordEntry = { keyword: string; orientation?: 'landscape' | 'portrait' | 'square'; color?: string };
+      type KeywordEntry = { keyword: string; orientation?: 'landscape' | 'portrait' | 'square'; color?: string; preferPanoramic?: boolean };
       const keywordsToFetch: KeywordEntry[] = [];
 
       for (const section of emailContent.sections) {
@@ -183,12 +183,14 @@ export async function POST(request: NextRequest) {
 
       // ── Pexels background-image resolution ──────────────────────────────
       // Background images are natural photorealistic photos — no style tint/modifier.
+      // preferPanoramic=true so the selector favours wide atmospheric shots.
       const bgKeywordsToFetch: KeywordEntry[] = [];
       for (const section of emailContent.sections) {
         if (section.backgroundImageKeyword) {
           bgKeywordsToFetch.push({
             keyword: section.backgroundImageKeyword,
             orientation: 'landscape',
+            preferPanoramic: true,
           });
         }
       }

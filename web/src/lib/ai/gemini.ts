@@ -26,7 +26,13 @@ export interface EmailSection {
   buttonUrl?: string;
   imageUrl?: string;
   imageAlt?: string;
-  /** Short search keyword used to fetch a real image from Pexels (e.g. "coffee shop interior"). Set instead of imageUrl. */
+  /**
+   * 5–8 word photographic scene description for Pexels image search.
+   * Describe SUBJECT + SETTING + MOOD/LIGHTING specifically — never single words or vague topics.
+   * BAD: "team meeting", "technology", "business".
+   * GOOD: "diverse team laughing around whiteboard office", "developer focused laptop dark screen glow", "woman presenting data modern glass conference room".
+   * Match the visual to the section's actual content and brand industry.
+   */
   imageKeyword?: string;
   // For testimonial sections
   quote?: string;
@@ -53,7 +59,7 @@ export interface EmailSection {
     url: string;
     alt: string;
     caption?: string;
-    /** Short search keyword for Pexels (e.g. "product display"). Used instead of url when present. */
+    /** 5–8 word photographic scene description for Pexels. Describe the specific visual: subject + setting + mood. BAD: "food". GOOD: "chef plating gourmet dish restaurant kitchen steam". */
     keyword?: string;
   }>;
   // For stats sections
@@ -101,7 +107,13 @@ export interface EmailSection {
   buttonColor?: string;
   /** CSS gradient string for section background — e.g. "linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)" — takes precedence over backgroundColor */
   backgroundGradient?: string;
-  /** Short 2–5 word vivid landscape descriptor used to fetch a full-width Pexels background photo for this section (e.g. "mountain sunrise horizon", "city lights at night", "tech office minimal"). MUST be set on hero sections. When set, always pair with textColor: '#ffffff'. */
+  /**
+   * 5–8 word cinematic wide-angle scene for the full-width Pexels background photo.
+   * Describe SETTING + ATMOSPHERE + LIGHTING. Wide-angle/panoramic subjects work best.
+   * BAD: "city", "nature", "abstract".
+   * GOOD: "aerial city lights highway night long exposure", "misty mountain valley golden sunrise fog", "minimal concrete architecture wide angle overhead", "dark neon lit alley cyberpunk rain".
+   * MUST be set on hero sections. Always pair with textColor: '#ffffff'.
+   */
   backgroundImageKeyword?: string;
   /** Resolved Pexels URL for the section background image — populated by the server, not by the AI. */
   backgroundImageUrl?: string;
@@ -396,7 +408,18 @@ MANDATORY EMAIL COMPOSITION RULES (non-negotiable):
 4. CTA section must always set backgroundColor (brand primary or dark variant) and textColor: '#ffffff'.
 5. Use feature-list with layout: "grid" and at least 4 features for product/feature emails.
 6. Use stats section with 3–4 concrete metric numbers for emails about growth, performance, or social proof.
-7. BACKGROUND IMAGES: Hero sections MUST set backgroundImageKeyword — a vivid, wide 2–5 word landscape descriptor (e.g. "mountain sunrise horizon", "city lights panorama", "tech office minimal", "dark abstract texture"). CTA sections MAY include backgroundImageKeyword when the brand is visual or lifestyle-oriented. When backgroundImageKeyword is set, ALWAYS also set textColor: '#ffffff'. The renderer automatically applies a dark gradient overlay for text readability. Do NOT set backgroundGradient when you set backgroundImageKeyword.
+7. BACKGROUND IMAGES: Hero sections MUST set backgroundImageKeyword — a cinematic 5–8 word wide-angle descriptor (e.g. "aerial city lights highway night exposure", "misty mountain valley golden sunrise fog", "minimal concrete office architecture overhead"). CTA sections MAY include backgroundImageKeyword for visual/lifestyle brands. When set, ALWAYS pair with textColor: '#ffffff'. The renderer applies a dark gradient overlay automatically. Do NOT also set backgroundGradient.
+
+IMAGE KEYWORD RULES (non-negotiable):
+1. All imageKeyword and gallery image keyword values MUST be 5–8 specific, descriptive words: subject + setting + mood/lighting. NEVER use single words or vague category names.
+2. Match the visual to the section content and brand industry:
+   - SaaS / software email → "developer focused dual monitor dark office", "woman typing laptop bright minimal desk"
+   - Fitness / wellness → "athlete trail running sunrise forest path", "yoga pose beach golden hour soft light"
+   - Food / restaurant → "chef plating gourmet dish restaurant kitchen steam", "fresh ingredients wooden table natural light"
+   - Finance / B2B → "business handshake modern glass lobby", "charts analysis laptop coffee desk morning"
+   - E-commerce / fashion → "model wearing product natural outdoor light", "product flat lay minimal white surface"
+3. Include human subjects when the section is about people, results, community, or testimonials.
+4. backgroundImageKeyword must describe wide-angle atmospheric scenes: landscapes, architecture, cityscapes, or abstract textures with strong perspective — NOT close-up portraits.
 
 COPY QUALITY RULES (non-negotiable):
 1. Use SPECIFIC numbers, percentages, and timeframes — never vague claims. Write "Reduce churn by 34%" not "reduce churn significantly".
@@ -418,8 +441,7 @@ Return a JSON object with this exact structure:
       "heading": "Outcome-focused headline under 8 words",
       "intro": "A compelling 1-2 sentence hook that states the core benefit or insight directly.",
       "subheading": "Supporting detail that reinforces the heading value prop.",
-      "backgroundImageKeyword": "city lights panorama",
-      "backgroundGradient": "linear-gradient(135deg, #0d1117 0%, #1a1a2e 100%)",
+      "backgroundImageKeyword": "aerial city highway lights night long exposure",
       "textColor": "#ffffff",
       "buttonText": "Start Free Trial",
       "buttonUrl": "#",
@@ -468,7 +490,7 @@ Return a JSON object with this exact structure:
       "heading": "Gallery heading",
       "images": [
         {
-          "keyword": "relevant search keyword for this image (e.g. 'product on shelf')",
+          "keyword": "fresh product displayed wooden table natural window light",
           "alt": "Image description",
           "caption": "Optional caption"
         }
@@ -500,7 +522,7 @@ Return a JSON object with this exact structure:
     },
     {
       "type": "image-text",
-      "imageKeyword": "relevant search keyword for this section image (e.g. 'laptop workspace')",
+      "imageKeyword": "developer focused laptop dual screen dark office glow",
       "imageAlt": "Descriptive alt text",
       "imagePosition": "left",
       "heading": "Feature or product headline",
