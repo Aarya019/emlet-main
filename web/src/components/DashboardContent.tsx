@@ -54,6 +54,7 @@ export default function DashboardContent() {
     brand_voice: 'professional' as BrandVoice,
     primary_color: '#5c5cf0',
     secondary_color: '',
+    background_color: '',
     brand_description: '',
     website_url: '',
     logo_url: ''
@@ -202,6 +203,7 @@ export default function DashboardContent() {
           brand_voice: data.brandVoice || brandForm.brand_voice,
           primary_color: data.primaryColor || brandForm.primary_color,
           secondary_color: data.secondaryColor || brandForm.secondary_color,
+          background_color: brandForm.background_color,
           brand_description: data.brandDescription || brandForm.brand_description,
           logo_url: data.logoUrl || brandForm.logo_url
         });
@@ -271,6 +273,7 @@ export default function DashboardContent() {
       brand_voice: 'professional' as BrandVoice,
       primary_color: '#5c5cf0',
       secondary_color: '',
+      background_color: '',
       brand_description: '',
       website_url: '',
       logo_url: ''
@@ -285,6 +288,7 @@ export default function DashboardContent() {
       brand_voice: brand.brand_voice,
       primary_color: brand.primary_color,
       secondary_color: brand.secondary_color || '',
+      background_color: brand.background_color || '',
       brand_description: brand.brand_description || '',
       website_url: brand.website_url || '',
       logo_url: brand.logo_url || ''
@@ -1077,11 +1081,21 @@ export default function DashboardContent() {
                                     title={`Secondary: ${brand.secondary_color}`}
                                   />
                                 )}
+                                {brand.background_color && (
+                                  <div 
+                                    className="flex-1 h-8 rounded-md border-2 border-white/30 shadow-lg" 
+                                    style={{ backgroundColor: brand.background_color }}
+                                    title={`Background: ${brand.background_color}`}
+                                  />
+                                )}
                               </div>
                               <div className="flex gap-2 text-[10px] text-white/50 font-mono">
                                 <span className="flex-1 text-center truncate">{brand.primary_color}</span>
                                 {brand.secondary_color && (
                                   <span className="flex-1 text-center truncate">{brand.secondary_color}</span>
+                                )}
+                                {brand.background_color && (
+                                  <span className="flex-1 text-center truncate">{brand.background_color}</span>
                                 )}
                               </div>
                             </div>
@@ -1435,6 +1449,54 @@ export default function DashboardContent() {
                             </button>
                           )}
                         </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Background Color */}
+                  <div>
+                    <label className="block text-sm font-medium text-white mb-2">
+                      Background Color
+                      <span className="ml-2 text-xs text-white/40 font-normal">(optional — used as email body background)</span>
+                    </label>
+                    <div className="flex gap-3 items-center">
+                      <div className="relative flex-shrink-0">
+                        <input
+                          type="color"
+                          value={brandForm.background_color || '#ffffff'}
+                          onChange={(e) => setBrandForm({ ...brandForm, background_color: e.target.value })}
+                          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
+                        <div
+                          className="w-12 h-12 rounded-lg border-2 border-white/20 shadow-inner cursor-pointer"
+                          style={{
+                            backgroundColor: brandForm.background_color || 'transparent',
+                            backgroundImage: brandForm.background_color ? 'none' : 'repeating-conic-gradient(#ffffff18 0% 25%, transparent 0% 50%) 0 0 / 12px 12px'
+                          }}
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0 flex gap-2">
+                        <input
+                          type="text"
+                          value={brandForm.background_color || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || /^#[0-9A-Fa-f]{0,6}$/.test(val)) setBrandForm({ ...brandForm, background_color: val });
+                          }}
+                          maxLength={7}
+                          placeholder="#f5f5f5"
+                          className="flex-1 min-w-0 px-4 py-3 rounded-lg bg-black border border-white/20 text-white font-mono text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                        />
+                        {brandForm.background_color && (
+                          <button
+                            type="button"
+                            onClick={() => setBrandForm({ ...brandForm, background_color: '' })}
+                            className="px-3 py-3 rounded-lg border border-white/20 text-white/40 hover:text-white hover:border-white/40 transition-colors text-xs"
+                            title="Clear background color"
+                          >
+                            ✕
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

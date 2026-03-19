@@ -29,6 +29,7 @@ export interface BrandProfile {
   brand_voice: BrandVoice;
   primary_color: string;
   secondary_color: string | null;
+  background_color: string | null;
   brand_description: string | null;
   logo_url: string | null;
   website_url: string | null;

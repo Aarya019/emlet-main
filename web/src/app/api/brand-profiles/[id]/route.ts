@@ -54,6 +54,7 @@ export async function PUT(
       brand_voice: body.brand_voice,
       primary_color: body.primary_color,
       secondary_color: body.secondary_color,
+      background_color: body.background_color,
       brand_description: body.brand_description,
       logo_url: body.logo_url,
       website_url: body.website_url,

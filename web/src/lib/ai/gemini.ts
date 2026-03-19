@@ -244,6 +244,7 @@ BRAND PROFILE:
 - Brand Voice: ${brandProfile.brand_voice}
 - Primary Color: ${brandProfile.primary_color}
 ${brandProfile.secondary_color ? `- Secondary Color: ${brandProfile.secondary_color}` : ''}
+${brandProfile.background_color ? `- Background Color: ${brandProfile.background_color}` : ''}
 ${brandProfile.logo_url ? `- Logo URL: ${brandProfile.logo_url}` : ''}
 ${brandProfile.website_url ? `- Website URL: ${brandProfile.website_url}` : ''}
 - Brand Description: ${brandProfile.brand_description || 'Not provided'}
@@ -252,6 +253,7 @@ BRAND PERSONALIZATION INSTRUCTIONS:
 - Use the brand logo URL in hero sections and footer sections
 - Use primary color for main CTAs, headings, and key elements
 ${brandProfile.secondary_color ? '- Use secondary color for accents, borders, and secondary CTAs' : ''}
+${brandProfile.background_color ? `- Use background_color (${brandProfile.background_color}) for the email body background and light section backgrounds — keeps the email visually on-brand` : ''}
 ${brandProfile.website_url ? `- Set all CTA button URLs to ${brandProfile.website_url} (or relevant subpages like ${brandProfile.website_url}/pricing)` : '- Use # for button URLs'}
 - Maintain consistent brand voice (${brandProfile.brand_voice}) throughout all copy
 - Reference the brand name naturally in content
@@ -641,6 +643,7 @@ RULES:
    - Include logo in hero imageUrl and footer sections when logo_url is provided
    - Use primary_color for all main CTAs and primary design elements
    - Use secondary_color (if provided) for accents, borders, and highlights
+   - Use background_color (if provided) as a cue for the overall email tone — the renderer will apply it as the body background automatically
    - Set all button URLs to the brand's website_url or relevant subpages
    - Weave the brand_name naturally into copy (headlines, content, CTAs)
    - Match the brand_voice tone in all written content

@@ -1617,11 +1617,12 @@ export async function generateEmailHtml(
   brandProfile: BrandProfile | null
 ): Promise<{ html: string; reactCode: string }> {
   const config = styleConfigs[designStyle] || styleConfigs.minimalist;
-  const primaryColor   = brandProfile?.primary_color   || '#5c5cf0';
-  const secondaryColor = brandProfile?.secondary_color || primaryColor;
-  const logoUrl        = brandProfile?.logo_url        || null;
-  const websiteUrl     = brandProfile?.website_url     || null;
-  const brandName      = brandProfile?.brand_name      || 'Company';
+  const primaryColor    = brandProfile?.primary_color    || '#5c5cf0';
+  const secondaryColor  = brandProfile?.secondary_color  || primaryColor;
+  const backgroundColor = brandProfile?.background_color || null;
+  const logoUrl         = brandProfile?.logo_url         || null;
+  const websiteUrl      = brandProfile?.website_url      || null;
+  const brandName       = brandProfile?.brand_name       || 'Company';
 
   // ── Force-inject brand data into sections ────────────────────────────
   // This guarantees brand assets are present regardless of what the AI returned.
@@ -1689,7 +1690,7 @@ export async function generateEmailHtml(
     React.createElement(Preview, null, email.previewText),
     React.createElement(Body, {
       style: {
-        backgroundColor: config.bodyBg,
+        backgroundColor: backgroundColor || config.bodyBg,
         margin: '0',
         padding: '20px 0',
         fontFamily: config.fontFamily,

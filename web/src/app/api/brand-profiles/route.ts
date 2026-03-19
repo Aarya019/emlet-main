@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       brand_voice: body.brand_voice || 'professional',
       primary_color: body.primary_color || '#5c5cf0',
       secondary_color: body.secondary_color || null,
+      background_color: body.background_color || null,
       brand_description: body.brand_description || null,
       logo_url: body.logo_url || null,
       website_url: body.website_url || null,
