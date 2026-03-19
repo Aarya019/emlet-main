@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { BrandProfile } from '@/lib/db/types';
+import { buildEmailPalette } from '@/lib/colors/palette';
 
 // Initialize Gemini API
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -236,6 +237,10 @@ Remember to:
  */
 function buildSystemPrompt(brandProfile: BrandProfile | null, designStyle: string): string {
   const currentYear = new Date().getFullYear();
+  const palette = buildEmailPalette(
+    brandProfile?.primary_color ?? '#5c5cf0',
+    brandProfile?.background_color ?? null,
+  );
   const brandContext = brandProfile
     ? `
 BRAND PROFILE:
@@ -399,15 +404,28 @@ VARIETY GUIDELINES (CRITICAL - Make each email unique):
 - Vary section lengths: some short and punchy, others detailed
 - Use different emotional triggers: excitement, relief, curiosity, belonging, achievement
 
+COLOR PALETTE — use ONLY these exact hex values for backgroundColor, textColor, buttonColor. NEVER invent or use any other hex colors:
+- SURFACE        (default light section bg):    "${palette.surface}"
+- SURFACE_ALT    (alternate light section bg):  "${palette.surfaceAlt}"
+- ACCENT_LIGHT   (feature / highlight bg):      "${palette.accentLight}"
+- PRIMARY        (CTA buttons, key accents):    "${palette.primary}"
+- PRIMARY_DARK   (dark/dramatic section bg):    "${palette.primaryDark}"
+- ON_DARK        (text + buttons on dark bg):   "${palette.onDark}"
+- BODY_TEXT      (default body text):           "${palette.bodyText}"
+
 MANDATORY EMAIL COMPOSITION RULES (non-negotiable):
 1. STRUCTURE: Always generate 6–8 sections minimum. Required sequence: header → hero → [2–4 body sections] → cta → footer. Body sections must include a mix of at least one feature-list or stats, one content or image-text, and optionally a testimonial or quote.
-2. VISUAL RHYTHM — set backgroundColor on EVERY section to create light/dark/accent alternation:
-   - Light sections: '#ffffff' or a very light brand tint (e.g. '#f5f9ff', '#f8f8f8')
-   - Dark/accent sections: deep navy like '#0d1117', '#1a1a2e', deep teal, or the brand primary darkened significantly
-   - When a section uses a dark backgroundColor, ALWAYS also set textColor: '#ffffff' and buttonColor: '#ffffff'
-3. HERO must always include: eyebrow + heading + intro (2 sentences) + subheading + buttonText + buttonUrl + backgroundGradient + textColor: '#ffffff'.
-   Use backgroundGradient for a rich dark gradient (e.g. "linear-gradient(135deg, #0d1117 0%, #1a1a2e 100%)") unless the brand has a specific vivid primary color, in which case incorporate it (e.g. "linear-gradient(135deg, #0d1117 0%, {primaryColor}cc 100%)").
-4. CTA section must always set backgroundColor (brand primary or dark variant) and textColor: '#ffffff'.
+2. VISUAL RHYTHM — set backgroundColor on EVERY section using ONLY the palette above:
+   - Default light sections:        "${palette.surface}"
+   - Alternate light sections:      "${palette.surfaceAlt}"
+   - Feature / highlight sections:  "${palette.accentLight}"
+   - Dark dramatic sections:        "${palette.primaryDark}" — ALWAYS also set textColor: "${palette.onDark}" and buttonColor: "${palette.onDark}"
+   - CTA section:                   "${palette.primary}" — ALWAYS also set textColor: "${palette.onPrimary}" and buttonColor: "${palette.onPrimary}"
+   Ideal rhythm for a 7-section email: SURFACE → SURFACE_ALT → PRIMARY_DARK → SURFACE → ACCENT_LIGHT → PRIMARY → SURFACE
+   NEVER use raw '#ffffff', '#f5f9ff', '#f8f8f8', '#0d1117', '#1a1a2e' or any other value not in the palette.
+3. HERO must always include: eyebrow + heading + intro (2 sentences) + subheading + buttonText + buttonUrl + backgroundGradient + textColor: "${palette.onDark}".
+   Use backgroundGradient incorporating the brand palette: "linear-gradient(135deg, ${palette.primaryDark} 0%, ${palette.primary}cc 100%)".
+4. CTA section must always set backgroundColor: "${palette.primary}" and textColor: "${palette.onPrimary}".
 5. Use feature-list with layout: "grid" and at least 4 features for product/feature emails.
 6. Use stats section with 3–4 concrete metric numbers for emails about growth, performance, or social proof.
 7. BACKGROUND IMAGES: Hero sections MUST set backgroundImageKeyword — a cinematic 5–8 word wide-angle descriptor (e.g. "aerial city lights highway night exposure", "misty mountain valley golden sunrise fog", "minimal concrete office architecture overhead"). CTA sections MAY include backgroundImageKeyword for visual/lifestyle brands. When set, ALWAYS pair with textColor: '#ffffff'. The renderer applies a dark gradient overlay automatically. Do NOT also set backgroundGradient.
