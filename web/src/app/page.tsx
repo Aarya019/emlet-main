@@ -52,6 +52,7 @@ export default function Home() {
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [userInput, setUserInput] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const examples = [
     "Product launch with 40% discount...",
@@ -139,9 +140,9 @@ export default function Home() {
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5">
-        <div className="mx-auto grid max-w-6xl grid-cols-3 items-center px-6 py-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-3 md:px-6 md:py-4">
           <a href="/" className="flex items-center gap-2 group">
-            <img src="/logo.png" alt="Emlet" className="h-8 w-auto" />
+            <img src="/logo.png" alt="Emlet" className="h-7 w-auto md:h-8" />
           </a>
           <nav className="hidden items-center justify-center gap-8 text-sm text-white/70 md:flex">
             <a href="#how-it-works" className="transition-colors hover:text-white">How it works</a>
@@ -149,7 +150,8 @@ export default function Home() {
             <a href="#faq" className="transition-colors hover:text-white">FAQ</a>
             <a href="/pricing" className="transition-colors hover:text-white">Pricing</a>
           </nav>
-          <div className="flex items-center justify-end gap-3">
+          {/* Desktop auth buttons */}
+          <div className="hidden items-center justify-end gap-3 md:flex">
             <a href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
               Sign in
             </a>
@@ -157,7 +159,58 @@ export default function Home() {
               Get started free
             </a>
           </div>
+          {/* Mobile: sign-in link + hamburger */}
+          <div className="flex items-center gap-2 md:hidden">
+            <a href="/sign-in" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white">
+              Sign in
+            </a>
+            <button
+              onClick={() => setMobileMenuOpen((o) => !o)}
+              aria-label="Toggle menu"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 hover:text-white transition-colors"
+            >
+              {mobileMenuOpen ? (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
+        {/* Mobile drawer */}
+        {mobileMenuOpen && (
+          <div className="border-t border-white/8 bg-black/95 px-4 py-4 md:hidden">
+            <nav className="flex flex-col gap-1">
+              {[
+                { href: '#how-it-works', label: 'How it works' },
+                { href: '#features', label: 'Features' },
+                { href: '#faq', label: 'FAQ' },
+                { href: '/pricing', label: 'Pricing' },
+              ].map((link) => (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+                >
+                  {link.label}
+                </a>
+              ))}
+            </nav>
+            <div className="mt-4 pt-4 border-t border-white/8">
+              <a
+                href="/sign-up"
+                className="block w-full rounded-full bg-white py-2.5 text-center text-sm font-bold text-black"
+              >
+                Get started free →
+              </a>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* ── Hero / Generator ───────────────────────────────────────────────── */}
@@ -197,20 +250,20 @@ export default function Home() {
                 onChange={(e) => { setIsUserTyping(true); setUserInput(e.target.value); setStreamingText(e.target.value); }}
                 className="w-full resize-none rounded-xl border-0 bg-black/60 px-5 py-3 text-base text-white/60 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:text-white min-h-[100px] max-h-[120px]"
               />
-              <div className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
                 <div className="flex items-center gap-2 text-xs text-white/40">
-                  <svg className="h-3.5 w-3.5 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-3.5 w-3.5 flex-shrink-0 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                   <span className="text-[#00ffff]">Gemini AI</span>
                   <span className="text-white/20">·</span>
-                  <span>React Email</span>
-                  <span className="text-white/20">·</span>
-                  <span>HTML & TSX export</span>
+                  <span className="hidden sm:inline">React Email</span>
+                  <span className="hidden sm:inline text-white/20">·</span>
+                  <span className="hidden sm:inline">HTML & TSX export</span>
                 </div>
                 <button
                   onClick={handleGenerateEmail}
-                  className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black transition-all hover:shadow-xl hover:shadow-white/20 hover:-translate-y-px hover:scale-105 active:scale-100 whitespace-nowrap"
+                  className="w-full rounded-full bg-white px-6 py-2.5 text-sm font-semibold text-black transition-all hover:shadow-xl hover:shadow-white/20 hover:-translate-y-px hover:scale-105 active:scale-100 sm:w-auto sm:py-2"
                 >
                   Generate Email →
                 </button>
