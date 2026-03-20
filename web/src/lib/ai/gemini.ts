@@ -115,6 +115,11 @@ export interface EmailSection {
     buttonText?: string;
     buttonUrl?: string;
   }>;
+  // Per-section generation hints (used by the AI block-regeneration feature)
+  /** Tone hint for AI block regeneration — e.g. 'urgent', 'playful', 'professional', 'casual', 'warm', 'inspiring', 'formal', 'humorous' */
+  sectionTone?: string;
+  /** Writing-style hint for AI block regeneration — e.g. 'punchy', 'storytelling', 'data-driven', 'conversational', 'minimal', 'detailed' */
+  sectionStyle?: string;
   // Per-section color overrides
   /** Override the section background color (hex, e.g. "#f0f4ff") */
   backgroundColor?: string;
@@ -716,6 +721,132 @@ RULES:
 10. Adapt all content and structure to match the ${designStyle} style perfectly
 11. CRITICAL: ALL string values in the JSON must be PLAIN TEXT ONLY. Never use HTML tags, <span>, <b>, <i>, CSS styles, or any markup inside JSON string fields. The renderer will handle all styling — your job is content only.
 12. NO EMOJIS anywhere in the output — not in subject lines, headings, body text, button labels, or any other field.`;
+}
+
+// ─────────────────────────────────────────────
+// Block regeneration
+// ─────────────────────────────────────────────
+
+/**
+ * Rewrite the content fields of a single email section using tone/style hints.
+ * Returns only the writable content fields (never images, colors, or hints).
+ */
+export async function regenerateSingleSection(
+  section: EmailSection,
+  emailSubject: string,
+  allSections: EmailSection[],
+  brandProfile: BrandProfile | null,
+  designStyle: string,
+): Promise<Partial<EmailSection>> {
+  const tone  = section.sectionTone  || 'professional';
+  const style = section.sectionStyle || 'conversational';
+
+  const palette = buildEmailPalette(
+    brandProfile?.primary_color ?? '#5c5cf0',
+    brandProfile?.background_color ?? null,
+  );
+  const brandContext = brandProfile
+    ? `Brand: ${brandProfile.brand_name}. Voice: ${brandProfile.brand_voice}. Industry: ${brandProfile.industry || 'not specified'}.`
+    : 'No brand profile — use a neutral professional tone.';
+
+  // Give the AI lightweight context about surrounding sections
+  const surroundingContext = allSections
+    .filter((_, i) => allSections[i] !== section)
+    .map(s => `${s.type}${s.heading ? ` ("${s.heading}")` : ''}`)
+    .join(', ');
+
+  // Build the per-type content field list so the AI knows exactly what to return
+  const typeFieldGuide: Record<string, string> = {
+    hero:           'eyebrow, heading, subheading, intro, text, buttonText, secondaryButtonText',
+    content:        'eyebrow, heading, intro, text',
+    cta:            'eyebrow, heading, intro, text, buttonText, secondaryButtonText',
+    announcement:   'eyebrow, heading, text',
+    'image-text':   'eyebrow, heading, subheading, text, buttonText',
+    'feature-list': 'heading, subheading, features (each: title, description)',
+    testimonial:    'quote',
+    testimonials:   'heading, subheading, testimonials (each: quote)',
+    stats:          'heading, stats (each: value, label)',
+    gallery:        'heading',
+    'pricing-table':'heading',
+    coupon:         'heading, text, expiryText',
+    columns:        'heading, columns (each: heading, text)',
+    'social-links': 'text',
+    header:         'tagline',
+    footer:         'text',
+    divider:        'text',
+    quote:          'text, author, authorTitle',
+    'code-block':   'heading, subheading',
+  };
+
+  const fieldsToReturn = typeFieldGuide[section.type] || 'heading, text';
+
+  const prompt = `You are an expert email copywriter. Rewrite the content fields of a single "${section.type}" email block.
+
+EMAIL SUBJECT: "${emailSubject}"
+SURROUNDING SECTIONS: ${surroundingContext}
+DESIGN STYLE: ${designStyle}
+${brandContext}
+
+TONE: ${tone}
+WRITING STYLE: ${style}
+
+CURRENT BLOCK (JSON):
+${JSON.stringify(section, null, 2)}
+
+INSTRUCTIONS:
+1. Rewrite ONLY these fields: ${fieldsToReturn}
+2. Keep the exact same JSON field names — do not rename or add/remove fields
+3. Do NOT change: type, imageUrl, imageKeyword, backgroundImageKeyword, backgroundColor, textColor, buttonColor, backgroundGradient, buttonUrl, secondaryButtonUrl, sectionTone, sectionStyle, or any URL/color/image fields
+4. Apply the tone "${tone}" and writing style "${style}" strictly
+5. Keep within the same general topic — do not change the subject matter
+6. Return ONLY a valid JSON object containing the rewritten fields — no markdown, no explanation
+7. NO emojis anywhere. Plain text only.
+8. Short, punchy copy wins over verbose prose (unless style = 'detailed' or 'storytelling')
+
+Return ONLY the JSON object with the rewritten content fields.`;
+
+  const fullPrompt = `${prompt}`;
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(res => setTimeout(res, 2000));
+      const result = await tryGenerateWithModel(MODEL_PRIMARY, fullPrompt);
+      // tryGenerateWithModel returns a GeneratedEmail, but we passed a section prompt
+      // We'll call the model directly instead
+      throw new Error('use-direct');
+    } catch {
+      break;
+    }
+  }
+
+  // Call model directly (not via tryGenerateWithModel which expects GeneratedEmail shape)
+  async function callModel(modelName: string): Promise<Partial<EmailSection>> {
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      generationConfig: { temperature: 1.0, topP: 0.95, topK: 40, maxOutputTokens: 2048 },
+    });
+    const result = await model.generateContent(fullPrompt);
+    const text = result.response.text();
+    const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+    const jsonMatch = stripped.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in response');
+    return JSON.parse(jsonMatch[0]) as Partial<EmailSection>;
+  }
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(res => setTimeout(res, 2000));
+      return await callModel(MODEL_PRIMARY);
+    } catch (err) {
+      if (attempt === 1) break;
+    }
+  }
+
+  try {
+    return await callModel(MODEL_FALLBACK);
+  } catch (err) {
+    throw err instanceof Error ? err : new Error('Failed to regenerate section');
+  }
 }
 
 /**

@@ -33,6 +33,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [defaultColors, setDefaultColors] = useState<{ bodyBg: string; bodyColor: string; primaryColor: string; secondaryColor: string } | null>(null);
+  const [regeneratingSection, setRegeneratingSection] = useState<number | null>(null);
+  const [blockError, setBlockError] = useState<{ index: number; message: string } | null>(null);
 
   // Live preview state
   const [livePreviewHtml, setLivePreviewHtml] = useState<string | null>(null);
@@ -488,6 +490,53 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                               )}
                             </div>
                             <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
+                              {/* Wand / regenerate button */}
+                              {!['divider', 'header', 'social-links', 'footer'].includes(section.type) && (
+                                <button
+                                  disabled={regeneratingSection !== null}
+                                  onClick={async () => {
+                                    if (!email || regeneratingSection !== null) return;
+                                    setBlockError(null);
+                                    setRegeneratingSection(index);
+                                    try {
+                                      const res = await fetch('/api/regenerate-block', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          emailGenerationId: email.id,
+                                          sectionIndex: index,
+                                          designStyle: email.design_style,
+                                        }),
+                                      });
+                                      const data = await res.json();
+                                      if (!res.ok) throw new Error(data.error || 'Failed to regenerate');
+                                      updateSection(index, data.section);
+                                      if (data.html_code) {
+                                        setLivePreviewHtml(data.html_code);
+                                        setPreviewKey(k => k + 1);
+                                      }
+                                    } catch (err) {
+                                      setBlockError({ index, message: err instanceof Error ? err.message : 'Regeneration failed' });
+                                    } finally {
+                                      setRegeneratingSection(null);
+                                    }
+                                  }}
+                                  className={`p-1.5 rounded transition-all ${
+                                    (section.sectionTone || section.sectionStyle)
+                                      ? 'text-[#00ffff] hover:bg-[#00ffff]/10'
+                                      : 'text-white/20 hover:text-[#00ffff] hover:bg-[#00ffff]/10 opacity-0 group-hover:opacity-100'
+                                  } disabled:opacity-30 disabled:cursor-not-allowed`}
+                                  title={section.sectionTone || section.sectionStyle ? `Regenerate (${[section.sectionTone, section.sectionStyle].filter(Boolean).join(', ')})` : 'Regenerate block with AI'}
+                                >
+                                  {regeneratingSection === index ? (
+                                    <div className="w-3.5 h-3.5 border-2 border-[#00ffff]/30 border-t-[#00ffff] rounded-full animate-spin" />
+                                  ) : (
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                    </svg>
+                                  )}
+                                </button>
+                              )}
                               <button
                                 disabled={!canMoveUp}
                                 onClick={() => moveSection(index, 'up')}
@@ -1034,6 +1083,44 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <p className="text-[11px] text-white/25 mt-1">Leave blank to use your ESP's merge tag</p>
                                   </div>
                                 </>
+                              )}
+
+                              {/* ── AI Generation Hints ── */}
+                              {!['divider', 'header', 'social-links'].includes(section.type) && (
+                                <div className="pt-3 mt-1 border-t border-white/10">
+                                  <label className="block text-xs text-white/40 mb-2 uppercase tracking-wider">AI Hints <span className="normal-case text-white/20 font-normal">(guide block regeneration)</span></label>
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Tone</label>
+                                      <select
+                                        value={section.sectionTone || ''}
+                                        onChange={e => updateSection(index, { sectionTone: e.target.value || undefined })}
+                                        className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors"
+                                      >
+                                        <option value="" className="bg-[#0a0a0a]">— default —</option>
+                                        {['urgent', 'playful', 'professional', 'casual', 'warm', 'inspiring', 'formal', 'humorous'].map(t => (
+                                          <option key={t} value={t} className="bg-[#0a0a0a]">{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                    <div>
+                                      <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Style</label>
+                                      <select
+                                        value={section.sectionStyle || ''}
+                                        onChange={e => updateSection(index, { sectionStyle: e.target.value || undefined })}
+                                        className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors"
+                                      >
+                                        <option value="" className="bg-[#0a0a0a]">— default —</option>
+                                        {['punchy', 'storytelling', 'data-driven', 'conversational', 'minimal', 'detailed'].map(s => (
+                                          <option key={s} value={s} className="bg-[#0a0a0a]">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+                                        ))}
+                                      </select>
+                                    </div>
+                                  </div>
+                                  {blockError?.index === index && (
+                                    <p className="mt-1.5 text-[11px] text-red-400">{blockError.message}</p>
+                                  )}
+                                </div>
                               )}
 
                               {/* ── Color overrides ── */}
