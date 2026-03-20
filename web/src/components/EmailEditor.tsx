@@ -69,6 +69,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     'image-text':  { heading: 'Feature Title', text: 'Describe the feature.', imageUrl: '', imagePosition: 'left' },
     'feature-list': { heading: 'Our Features', features: [{ title: 'Feature 1', description: 'Description here.' }] },
     testimonial:   { quote: 'This product changed my life.', author: 'Jane Doe', authorTitle: 'CEO, Acme Inc.' },
+    testimonials:  { heading: 'What Our Customers Say', testimonials: [{ quote: 'This product changed my life.', author: 'Jane Doe', authorTitle: 'CEO, Acme Inc.', rating: 5 }, { quote: 'Highly recommend to everyone.', author: 'John Smith', authorTitle: 'Founder, StartupXYZ', rating: 5 }] },
     stats:         { heading: 'By the Numbers', stats: [{ value: '1,000+', label: 'Customers' }, { value: '99%', label: 'Satisfaction' }] },
     gallery:       { heading: 'Gallery', images: [{ url: '', alt: 'Image 1' }, { url: '', alt: 'Image 2' }] },
     'pricing-table': { heading: 'Pricing', plans: [{ name: 'Pro', price: '$29', period: '/mo', features: ['Feature A', 'Feature B'], buttonText: 'Start Free Trial' }] },
