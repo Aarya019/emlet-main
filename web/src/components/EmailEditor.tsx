@@ -422,119 +422,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       <main className="relative">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-0">
           
-          {/* Preview Panel - LEFT (2/3 width) */}
-          <div className="lg:col-span-2 border-r border-white/10">
-            <div className="h-[calc(100vh-73px)] overflow-y-auto p-6">
-              <div className="mb-4 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-white mb-1">Live Preview</h3>
-                    {previewing && (
-                      <span className="flex items-center gap-1 text-xs text-cyan-400 animate-pulse">
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block" />
-                        Updating…
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-white/60">See how your email looks</p>
-                </div>
-                
-                {/* View Mode Toggle */}
-                <div className="flex items-center gap-2 p-1 rounded-lg bg-white/5 border border-white/10">
-                  <button
-                    onClick={() => setPreviewMode('desktop')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 ${
-                      previewMode === 'desktop'
-                        ? 'bg-white text-black'
-                        : 'text-white/60 hover:text-white'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    Desktop
-                  </button>
-                  <button
-                    onClick={() => setPreviewMode('mobile')}
-                    className={`px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 ${
-                      previewMode === 'mobile'
-                        ? 'bg-white text-black'
-                        : 'text-white/60 hover:text-white'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                    Mobile
-                  </button>
-                </div>
-              </div>
-              
-              <div className={`mx-auto transition-all duration-300 ${
-                previewMode === 'mobile' ? 'max-w-[375px]' : 'max-w-full'
-              }`}>
-                {email.html_code ? (
-                  // Use generated HTML for accurate design-style preview
-                  <div className="rounded-lg overflow-hidden shadow-2xl border border-white/20">
-                    <iframe
-                      key={previewKey}
-                      srcDoc={livePreviewHtml ?? email.html_code}
-                      title="Email Preview"
-                      className="w-full border-0"
-                      style={{ height: '700px' }}
-                      sandbox="allow-same-origin"
-                    />
-                  </div>
-                ) : (
-                  // Fallback: manual render from JSON
-                  <div className="bg-white rounded-lg overflow-hidden shadow-2xl border-4 border-black">
-                    <div className="p-8 space-y-6">
-                      <div className="text-xs text-gray-500 border-b border-gray-200 pb-4">
-                        <div className="font-bold text-gray-900 mb-1">{emailContent.subject}</div>
-                        <div>{emailContent.previewText}</div>
-                      </div>
-                      {emailContent.sections.map((section, index) => (
-                        <div key={index} className="space-y-3">
-                          {section.type === 'hero' && (
-                            <div className="text-center">
-                              {section.imageUrl && <img src={section.imageUrl} alt={section.imageAlt} className="w-full mb-4 rounded" />}
-                              {section.heading && <h1 className="text-3xl font-black text-gray-900 mb-2">{section.heading}</h1>}
-                              {section.subheading && <p className="text-lg text-gray-600">{section.subheading}</p>}
-                            </div>
-                          )}
-                          {section.type === 'content' && (
-                            <div>
-                              {section.heading && <h2 className="text-2xl font-black text-gray-900 mb-2">{section.heading}</h2>}
-                              {section.text && <p className="text-gray-700 leading-relaxed">{section.text}</p>}
-                            </div>
-                          )}
-                          {section.type === 'cta' && (
-                            <div className="text-center py-6">
-                              {section.heading && <h3 className="text-xl font-black text-gray-900 mb-2">{section.heading}</h3>}
-                              {section.text && <p className="text-gray-600 mb-4">{section.text}</p>}
-                              {section.buttonText && (
-                                <a href={section.buttonUrl || '#'} className="inline-block px-8 py-4 bg-black text-white font-bold text-lg rounded">
-                                  {section.buttonText}
-                                </a>
-                              )}
-                            </div>
-                          )}
-                          {section.type === 'footer' && (
-                            <div className="text-center text-sm text-gray-500 border-t border-gray-200 pt-4">
-                              {section.text && <p>{section.text}</p>}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Editor Panel - RIGHT (1/3 width) */}
-          <div className="lg:col-span-1 relative">
+          {/* Editor Panel - LEFT (1/3 width) */}
+          <div className="lg:col-span-1 relative border-r border-white/10">
             <div className="h-[calc(100vh-73px)] overflow-y-auto p-6 space-y-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -1498,6 +1387,117 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 </div>
               </>
             )}
+          </div>
+
+          {/* Preview Panel - RIGHT (2/3 width) */}
+          <div className="lg:col-span-2 relative">
+            <div className="h-[calc(100vh-73px)] overflow-y-auto p-6">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold text-white mb-1">Live Preview</h3>
+                    {previewing && (
+                      <span className="flex items-center gap-1 text-xs text-cyan-400 animate-pulse">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block" />
+                        Updating…
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-white/60">See how your email looks</p>
+                </div>
+
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-2 p-1 rounded-lg bg-white/5 border border-white/10">
+                  <button
+                    onClick={() => setPreviewMode('desktop')}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 ${
+                      previewMode === 'desktop'
+                        ? 'bg-white text-black'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    Desktop
+                  </button>
+                  <button
+                    onClick={() => setPreviewMode('mobile')}
+                    className={`px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 ${
+                      previewMode === 'mobile'
+                        ? 'bg-white text-black'
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                    Mobile
+                  </button>
+                </div>
+              </div>
+
+              <div className={`mx-auto transition-all duration-300 ${
+                previewMode === 'mobile' ? 'max-w-[375px]' : 'max-w-full'
+              }`}>
+                {email.html_code ? (
+                  // Use generated HTML for accurate design-style preview
+                  <div className="rounded-lg overflow-hidden shadow-2xl border border-white/20">
+                    <iframe
+                      key={previewKey}
+                      srcDoc={livePreviewHtml ?? email.html_code}
+                      title="Email Preview"
+                      className="w-full border-0"
+                      style={{ height: '700px' }}
+                      sandbox="allow-same-origin"
+                    />
+                  </div>
+                ) : (
+                  // Fallback: manual render from JSON
+                  <div className="bg-white rounded-lg overflow-hidden shadow-2xl border-4 border-black">
+                    <div className="p-8 space-y-6">
+                      <div className="text-xs text-gray-500 border-b border-gray-200 pb-4">
+                        <div className="font-bold text-gray-900 mb-1">{emailContent.subject}</div>
+                        <div>{emailContent.previewText}</div>
+                      </div>
+                      {emailContent.sections.map((section, index) => (
+                        <div key={index} className="space-y-3">
+                          {section.type === 'hero' && (
+                            <div className="text-center">
+                              {section.imageUrl && <img src={section.imageUrl} alt={section.imageAlt} className="w-full mb-4 rounded" />}
+                              {section.heading && <h1 className="text-3xl font-black text-gray-900 mb-2">{section.heading}</h1>}
+                              {section.subheading && <p className="text-lg text-gray-600">{section.subheading}</p>}
+                            </div>
+                          )}
+                          {section.type === 'content' && (
+                            <div>
+                              {section.heading && <h2 className="text-2xl font-black text-gray-900 mb-2">{section.heading}</h2>}
+                              {section.text && <p className="text-gray-700 leading-relaxed">{section.text}</p>}
+                            </div>
+                          )}
+                          {section.type === 'cta' && (
+                            <div className="text-center py-6">
+                              {section.heading && <h3 className="text-xl font-black text-gray-900 mb-2">{section.heading}</h3>}
+                              {section.text && <p className="text-gray-600 mb-4">{section.text}</p>}
+                              {section.buttonText && (
+                                <a href={section.buttonUrl || '#'} className="inline-block px-8 py-4 bg-black text-white font-bold text-lg rounded">
+                                  {section.buttonText}
+                                </a>
+                              )}
+                            </div>
+                          )}
+                          {section.type === 'footer' && (
+                            <div className="text-center text-sm text-gray-500 border-t border-gray-200 pt-4">
+                              {section.text && <p>{section.text}</p>}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </main>
