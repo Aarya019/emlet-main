@@ -1654,6 +1654,126 @@ function renderDivider(section: EmailSection, config: StyleConfig): React.ReactE
 }
 
 // ─────────────────────────────────────────────
+function renderTestimonials(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+  const fg       = section.textColor   || config.bodyColor;
+  const btn      = section.buttonColor || primaryColor;
+  const cFg      = cardTextColor(config.cardStyle.backgroundColor as string | undefined);
+  const cFgMuted = cFg + '99';
+  const items    = section.testimonials || [];
+
+  const headingEl = section.heading
+    ? React.createElement(Heading, {
+        as: 'h2',
+        style: {
+          fontFamily: config.headingFontFamily,
+          fontSize: '24px',
+          fontWeight: config.headingWeight,
+          color: fg,
+          margin: '0 0 8px 0',
+          textAlign: 'center' as const,
+        }
+      }, section.heading)
+    : null;
+
+  const subheadingEl = section.subheading
+    ? React.createElement(Text, {
+        style: {
+          fontFamily: config.fontFamily,
+          fontSize: '15px',
+          color: fg + '99',
+          margin: '0 0 24px 0',
+          textAlign: 'center' as const,
+        }
+      }, section.subheading)
+    : null;
+
+  const pairs: typeof items[] = [];
+  for (let i = 0; i < items.length; i += 2) pairs.push(items.slice(i, i + 2));
+
+  return React.createElement(Section, {
+    className: 'em-section',
+    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
+  },
+    headingEl,
+    subheadingEl,
+    ...pairs.map((pair, rowIdx) =>
+      React.createElement(Section, { key: rowIdx, style: { marginBottom: '16px' } },
+        React.createElement(Row, null,
+          ...pair.map((item, i) => {
+            const filled = Math.min(5, Math.max(1, Math.round(item.rating ?? 5)));
+            const stars = '\u2605'.repeat(filled) + '\u2606'.repeat(5 - filled);
+            return React.createElement(Column, {
+              key: i,
+              className: 'em-col',
+              style: { verticalAlign: 'top', padding: '0 8px' }
+            },
+              React.createElement('div', { style: { ...config.cardStyle } },
+                // Star rating
+                React.createElement(Text, {
+                  style: {
+                    fontFamily: "'Arial', sans-serif",
+                    fontSize: '16px',
+                    color: btn,
+                    margin: '0 0 10px 0',
+                    letterSpacing: '1px',
+                  }
+                }, stars),
+                // Quote text
+                React.createElement(Text, {
+                  style: {
+                    fontFamily: config.fontFamily,
+                    fontSize: '14px',
+                    fontStyle: 'italic',
+                    color: cFg,
+                    lineHeight: '1.65',
+                    margin: '0 0 16px 0',
+                  }
+                }, `\u201C${item.quote}\u201D`),
+                // Author: avatar + name/title
+                React.createElement(Row, null,
+                  item.authorImage
+                    ? React.createElement(Column, { style: { width: '44px', verticalAlign: 'middle' } },
+                        React.createElement(Img, {
+                          src: item.authorImage,
+                          alt: item.author,
+                          width: '36',
+                          height: '36',
+                          style: { width: '36px', height: '36px', borderRadius: '50%', display: 'block' }
+                        })
+                      )
+                    : null,
+                  React.createElement(Column, { style: { verticalAlign: 'middle' } },
+                    React.createElement(Text, {
+                      style: {
+                        fontFamily: config.fontFamily,
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        color: cFg,
+                        margin: '0 0 2px 0',
+                      }
+                    }, item.author),
+                    item.authorTitle
+                      ? React.createElement(Text, {
+                          style: {
+                            fontFamily: config.fontFamily,
+                            fontSize: '11px',
+                            color: cFgMuted,
+                            margin: '0',
+                          }
+                        }, item.authorTitle)
+                      : null
+                  )
+                )
+              )
+            );
+          })
+        )
+      )
+    )
+  );
+}
+
+// ─────────────────────────────────────────────
 // Main renderer
 // ─────────────────────────────────────────────
 
@@ -1668,6 +1788,7 @@ function renderSection(
     case 'hero':          return renderHero(section, config, primaryColor);
     case 'content':       return renderContent(section, config, primaryColor);
     case 'testimonial':   return renderTestimonial(section, config, primaryColor, secondaryColor);
+    case 'testimonials':  return renderTestimonials(section, config, primaryColor);
     case 'feature-list':  return renderFeatureList(section, config, primaryColor);
     case 'pricing-table': return renderPricingTable(section, config, primaryColor);
     case 'stats':         return renderStats(section, config, primaryColor);

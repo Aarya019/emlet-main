@@ -7,7 +7,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Email content structure
 export interface EmailSection {
-  type: 'hero' | 'content' | 'cta' | 'footer' | 'testimonial' | 'feature-list' | 'pricing-table' | 'gallery' | 'stats' | 'announcement' | 'header' | 'image-text' | 'coupon' | 'social-links' | 'columns' | 'divider' | 'quote' | 'code-block';
+  type: 'hero' | 'content' | 'cta' | 'footer' | 'testimonial' | 'testimonials' | 'feature-list' | 'pricing-table' | 'gallery' | 'stats' | 'announcement' | 'header' | 'image-text' | 'coupon' | 'social-links' | 'columns' | 'divider' | 'quote' | 'code-block';
   heading?: string;
   subheading?: string;
   /** Large lead paragraph rendered at a bigger, bolder size above the body text. Use for strong opening statements or key summaries. */
@@ -40,6 +40,16 @@ export interface EmailSection {
   author?: string;
   authorTitle?: string;
   authorImage?: string;
+  // For testimonials (plural) sections — 2-column grid of multiple quote cards
+  testimonials?: Array<{
+    quote: string;
+    author: string;
+    authorTitle?: string;
+    /** URL to a circular avatar image (40×40px) */
+    authorImage?: string;
+    /** Star rating 1–5 (defaults to 5) */
+    rating?: number;
+  }>;
   // For feature-list sections
   features?: Array<{
     icon?: string;
@@ -420,7 +430,7 @@ COLOR PALETTE — use ONLY these exact hex values for backgroundColor, textColor
 - BODY_TEXT      (default body text):           "${palette.bodyText}"
 
 MANDATORY EMAIL COMPOSITION RULES (non-negotiable):
-1. STRUCTURE: Always generate 6–8 sections minimum. Required sequence: header → hero → [2–4 body sections] → cta → footer. Body sections must include a mix of at least one feature-list or stats, one content or image-text, and optionally a testimonial or quote.
+1. STRUCTURE: Always generate 6–8 sections minimum. Required sequence: header → hero → [2–4 body sections] → cta → footer. Body sections must include a mix of at least one feature-list or stats, one content or image-text, and optionally a testimonials grid (preferred over single testimonial when showing multiple quotes) or quote.
 2. VISUAL RHYTHM — set backgroundColor on EVERY section using ONLY the palette above:
    - Default light sections:        "${palette.surface}"
    - Alternate light sections:      "${palette.surfaceAlt}"
@@ -491,6 +501,25 @@ Return a JSON object with this exact structure:
       "author": "Customer Name",
       "authorTitle": "Job Title, Company",
       "authorImage": "https://placehold.co/80x80"
+    },
+    {
+      "type": "testimonials",
+      "heading": "Loved by thousands of teams",
+      "subheading": "Here's what our customers have to say",
+      "testimonials": [
+        {
+          "quote": "We cut our email production time from 2 hours to 8 minutes. The ROI was clear within the first week.",
+          "author": "Sarah Chen",
+          "authorTitle": "Head of Marketing, Acme Corp",
+          "rating": 5
+        },
+        {
+          "quote": "Finally an email tool that actually understands our brand. Every email looks like our designers made it.",
+          "author": "Marcus Lee",
+          "authorTitle": "Founder, GrowthLab",
+          "rating": 5
+        }
+      ]
     },
     {
       "type": "feature-list",
@@ -626,7 +655,8 @@ SECTION TYPES:
 - header: Brand logo bar with optional tagline — ALWAYS the very first section. Optionally supply 'columns' as an array of nav links [{heading:'About', buttonUrl:'/about'}, ...] to add a centered nav row below the logo.
 - hero: Main banner. MUST include: eyebrow + heading + intro + subheading + buttonText + buttonUrl. MUST set backgroundGradient (e.g. "linear-gradient(135deg, #0d1117 0%, #1a1a2e 100%)") and textColor: "#ffffff". Add secondaryButtonText+secondaryButtonUrl for a ghost/text secondary action. Always include imageKeyword for a contextual image.
 - content: Text content block. Add 'eyebrow' (e.g. "Behind The Scenes") for a small coloured label above the heading.
-- testimonial: Customer quote with author info. Include 'authorImage' URL to render a side-by-side avatar layout instead of centered card.
+- testimonial: Single customer quote with author info. Include 'authorImage' URL to render a side-by-side avatar layout instead of centered card.
+- testimonials: Grid of 2–4 customer quote cards (2 per row). Each item has 'quote' (required), 'author' (required), 'authorTitle', optional 'rating' (1–5 stars, default 5), and optional 'authorImage' URL. Use this instead of a single testimonial when you have multiple quotes to showcase. Add an optional 'subheading' below the main heading.
 - feature-list: List of product/service features with icons and descriptions. Set 'numbered: true' for step-by-step numbered badges. Set 'layout: "grid"' for a 2-column centered card grid.
 - pricing-table: Pricing tiers with features, highlight one as recommended
 - gallery: Grid of images with optional captions
@@ -643,13 +673,13 @@ SECTION TYPES:
 - footer: Footer with company details, address, and unsubscribe notice
 
 SECTION USAGE GUIDELINES (use as starting templates — always build a full, rich email, never a sparse one):
-- Product launch: header + hero + announcement (launch news) + feature-list + image-text + image-text (reversed) + stats + testimonial + pricing-table + cta + social-links + footer
+- Product launch: header + hero + announcement (launch news) + feature-list + image-text + image-text (reversed) + stats + testimonials + pricing-table + cta + social-links + footer
 - Newsletter: header + hero + content + divider + content + image-text + announcement + columns + cta + social-links + footer
-- Promotional/Sale: header + hero + announcement + coupon + stats + feature-list + testimonial + pricing-table + cta + footer
+- Promotional/Sale: header + hero + announcement + coupon + stats + feature-list + testimonials + pricing-table + cta + footer
 - Educational: header + hero + content + quote + columns + image-text + feature-list + stats + testimonial + cta + footer
 - Software/Dev: header + hero + content + code-block + feature-list + image-text + quote + stats + testimonial + cta + footer
-- Social proof: header + hero + stats + testimonial + gallery + image-text + columns + cta + footer
-- Product spotlight: header + hero + content + image-text + image-text (reversed) + feature-list + testimonial + cta + footer
+- Social proof: header + hero + stats + testimonials + gallery + image-text + columns + cta + footer
+- Product spotlight: header + hero + content + image-text + image-text (reversed) + feature-list + testimonials + cta + footer
 - Welcome email: header + hero + content + columns + feature-list + testimonial + cta + social-links + footer
 
 RULES:
