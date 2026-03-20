@@ -136,8 +136,8 @@ export async function fetchPexelsImage(
       photo = data.photos[0];
     }
 
-    // `large` (1280px wide) is sufficient for email; `large2x` is overkill
-    return photo.src.large;
+    // `large2x` (2560px wide) gives sharp images on retina/HiDPI displays
+    return photo.src.large2x;
   } catch (error) {
     console.error(`Failed to fetch Pexels image for "${keyword}":`, error);
     return null;

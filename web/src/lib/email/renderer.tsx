@@ -198,12 +198,14 @@ function renderPhosphorIcon(
 ): React.ReactElement {
   if (iconName) {
     const encodedColor = encodeURIComponent(color);
-    const url = `https://api.iconify.design/ph/${iconName}.svg?color=${encodedColor}&width=${size}&height=${size}`;
+    // Request 2× the display size so icons look sharp on retina/HiDPI screens
+    const fetch2x = size * 2;
+    const url = `https://api.iconify.design/ph/${iconName}.svg?color=${encodedColor}&width=${fetch2x}&height=${fetch2x}`;
     return React.createElement(Img, {
       src: url,
       alt: iconName,
-      width: String(size),
-      height: String(size),
+      width: String(fetch2x),
+      height: String(fetch2x),
       style: { width: `${size}px`, height: `${size}px`, display: 'block', margin: '0 auto' },
     });
   }
@@ -283,7 +285,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
         ? React.createElement(Img, {
             src: section.imageUrl,
             alt: section.imageAlt || '',
-            width: '520',
+            width: '1040',
             style: { width: '100%', maxWidth: '520px', marginBottom: '32px', borderRadius: config.borderRadius, display: 'block', margin: '0 auto 32px auto' }
           })
         : null,
@@ -1229,7 +1231,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
     React.createElement(Img, {
       src: section.imageUrl!,
       alt: section.imageAlt || '',
-      width: '260',
+      width: '520',
       style: { width: '100%', borderRadius: config.borderRadius, display: 'block' }
     })
   ) : null;
