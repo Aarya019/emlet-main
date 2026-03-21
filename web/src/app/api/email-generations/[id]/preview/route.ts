@@ -32,7 +32,7 @@ export async function POST(
     brandProfile = await getBrandProfile(generation.brand_profile_id, user.id);
   }
 
-  const { html } = await generateEmailHtml(content_json, generation.design_style, brandProfile);
+  const { html } = await generateEmailHtml(content_json, generation.design_style, brandProfile, true);
 
   return NextResponse.json({ html });
 }

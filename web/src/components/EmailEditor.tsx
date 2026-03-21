@@ -74,6 +74,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
   const [aiOpenSection, setAiOpenSection] = useState<number | null>(null);
 
+  // Always-current ref so the iframe onLoad handler reads latest sections without stale closure
+
   // Live preview state
   const [livePreviewHtml, setLivePreviewHtml] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
@@ -215,6 +217,100 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       return { ...prev, sections };
     });
     setIsDirty(true);
+  }, []);
+
+  // Shared iframe onLoad: section click-to-select + double-click inline field editing
+  const handleIframeLoad = useCallback(() => {
+    const iframe = iframeRef.current;
+    if (!iframe?.contentDocument?.body) return;
+    const doc = iframe.contentDocument;
+
+    const style = doc.createElement('style');
+    style.textContent = `
+      .em-section { cursor: pointer !important; outline: 2px solid transparent !important; outline-offset: 2px !important; transition: outline 0.12s ease !important; }
+      .em-section:hover { outline: 1px dashed rgba(150,150,150,0.5) !important; outline-offset: -1px !important; }
+      .em-section.em-selected { outline: 1px dashed rgba(180,180,180,0.8) !important; outline-offset: -1px !important; }
+      [data-em-field]:not([contenteditable="true"]):hover { outline: 1px solid rgba(96,165,250,0.45) !important; border-radius: 2px !important; cursor: text !important; }
+      [data-em-field][contenteditable="true"] { outline: 2px solid rgba(0,200,200,0.8) !important; outline-offset: 1px !important; border-radius: 2px !important; cursor: text !important; }
+    `;
+    doc.head.appendChild(style);
+
+    const script = doc.createElement('script');
+    script.textContent = `(function() {
+  var sections = Array.from(document.querySelectorAll('.em-section'));
+
+  // Section click-to-select
+  sections.forEach(function(sectionEl) {
+    // Derive the true JSON section index from the first renderer-tagged child field.
+    // We can't use the querySelectorAll loop index because header/footer/divider/social-links
+    // sections don't have the em-section class, so the DOM index != JSON index.
+    var firstField = sectionEl.querySelector('[data-em-si]');
+    var si = firstField ? parseInt(firstField.getAttribute('data-em-si'), 10) : -1;
+    if (isNaN(si) || si < 0) return;
+    sectionEl.setAttribute('data-em-index', si);
+    sectionEl.addEventListener('click', function(e) {
+      if (document.querySelector('[contenteditable="true"]')) return;
+      e.stopPropagation();
+      sections.forEach(function(s) { s.classList.remove('em-selected'); });
+      sectionEl.classList.add('em-selected');
+      window.parent.postMessage({ type: 'section-click', index: si }, '*');
+    });
+  });
+
+  // Double-click inline editing — relies on data-em-field attrs stamped by renderer in preview mode
+  Array.from(document.querySelectorAll('[data-em-field]')).forEach(function(el) {
+    el.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (el.getAttribute('contenteditable') === 'true') return;
+      startEdit(el);
+    });
+  });
+
+  function startEdit(el) {
+    var field = el.getAttribute('data-em-field');
+    var si = parseInt(el.getAttribute('data-em-si'), 10);
+    if (!field || isNaN(si)) return;
+    var isText = field === 'text';
+    var sectionEl = sections[si];
+    var textGroup = isText
+      ? Array.from(sectionEl ? sectionEl.querySelectorAll('[data-em-field="text"]') : [el])
+      : null;
+    var origContent = el.textContent || '';
+    el.setAttribute('contenteditable', 'true');
+    el.setAttribute('data-em-editing', '1');
+    el.focus();
+    try {
+      var r = document.createRange();
+      r.selectNodeContents(el);
+      var sel = window.getSelection();
+      if (sel) { sel.removeAllRanges(); sel.addRange(r); }
+    } catch(err) {}
+    var done = false;
+    function commit() {
+      if (done) return; done = true;
+      el.setAttribute('contenteditable', 'false');
+      el.removeAttribute('data-em-editing');
+      var value = isText && textGroup && textGroup.length > 1
+        ? textGroup.map(function(p) { return (p.textContent || '').trim(); }).join('\\n\\n')
+        : (el.textContent || '').trim();
+      if (value !== origContent.trim()) {
+        window.parent.postMessage({ type: 'field-update', sectionIndex: si, field: field, value: value }, '*');
+      }
+    }
+    function cancel() {
+      if (done) return; done = true;
+      el.setAttribute('contenteditable', 'false');
+      el.removeAttribute('data-em-editing');
+      el.textContent = origContent;
+    }
+    el.addEventListener('blur', function() { setTimeout(commit, 80); }, { once: true });
+    el.addEventListener('keydown', function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); el.removeEventListener('keydown', onKey); cancel(); return; }
+      if (e.key === 'Enter' && !e.shiftKey && !isText) { e.preventDefault(); el.removeEventListener('keydown', onKey); el.blur(); }
+    });
+  }
+})();`;
+    doc.body.appendChild(script);
   }, []);
 
   const deleteSection = useCallback((index: number) => {
@@ -383,8 +479,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     }
   };
 
-  // Click-to-edit: listen for postMessages from the preview iframe
+  // Listen for postMessages from the preview iframe (section-click + field-update)
   useEffect(() => {
+    const EDITABLE_FIELDS = new Set(['heading','subheading','intro','text','eyebrow',
+      'buttonText','secondaryButtonText','quote','author','authorTitle',
+      'tagline','expiryText','code','imageAlt']);
     const handler = (e: MessageEvent) => {
       if (e.data?.type === 'section-click' && typeof e.data.index === 'number') {
         const idx = e.data.index;
@@ -398,10 +497,19 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
           sectionRefs.current.get(idx)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 50);
       }
+      if (
+        e.data?.type === 'field-update' &&
+        typeof e.data.sectionIndex === 'number' &&
+        typeof e.data.field === 'string' &&
+        typeof e.data.value === 'string' &&
+        EDITABLE_FIELDS.has(e.data.field)
+      ) {
+        updateSection(e.data.sectionIndex, { [e.data.field as keyof EmailSection]: e.data.value });
+      }
     };
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, []);
+  }, [updateSection]);
 
   // dnd-kit sensors
   const sensors = useSensors(
@@ -1803,90 +1911,81 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                         title="Email Preview"
                         className="w-full border-0 block"
                         style={{ height: '700px' }}
-                        sandbox="allow-same-origin"
-                        onLoad={() => {
-                          const iframe = iframeRef.current;
-                          if (!iframe?.contentDocument) return;
-                          const doc = iframe.contentDocument;
-                          // Inject hover/selected styles
-                          const style = doc.createElement('style');
-                          style.textContent = `
-                            .em-section { cursor: pointer !important; outline: 2px solid transparent !important; outline-offset: 2px !important; transition: outline 0.12s ease !important; }
-                            .em-section:hover { outline: 1px dashed rgba(150,150,150,0.5) !important; outline-offset: -1px !important; }
-                            .em-section.em-selected { outline: 1px dashed rgba(180,180,180,0.8) !important; outline-offset: -1px !important; }
-                          `;
-                          doc.head.appendChild(style);
-                          // Inject click detection script
-                          const script = doc.createElement('script');
-                          script.textContent = `
-                            (function() {
-                              var sections = document.querySelectorAll('.em-section');
-                              sections.forEach(function(el, i) {
-                                el.addEventListener('click', function(e) {
-                                  e.stopPropagation();
-                                  sections.forEach(function(s) { s.classList.remove('em-selected'); });
-                                  el.classList.add('em-selected');
-                                  window.parent.postMessage({ type: 'section-click', index: i }, '*');
-                                });
-                              });
-                            })();
-                          `;
-                          doc.body.appendChild(script);
-                        }}
+                        sandbox="allow-same-origin allow-scripts"
+                        onLoad={handleIframeLoad}
                       />
                     </div>
                   ) : (
-                    // Mobile: phone frame
-                    <div className="mx-auto" style={{ maxWidth: '375px' }}>
-                      <div className="rounded-[2.5rem] overflow-hidden shadow-2xl border-2 border-white/20 bg-[#1c1c1e]" style={{ padding: '12px' }}>
-                        {/* Notch */}
-                        <div className="flex justify-center mb-2">
-                          <div className="w-24 h-5 bg-[#2a2a2d] rounded-full flex items-center justify-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-[#3a3a3d]" />
-                            <div className="w-2 h-2 rounded-full bg-[#3a3a3d]" />
+                    // Mobile: iPhone 15 Pro frame
+                    <div className="mx-auto select-none" style={{ width: '390px' }}>
+                      {/* Outer shell */}
+                      <div className="relative rounded-[3rem] bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_30px_80px_rgba(0,0,0,0.8),inset_0_0_0_1px_rgba(255,255,255,0.05)]" style={{ padding: '14px' }}>
+
+                        {/* Side buttons — volume up */}
+                        <div className="absolute rounded-l-sm bg-[#2e2e2e]" style={{ left: '-3px', top: '108px', width: '3px', height: '32px' }} />
+                        {/* Side buttons — volume down */}
+                        <div className="absolute rounded-l-sm bg-[#2e2e2e]" style={{ left: '-3px', top: '152px', width: '3px', height: '32px' }} />
+                        {/* Side buttons — action button */}
+                        <div className="absolute rounded-l-sm bg-[#2e2e2e]" style={{ left: '-3px', top: '72px', width: '3px', height: '24px' }} />
+                        {/* Side buttons — power/lock */}
+                        <div className="absolute rounded-r-sm bg-[#2e2e2e]" style={{ right: '-3px', top: '120px', width: '3px', height: '56px' }} />
+
+                        {/* Inner screen bezel */}
+                        <div className="rounded-[2.4rem] overflow-hidden bg-black relative" style={{ height: '814px' }}>
+
+                          {/* Status bar */}
+                          <div className="flex items-center justify-between bg-black px-6 pt-3 pb-1" style={{ height: '50px' }}>
+                            <span className="text-white text-xs font-semibold" style={{ fontSize: '13px' }}>9:41</span>
+                            {/* Dynamic Island */}
+                            <div className="absolute left-1/2 -translate-x-1/2 top-3 bg-black rounded-full z-10 flex items-center justify-center gap-2" style={{ width: '120px', height: '34px', boxShadow: '0 0 0 1px rgba(255,255,255,0.08)' }}>
+                              {/* Camera dot */}
+                              <div className="rounded-full bg-[#1c1c1e]" style={{ width: '11px', height: '11px' }} />
+                              {/* FaceID sensors */}
+                              <div className="rounded-full bg-[#2a2a2c]" style={{ width: '8px', height: '8px' }} />
+                            </div>
+                            {/* Status icons */}
+                            <div className="flex items-center gap-1.5">
+                              {/* Signal */}
+                              <svg width="17" height="12" viewBox="0 0 17 12" fill="white">
+                                <rect x="0" y="7" width="3" height="5" rx="0.5" opacity="0.4"/>
+                                <rect x="4.5" y="5" width="3" height="7" rx="0.5" opacity="0.6"/>
+                                <rect x="9" y="2.5" width="3" height="9.5" rx="0.5" opacity="0.8"/>
+                                <rect x="13.5" y="0" width="3" height="12" rx="0.5"/>
+                              </svg>
+                              {/* WiFi */}
+                              <svg width="16" height="12" viewBox="0 0 16 12" fill="white">
+                                <path d="M8 9.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z"/>
+                                <path d="M3.5 6.5a6.5 6.5 0 019 0" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.6"/>
+                                <path d="M1 4A9.8 9.8 0 0115 4" stroke="white" strokeWidth="1.5" fill="none" strokeLinecap="round" opacity="0.3"/>
+                              </svg>
+                              {/* Battery */}
+                              <div className="flex items-center gap-0.5">
+                                <div className="rounded-sm border border-white/70 relative flex items-center" style={{ width: '24px', height: '12px', padding: '2px' }}>
+                                  <div className="bg-white rounded-sm h-full" style={{ width: '70%' }} />
+                                </div>
+                                <div className="rounded-r-sm bg-white/50" style={{ width: '2px', height: '5px' }} />
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        <div className="rounded-2xl overflow-hidden">
-                          <iframe
-                            ref={iframeRef}
-                            key={previewKey}
-                            srcDoc={livePreviewHtml ?? email.html_code}
-                            title="Email Preview"
-                            className="w-full border-0 block"
-                            style={{ height: '620px' }}
-                            sandbox="allow-same-origin"
-                            onLoad={() => {
-                              const iframe = iframeRef.current;
-                              if (!iframe?.contentDocument) return;
-                              const doc = iframe.contentDocument;
-                              const style = doc.createElement('style');
-                              style.textContent = `
-                                .em-section { cursor: pointer !important; outline: 2px solid transparent !important; outline-offset: 2px !important; transition: outline 0.12s ease !important; }
-                                .em-section:hover { outline: 1px dashed rgba(150,150,150,0.5) !important; outline-offset: -1px !important; }
-                                .em-section.em-selected { outline: 1px dashed rgba(180,180,180,0.8) !important; outline-offset: -1px !important; }
-                              `;
-                              doc.head.appendChild(style);
-                              const script = doc.createElement('script');
-                              script.textContent = `
-                                (function() {
-                                  var sections = document.querySelectorAll('.em-section');
-                                  sections.forEach(function(el, i) {
-                                    el.addEventListener('click', function(e) {
-                                      e.stopPropagation();
-                                      sections.forEach(function(s) { s.classList.remove('em-selected'); });
-                                      el.classList.add('em-selected');
-                                      window.parent.postMessage({ type: 'section-click', index: i }, '*');
-                                    });
-                                  });
-                                })();
-                              `;
-                              doc.body.appendChild(script);
-                            }}
-                          />
-                        </div>
-                        {/* Home indicator */}
-                        <div className="flex justify-center mt-3">
-                          <div className="w-28 h-1 bg-white/20 rounded-full" />
+
+                          {/* Scrollable email content */}
+                          <div className="overflow-hidden" style={{ height: '764px' }}>
+                            <iframe
+                              ref={iframeRef}
+                              key={previewKey}
+                              srcDoc={livePreviewHtml ?? email.html_code}
+                              title="Email Preview"
+                              className="w-full border-0 block"
+                              style={{ height: '764px' }}
+                              sandbox="allow-same-origin allow-scripts"
+                              onLoad={handleIframeLoad}
+                            />
+                          </div>
+
+                          {/* Home indicator */}
+                          <div className="absolute bottom-2 left-0 right-0 flex justify-center">
+                            <div className="rounded-full bg-white/40" style={{ width: '120px', height: '4px' }} />
+                          </div>
                         </div>
                       </div>
                     </div>

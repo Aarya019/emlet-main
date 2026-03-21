@@ -23,6 +23,18 @@ import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
 import type { BrandProfile } from '@/lib/db/types';
 
 // ─────────────────────────────────────────────
+// Preview-mode data attribute helper
+// ─────────────────────────────────────────────
+
+/** Returns data attrs for inline field editing when preview=true; empty object otherwise. */
+function pv(preview: boolean, si: number, field: string, ti?: number): Record<string, string> {
+  if (!preview) return {};
+  const a: Record<string, string> = { 'data-em-field': field, 'data-em-si': String(si) };
+  if (ti != null) a['data-em-ti'] = String(ti);
+  return a;
+}
+
+// ─────────────────────────────────────────────
 // Style definitions per design style
 // ─────────────────────────────────────────────
 
@@ -236,7 +248,7 @@ function cardTextColor(bgHex: string | undefined): string {
 // ─────────────────────────────────────────────
 // Section renderers
 // ─────────────────────────────────────────────
-function renderHero(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderHero(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const hasBgImage = !!section.backgroundImageUrl;
   // When a background image is present, always force white text for readability
   const fg  = section.textColor || (hasBgImage ? '#ffffff' : config.bodyColor);
@@ -292,6 +304,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
       // Eyebrow label
       section.eyebrow
         ? React.createElement(Text, {
+            ...pv(preview, si, 'eyebrow'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '11px',
@@ -306,6 +319,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
       // Main headline — 42px for cinematic impact
       section.heading
         ? React.createElement(Heading, {
+            ...pv(preview, si, 'heading'),
             as: 'h1',
             style: {
               fontFamily: config.headingFontFamily,
@@ -321,6 +335,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
       // Intro — large bold lead statement rendered below the headline
       section.intro
         ? React.createElement(Text, {
+            ...pv(preview, si, 'intro'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '19px',
@@ -334,6 +349,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
       // Subheading
       section.subheading
         ? React.createElement(Text, {
+            ...pv(preview, si, 'subheading'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '17px',
@@ -384,7 +400,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
   );
 }
 
-function renderContent(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderContent(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const bg  = section.backgroundColor;
   const fg  = section.textColor || config.bodyColor;
   const accent = section.buttonColor || primaryColor;
@@ -397,6 +413,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
     // Optional eyebrow label — small uppercase coloured category tag above heading
     section.eyebrow
       ? React.createElement(Text, {
+          ...pv(preview, si, 'eyebrow'),
           style: {
             fontFamily: config.fontFamily,
             fontSize: '11px',
@@ -410,6 +427,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
       : null,
     section.heading
       ? React.createElement(Heading, {
+          ...pv(preview, si, 'heading'),
           as: 'h2',
           style: {
             fontFamily: config.headingFontFamily,
@@ -424,6 +442,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
     // Optional intro line — rendered larger, slightly bolder
     section.intro
       ? React.createElement(Text, {
+          ...pv(preview, si, 'intro'),
           style: {
             fontFamily: config.fontFamily,
             fontSize: '19px',
@@ -437,6 +456,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
     // Multi-paragraph body text
     ...paragraphs.map((para, i) =>
       React.createElement(Text, {
+        ...pv(preview, si, 'text', i),
         key: i,
         style: {
           fontFamily: config.fontFamily,
@@ -450,7 +470,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
   );
 }
 
-function renderTestimonial(section: EmailSection, config: StyleConfig, primaryColor: string, secondaryColor: string): React.ReactElement {
+function renderTestimonial(section: EmailSection, config: StyleConfig, primaryColor: string, secondaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   // Side-by-side layout: circular avatar on the left, quote + author on the right
@@ -470,6 +490,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
           React.createElement(Column, { style: { verticalAlign: 'middle' } },
             section.quote
               ? React.createElement(Text, {
+                  ...pv(preview, si, 'quote'),
                   style: {
                     fontFamily: config.fontFamily,
                     fontSize: '16px',
@@ -482,6 +503,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
               : null,
             section.author
               ? React.createElement(Text, {
+                  ...pv(preview, si, 'author'),
                   style: {
                     fontFamily: config.fontFamily,
                     fontSize: '13px',
@@ -493,6 +515,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
               : null,
             section.authorTitle
               ? React.createElement(Text, {
+                  ...pv(preview, si, 'authorTitle'),
                   style: {
                     fontFamily: config.fontFamily,
                     fontSize: '12px',
@@ -532,6 +555,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
       }, '\u201C'),
       section.quote
         ? React.createElement(Text, {
+            ...pv(preview, si, 'quote'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '18px',
@@ -544,6 +568,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
         : null,
       section.author
         ? React.createElement(Text, {
+            ...pv(preview, si, 'author'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '14px',
@@ -555,6 +580,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
         : null,
       section.authorTitle
         ? React.createElement(Text, {
+            ...pv(preview, si, 'authorTitle'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '12px',
@@ -931,7 +957,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
   );
 }
 
-function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const accent = section.buttonColor || primaryColor;
   const fg = section.textColor || config.bodyColor;
   return React.createElement(Section, {
@@ -951,6 +977,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
     },
       section.heading
         ? React.createElement(Heading, {
+            ...pv(preview, si, 'heading'),
             as: 'h2',
             style: {
               fontFamily: config.headingFontFamily,
@@ -963,6 +990,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
         : null,
       section.text
         ? React.createElement(Text, {
+            ...pv(preview, si, 'text'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '15px',
@@ -992,7 +1020,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
   );
 }
 
-function renderCta(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderCta(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const hasBgImage = !!section.backgroundImageUrl;
   // CTA defaults to brand primary background for maximum visual impact
   const sectionBgStyle: React.CSSProperties = hasBgImage
@@ -1027,6 +1055,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
     React.createElement('div', { className: 'em-section', style: innerStyle },
       section.heading
         ? React.createElement(Heading, {
+            ...pv(preview, si, 'heading'),
             as: 'h2',
             style: {
               fontFamily: config.headingFontFamily,
@@ -1040,6 +1069,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
         : null,
       section.text
         ? React.createElement(Text, {
+            ...pv(preview, si, 'text'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '16px',
@@ -1085,7 +1115,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
   );
 }
 
-function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor: string): React.ReactElement {
+function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || secondaryColor;
   return React.createElement(Section, {
@@ -1102,6 +1132,7 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
         })
       : null,
     React.createElement(Text, {
+      ...pv(preview, si, 'text'),
       style: {
         fontFamily: config.fontFamily,
         fontSize: '12px',
@@ -1143,7 +1174,7 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
   );
 }
 
-function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: string, secondaryColor: string): React.ReactElement {
+function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: string, secondaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || primaryColor;    // brand name / logo fallback text
   const btn = section.buttonColor || secondaryColor;  // tagline + nav links
   const borderVal = `${config.hrStyle.borderWidth ?? '1px'} ${config.hrStyle.borderStyle ?? 'solid'} ${config.hrStyle.borderColor ?? '#e0e0e0'}`;
@@ -1173,6 +1204,7 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
       section.tagline && !section.columns?.length
         ? React.createElement(Column, { style: { verticalAlign: 'middle', textAlign: 'right' as const } },
             React.createElement(Text, {
+              ...pv(preview, si, 'tagline'),
               style: {
                 fontFamily: config.fontFamily,
                 fontSize: '12px',
@@ -1213,7 +1245,7 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
   );
 }
 
-function renderImageText(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderImageText(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   const isLeft = section.imagePosition !== 'right';
@@ -1242,6 +1274,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
   },
     section.heading
       ? React.createElement(Heading, {
+          ...pv(preview, si, 'heading'),
           as: 'h2',
           style: {
             fontFamily: config.headingFontFamily,
@@ -1255,6 +1288,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
       : null,
     section.text
       ? React.createElement(Text, {
+          ...pv(preview, si, 'text'),
           style: {
             fontFamily: config.fontFamily,
             fontSize: '15px',
@@ -1308,7 +1342,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
   );
 }
 
-function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   return React.createElement(Section, {
@@ -1326,6 +1360,7 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
     },
       section.heading
         ? React.createElement(Text, {
+            ...pv(preview, si, 'heading'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '13px',
@@ -1339,6 +1374,7 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
         : null,
       section.code
         ? React.createElement(Text, {
+            ...pv(preview, si, 'code'),
             style: {
               fontFamily: "'Courier New', 'Courier', monospace",
               fontSize: '30px',
@@ -1355,6 +1391,7 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
         : null,
       section.text
         ? React.createElement(Text, {
+            ...pv(preview, si, 'text'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '15px',
@@ -1366,6 +1403,7 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
         : null,
       section.expiryText
         ? React.createElement(Text, {
+            ...pv(preview, si, 'expiryText'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '12px',
@@ -1543,7 +1581,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
   );
 }
 
-function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   return React.createElement(Section, {
@@ -1559,6 +1597,7 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
     },
       section.text
         ? React.createElement(Text, {
+            ...pv(preview, si, 'text'),
             style: {
               fontFamily: config.headingFontFamily,
               fontSize: '22px',
@@ -1572,6 +1611,7 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
         : null,
       section.author
         ? React.createElement(Text, {
+            ...pv(preview, si, 'author'),
             style: {
               fontFamily: config.fontFamily,
               fontSize: '13px',
@@ -1656,7 +1696,7 @@ function renderDivider(section: EmailSection, config: StyleConfig): React.ReactE
 }
 
 // ─────────────────────────────────────────────
-function renderTestimonials(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderTestimonials(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg       = section.textColor   || config.bodyColor;
   const btn      = section.buttonColor || primaryColor;
   const cFg      = cardTextColor(config.cardStyle.backgroundColor as string | undefined);
@@ -1665,6 +1705,7 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
 
   const headingEl = section.heading
     ? React.createElement(Heading, {
+        ...pv(preview, si, 'heading'),
         as: 'h2',
         style: {
           fontFamily: config.headingFontFamily,
@@ -1679,6 +1720,7 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
 
   const subheadingEl = section.subheading
     ? React.createElement(Text, {
+        ...pv(preview, si, 'subheading'),
         style: {
           fontFamily: config.fontFamily,
           fontSize: '15px',
@@ -1781,30 +1823,32 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
 
 function renderSection(
   section: EmailSection,
+  si: number,
   config: StyleConfig,
   primaryColor: string,
-  secondaryColor: string
+  secondaryColor: string,
+  preview = false,
 ): React.ReactElement | null {
   switch (section.type) {
-    case 'header':        return renderHeader(section, config, primaryColor, secondaryColor);
-    case 'hero':          return renderHero(section, config, primaryColor);
-    case 'content':       return renderContent(section, config, primaryColor);
-    case 'testimonial':   return renderTestimonial(section, config, primaryColor, secondaryColor);
-    case 'testimonials':  return renderTestimonials(section, config, primaryColor);
+    case 'header':        return renderHeader(section, config, primaryColor, secondaryColor, si, preview);
+    case 'hero':          return renderHero(section, config, primaryColor, si, preview);
+    case 'content':       return renderContent(section, config, primaryColor, si, preview);
+    case 'testimonial':   return renderTestimonial(section, config, primaryColor, secondaryColor, si, preview);
+    case 'testimonials':  return renderTestimonials(section, config, primaryColor, si, preview);
     case 'feature-list':  return renderFeatureList(section, config, primaryColor);
     case 'pricing-table': return renderPricingTable(section, config, primaryColor);
     case 'stats':         return renderStats(section, config, primaryColor);
     case 'gallery':       return renderGallery(section, config);
-    case 'announcement':  return renderAnnouncement(section, config, primaryColor);
-    case 'image-text':    return renderImageText(section, config, primaryColor);
-    case 'coupon':        return renderCoupon(section, config, primaryColor);
+    case 'announcement':  return renderAnnouncement(section, config, primaryColor, si, preview);
+    case 'image-text':    return renderImageText(section, config, primaryColor, si, preview);
+    case 'coupon':        return renderCoupon(section, config, primaryColor, si, preview);
     case 'social-links':  return renderSocialLinks(section, config, primaryColor);
     case 'columns':       return renderColumns(section, config, primaryColor);
     case 'divider':       return renderDivider(section, config);
-    case 'quote':         return renderQuote(section, config, primaryColor);
+    case 'quote':         return renderQuote(section, config, primaryColor, si, preview);
     case 'code-block':    return renderCodeBlock(section, config, primaryColor);
-    case 'cta':           return renderCta(section, config, primaryColor);
-    case 'footer':        return renderFooter(section, config, secondaryColor);
+    case 'cta':           return renderCta(section, config, primaryColor, si, preview);
+    case 'footer':        return renderFooter(section, config, secondaryColor, si, preview);
     default:              return null;
   }
 }
@@ -1812,7 +1856,8 @@ function renderSection(
 export async function generateEmailHtml(
   email: GeneratedEmail,
   designStyle: string,
-  brandProfile: BrandProfile | null
+  brandProfile: BrandProfile | null,
+  preview = false,
 ): Promise<{ html: string; reactCode: string }> {
   const config = styleConfigs[designStyle] || styleConfigs.minimalist;
   const primaryColor    = brandProfile?.primary_color    || '#5c5cf0';
@@ -1858,7 +1903,7 @@ export async function generateEmailHtml(
 
   // Build section elements
   const sectionElements = processedSections
-    .map(s => renderSection(s, config, primaryColor, secondaryColor))
+    .map((s, i) => renderSection(s, i, config, primaryColor, secondaryColor, preview))
     .filter((el): el is React.ReactElement => el !== null);
 
   // Build full email element
