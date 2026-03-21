@@ -600,7 +600,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                           ref={el => { if (el) sectionRefs.current.set(index, el); else sectionRefs.current.delete(index); }}
                           className={`group rounded-lg border bg-white/5 transition-all ${
                             isSelected
-                              ? 'border-[#00ffff] shadow-[0_0_0_1px_#00ffff40]'
+                              ? 'border-white/40 shadow-[0_0_0_1px_rgba(255,255,255,0.1)]'
                               : 'border-white/10 hover:border-white/20'
                           }`}
                           style={{ borderLeftColor: blockColor, borderLeftWidth: '3px' }}
@@ -1643,11 +1643,6 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                         Updating…
                       </span>
                     )}
-                    {selectedSection !== null && (
-                      <span className="px-2 py-0.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 text-[10px] font-bold text-[#00ffff] uppercase tracking-wide">
-                        Block #{selectedSection + 1} selected
-                      </span>
-                    )}
                   </div>
                   <p className="text-xs text-white/40 mt-0.5">Click a section in the preview to jump to it</p>
                 </div>
@@ -1725,8 +1720,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                           const style = doc.createElement('style');
                           style.textContent = `
                             .em-section { cursor: pointer !important; outline: 2px solid transparent !important; outline-offset: 2px !important; transition: outline 0.12s ease !important; }
-                            .em-section:hover { outline: 2px solid rgba(0,255,255,0.4) !important; }
-                            .em-section.em-selected { outline: 2px solid #00ffff !important; }
+                            .em-section:hover { outline: 1px dashed rgba(150,150,150,0.5) !important; outline-offset: -1px !important; }
+                            .em-section.em-selected { outline: 1px dashed rgba(180,180,180,0.8) !important; outline-offset: -1px !important; }
                           `;
                           doc.head.appendChild(style);
                           // Inject click detection script
@@ -1775,8 +1770,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                               const style = doc.createElement('style');
                               style.textContent = `
                                 .em-section { cursor: pointer !important; outline: 2px solid transparent !important; outline-offset: 2px !important; transition: outline 0.12s ease !important; }
-                                .em-section:hover { outline: 2px solid rgba(0,255,255,0.4) !important; }
-                                .em-section.em-selected { outline: 2px solid #00ffff !important; }
+                                .em-section:hover { outline: 1px dashed rgba(150,150,150,0.5) !important; outline-offset: -1px !important; }
+                                .em-section.em-selected { outline: 1px dashed rgba(180,180,180,0.8) !important; outline-offset: -1px !important; }
                               `;
                               doc.head.appendChild(style);
                               const script = doc.createElement('script');
