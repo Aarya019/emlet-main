@@ -7,8 +7,10 @@ import EmailGeneratingOverlay from '@/components/EmailGeneratingOverlay';
 
 function ManageBillingButton() {
   const [loading, setLoading] = useState(false);
+  const [portalError, setPortalError] = useState<string | null>(null);
   const handleClick = async () => {
     setLoading(true);
+    setPortalError(null);
     try {
       const res = await fetch('/api/paddle/portal', { method: 'POST' });
       if (!res.ok) throw new Error('Failed to get portal URL');
@@ -16,19 +18,38 @@ function ManageBillingButton() {
       if (url) window.open(url, '_blank');
     } catch (err) {
       console.error('Portal error:', err);
+      setPortalError('Could not open billing portal. Please try again.');
     } finally {
       setLoading(false);
     }
   };
   return (
-    <button
-      onClick={handleClick}
-      disabled={loading}
-      className="px-6 py-2.5 rounded-full border border-white/20 text-white hover:bg-white/5 transition-all text-sm disabled:opacity-50"
-    >
-      {loading ? 'Loading…' : 'Manage Billing'}
-    </button>
+    <div className="flex flex-col items-start gap-1.5">
+      <button
+        onClick={handleClick}
+        disabled={loading}
+        className="px-6 py-2.5 rounded-full border border-white/20 text-white hover:bg-white/5 transition-all text-sm disabled:opacity-50"
+      >
+        {loading ? 'Loading…' : 'Manage Billing'}
+      </button>
+      {portalError && <p className="text-xs text-red-400">{portalError}</p>}
+    </div>
   );
+}
+
+function formatEmailDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    ...(date.getFullYear() !== now.getFullYear() ? { year: 'numeric' } : {})
+  });
 }
 
 type TabType = 'new-email' | 'brand' | 'history' | 'user';
@@ -101,9 +122,10 @@ export default function DashboardContent() {
       localStorage.removeItem('pendingEmailPrompt');
     }
     
-    // Load brand profile and user stats
+    // Load brand profile, user stats and email history
     loadBrandProfile();
     loadUserStats();
+    loadEmailHistory();
   }, []);
 
   const loadUserStats = async () => {
@@ -446,6 +468,12 @@ export default function DashboardContent() {
     }
   };
 
+  const now = new Date();
+  const thisMonthEmails = emailHistory.filter(e => {
+    const d = new Date(e.created_at);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+
   return (
     <div className="flex h-screen overflow-hidden overflow-x-hidden">
       {generating && <EmailGeneratingOverlay />}
@@ -628,7 +656,7 @@ export default function DashboardContent() {
               title="Settings"
             >
               <div className="w-8 h-8 flex-shrink-0 lg:mx-auto lg:group-hover:mx-0 transition-all duration-500 ease-in-out rounded-full bg-gradient-to-br from-[#00ff00] via-[#00ffff] to-[#ff00ff] flex items-center justify-center text-black font-semibold text-sm">
-                U
+                {userEmail ? userEmail[0].toUpperCase() : 'U'}
               </div>
               <div className="flex-1 text-left lg:max-w-0 lg:group-hover:max-w-xs overflow-hidden transition-all duration-500 ease-in-out">
                 <p className="text-sm font-medium whitespace-nowrap">Settings</p>
@@ -716,13 +744,13 @@ export default function DashboardContent() {
                             className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/20 rounded-lg pl-3 pr-2 py-1.5 text-xs font-medium text-white hover:border-white/40 hover:from-white/15 hover:to-white/10 transition-all min-w-[140px]"
                           >
                             <span className="flex-1 text-left">
-                              {designStyle === 'minimalist' && '✦ Minimalist'}
-                              {designStyle === 'editorial' && '📰 Editorial'}
-                              {designStyle === 'retro' && '🕹️ Retro'}
-                              {designStyle === 'brutalist' && '▪️ Brutalist'}
-                              {designStyle === 'cyberpunk' && '⚡ Cyberpunk'}
-                              {designStyle === 'handwritten' && '✍️ Handwritten'}
-                              {designStyle === 'bauhaus' && '▲ Bauhaus'}
+                              {designStyle === 'minimalist' && 'Minimalist'}
+                              {designStyle === 'editorial' && 'Editorial'}
+                              {designStyle === 'retro' && 'Retro'}
+                              {designStyle === 'brutalist' && 'Brutalist'}
+                              {designStyle === 'cyberpunk' && 'Cyberpunk'}
+                              {designStyle === 'handwritten' && 'Handwritten'}
+                              {designStyle === 'bauhaus' && 'Bauhaus'}
                             </span>
                             <svg className={`w-4 h-4 text-white/60 transition-transform ${styleDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -737,13 +765,13 @@ export default function DashboardContent() {
                               />
                               <div className="absolute left-0 top-full mt-2 w-48 max-h-[240px] bg-gradient-to-b from-black via-black to-black/95 border-2 border-white/20 rounded-lg shadow-2xl shadow-black/50 overflow-y-auto z-20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 backdrop-blur-xl">
                                 {([
-                                  { value: 'minimalist', label: '✦ Minimalist', desc: 'Clean & Simple' },
-                                  { value: 'editorial', label: '📰 Editorial', desc: 'Magazine Style' },
-                                  { value: 'retro', label: '🕹️ Retro', desc: 'Vintage Vibes' },
-                                  { value: 'brutalist', label: '▪️ Brutalist', desc: 'Bold & Raw' },
-                                  { value: 'cyberpunk', label: '⚡ Cyberpunk', desc: 'Neon Future' },
-                                  { value: 'handwritten', label: '✍️ Handwritten', desc: 'Organic Touch' },
-                                  { value: 'bauhaus', label: '▲ Bauhaus', desc: 'Geometric' }
+                                  { value: 'minimalist', label: 'Minimalist', desc: 'Lots of whitespace, clean fonts, simple layout' },
+                                  { value: 'editorial', label: 'Editorial', desc: 'Structured story layout, like a magazine article' },
+                                  { value: 'retro', label: 'Retro', desc: 'Warm nostalgic colors and classic typefaces' },
+                                  { value: 'brutalist', label: 'Brutalist', desc: 'Heavy borders, stark contrast, bold raw layout' },
+                                  { value: 'cyberpunk', label: 'Cyberpunk', desc: 'Neon colors, dark background, futuristic feel' },
+                                  { value: 'handwritten', label: 'Handwritten', desc: 'Personal and friendly, sketch-like elements' },
+                                  { value: 'bauhaus', label: 'Bauhaus', desc: 'Geometric shapes, primary colors, structured grid' }
                                 ] as const).map((style) => (
                                   <button
                                     key={style.value}
@@ -784,7 +812,6 @@ export default function DashboardContent() {
                                 </>
                               ) : (
                                 <>
-                                  <span className="text-white/40">🏷️</span>
                                   <span className="flex-1 text-left text-white/50">No brand</span>
                                 </>
                               );
@@ -907,17 +934,17 @@ export default function DashboardContent() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto mt-8">
                 <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-white/5">
                   <h3 className="text-xs sm:text-sm font-medium text-white/60 mb-1">Total Emails</h3>
-                  <p className="text-2xl sm:text-3xl font-bold text-white">0</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-white">{totalEmails}</p>
                 </div>
 
                 <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-white/5">
                   <h3 className="text-xs sm:text-sm font-medium text-white/60 mb-1">This Month</h3>
-                  <p className="text-2xl sm:text-3xl font-bold text-white">0</p>
+                  <p className="text-2xl sm:text-3xl font-bold text-white">{thisMonthEmails}</p>
                 </div>
 
                 <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-white/5">
-                  <h3 className="text-xs sm:text-sm font-medium text-white/60 mb-1">Templates</h3>
-                  <p className="text-2xl sm:text-3xl font-bold text-white">3</p>
+                  <h3 className="text-xs sm:text-sm font-medium text-white/60 mb-1">Brands</h3>
+                  <p className="text-2xl sm:text-3xl font-bold text-white">{brandProfiles.length}</p>
                 </div>
               </div>
 
@@ -925,19 +952,23 @@ export default function DashboardContent() {
               <div className="max-w-4xl mx-auto">
                 <h3 className="text-base sm:text-lg font-semibold text-white mb-3">Quick Start Templates</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                  {[
-                    { title: 'Product Launch', desc: 'Announce new products', icon: '🚀' },
-                    { title: 'Newsletter', desc: 'Weekly/monthly updates', icon: '📧' },
-                    { title: 'Promotion', desc: 'Sales and discounts', icon: '💰' },
-                    { title: 'Welcome Email', desc: 'Onboard new users', icon: '👋' },
-                    { title: 'Thank You', desc: 'Customer appreciation', icon: '🙏' },
-                    { title: 'Event Invite', desc: 'Webinars and events', icon: '📅' }
-                  ].map((template) => (
+                  {([
+                    { title: 'Product Launch', desc: 'Announce new products', prompt: 'Write a product launch announcement email introducing a new product, highlighting key features and a special launch offer.', style: 'editorial' as DesignStyle },
+                    { title: 'Newsletter', desc: 'Weekly/monthly updates', prompt: "Write a monthly newsletter email with company updates, recent highlights, and what's coming next.", style: 'minimalist' as DesignStyle },
+                    { title: 'Promotion', desc: 'Sales and discounts', prompt: 'Write a promotional email announcing a limited-time sale with a compelling discount offer and a clear call-to-action.', style: 'retro' as DesignStyle },
+                    { title: 'Welcome Email', desc: 'Onboard new users', prompt: 'Write a welcome email for new subscribers, introducing the brand and what they can expect from us.', style: 'minimalist' as DesignStyle },
+                    { title: 'Thank You', desc: 'Customer appreciation', prompt: 'Write a heartfelt customer appreciation email thanking customers for their loyalty and continued support.', style: 'handwritten' as DesignStyle },
+                    { title: 'Event Invite', desc: 'Webinars and events', prompt: 'Write an event invitation email for an upcoming webinar or conference, including key details and a registration call-to-action.', style: 'editorial' as DesignStyle }
+                  ]).map((template) => (
                     <button
                       key={template.title}
+                      onClick={() => {
+                        setEmailInput(template.prompt);
+                        setDesignStyle(template.style);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
                       className="p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-left group"
                     >
-                      <div className="text-2xl mb-2">{template.icon}</div>
                       <h4 className="text-sm font-semibold text-white mb-1 group-hover:text-[#00ffff] transition-colors">{template.title}</h4>
                       <p className="text-xs text-white/60">{template.desc}</p>
                     </button>
@@ -1356,18 +1387,24 @@ export default function DashboardContent() {
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">Brand Voice</label>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {(['professional', 'friendly', 'casual', 'formal'] as BrandVoice[]).map((voice) => (
+                      {([
+                        { value: 'professional', label: 'Professional', desc: 'Polished and business-like' },
+                        { value: 'friendly', label: 'Friendly', desc: 'Warm and approachable' },
+                        { value: 'casual', label: 'Casual', desc: 'Relaxed, like a friend' },
+                        { value: 'formal', label: 'Formal', desc: 'Official and authoritative' }
+                      ] as { value: BrandVoice; label: string; desc: string }[]).map(({ value, label, desc }) => (
                         <button
-                          key={voice}
+                          key={value}
                           type="button"
-                          onClick={() => setBrandForm({ ...brandForm, brand_voice: voice })}
-                          className={`px-4 py-2 rounded-lg border text-sm transition-all ${
-                            brandForm.brand_voice === voice
+                          onClick={() => setBrandForm({ ...brandForm, brand_voice: value })}
+                          className={`px-4 py-3 rounded-lg border text-left transition-all ${
+                            brandForm.brand_voice === value
                               ? 'border-[#00ffff] bg-[#00ffff]/10 text-white'
                               : 'border-white/20 text-white/70 hover:border-[#00ffff] hover:text-white hover:bg-white/5'
                           }`}
                         >
-                          {voice.charAt(0).toUpperCase() + voice.slice(1)}
+                          <div className="text-sm font-medium">{label}</div>
+                          <div className="text-xs text-white/40 mt-0.5">{desc}</div>
                         </button>
                       ))}
                     </div>
@@ -1567,7 +1604,7 @@ export default function DashboardContent() {
                         {/* Delete button — top-left, stops propagation */}
                         <button
                           onClick={(e) => { e.stopPropagation(); setEmailToDelete(email); }}
-                          className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-lg bg-red-500/80 hover:bg-red-500 flex items-center justify-center"
+                          className="absolute top-2 left-2 z-10 opacity-50 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-lg bg-red-500/80 hover:bg-red-500 flex items-center justify-center"
                           title="Delete email"
                         >
                           {isDeleting ? (
@@ -1626,12 +1663,7 @@ export default function DashboardContent() {
                             {email.subject_line || 'Untitled Email'}
                           </h3>
                           <div className="flex items-center justify-between text-xs text-white/40">
-                            <span>
-                              {new Date(email.created_at).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                            </span>
+                            <span>{formatEmailDate(email.created_at)}</span>
                             {email.email_type && (
                               <span className="capitalize px-2 py-0.5 rounded bg-white/5">
                                 {email.email_type}
@@ -1671,7 +1703,7 @@ export default function DashboardContent() {
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { label: 'Total Emails', value: totalEmails },
-                  { label: 'This Month', value: '—' },
+                  { label: 'This Month', value: thisMonthEmails },
                   { label: 'Credits Used', value: creditsRemaining !== null && planType !== 'enterprise' ? (planType === 'pro' ? 50 : 5) - creditsRemaining : '∞' },
                 ].map(stat => (
                   <div key={stat.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center">

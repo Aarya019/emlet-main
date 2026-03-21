@@ -23,6 +23,41 @@ import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
 import type { BrandProfile } from '@/lib/db/types';
 
 // ─────────────────────────────────────────────
+// Font resolver — fetches Google Fonts CSS on the server with a real browser
+// UA so we get back actual @font-face blocks. Those blocks reference static
+// fonts.gstatic.com URLs that email clients can load without any UA check.
+// Results are cached per URL for the lifetime of the server process.
+// ─────────────────────────────────────────────
+
+const _fontCSSCache = new Map<string, string>();
+
+async function resolveFontFaceCSS(googleFontsUrl: string): Promise<string> {
+  if (_fontCSSCache.has(googleFontsUrl)) return _fontCSSCache.get(googleFontsUrl)!;
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(googleFontsUrl, {
+      headers: {
+        // A real Chrome UA so Google Fonts returns WOFF2 @font-face declarations
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'text/css,*/*;q=0.1',
+      },
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (!res.ok) { return ''; }  // don't cache failures — retry on next request
+    const css = await res.text();
+    // Extract @font-face blocks — src URLs inside point to fonts.gstatic.com
+    // which is a pure static CDN (no UA detection, email clients load fine)
+    const blocks = (css.match(/@font-face\s*\{[\s\S]*?\}/g) ?? []).join('\n');
+    if (blocks) _fontCSSCache.set(googleFontsUrl, blocks);  // only cache successful results
+    return blocks;
+  } catch {
+    return '';  // don't cache failures — retry on next request
+  }
+}
+
+// ─────────────────────────────────────────────
 // Preview-mode data attribute helper
 // ─────────────────────────────────────────────
 
@@ -32,6 +67,87 @@ function pv(preview: boolean, si: number, field: string, ti?: number): Record<st
   const a: Record<string, string> = { 'data-em-field': field, 'data-em-si': String(si) };
   if (ti != null) a['data-em-ti'] = String(ti);
   return a;
+}
+
+// ─────────────────────────────────────────────
+// Font registry — all supported fonts
+// css      : exact CSS font-family value (with quotes if needed)
+// fallback : appended fallback generic stack
+// gfParam  : Google Fonts API param string (undefined = system font)
+// ─────────────────────────────────────────────
+
+export interface FontDef {
+  css: string;
+  fallback: string;
+  gfParam?: string;
+}
+
+export const FONT_REGISTRY: Record<string, FontDef> = {
+  // ── Google Fonts ──────────────────────────────────────────────────────
+  'Alegreya':            { css: "'Alegreya'",            fallback: "Georgia, serif",          gfParam: "Alegreya:ital,wght@0,400;0,700;1,400" },
+  'Alegreya Sans':       { css: "'Alegreya Sans'",       fallback: "Georgia, serif",          gfParam: "Alegreya+Sans:wght@400;700" },
+  'Bitter':              { css: "'Bitter'",              fallback: "Georgia, serif",          gfParam: "Bitter:ital,wght@0,400;0,700" },
+  'Cormorant':           { css: "'Cormorant'",           fallback: "Georgia, serif",          gfParam: "Cormorant:ital,wght@0,400;0,600;1,400" },
+  'DM Sans':             { css: "'DM Sans'",             fallback: "Arial, sans-serif",       gfParam: "DM+Sans:wght@400;500;700" },
+  'EB Garamond':         { css: "'EB Garamond'",         fallback: "Georgia, serif",          gfParam: "EB+Garamond:ital,wght@0,400;0,700;1,400" },
+  'Eczar':               { css: "'Eczar'",               fallback: "Georgia, serif",          gfParam: "Eczar:wght@400;700" },
+  'Gothic A1':           { css: "'Gothic A1'",           fallback: "Arial, sans-serif",       gfParam: "Gothic+A1:wght@400;700" },
+  'IBM Plex Sans':       { css: "'IBM Plex Sans'",       fallback: "Arial, sans-serif",       gfParam: "IBM+Plex+Sans:ital,wght@0,400;0,700;1,400" },
+  'Instrument Sans':     { css: "'Instrument Sans'",     fallback: "Arial, sans-serif",       gfParam: "Instrument+Sans:wght@400;500;700" },
+  'Instrument Serif':    { css: "'Instrument Serif'",    fallback: "Georgia, serif",          gfParam: "Instrument+Serif:ital@0;1" },
+  'Inter':               { css: "'Inter'",               fallback: "Arial, sans-serif",       gfParam: "Inter:wght@400;500;700" },
+  'Karla':               { css: "'Karla'",               fallback: "Arial, sans-serif",       gfParam: "Karla:ital,wght@0,400;0,700" },
+  'Lato':                { css: "'Lato'",                fallback: "Arial, sans-serif",       gfParam: "Lato:ital,wght@0,400;0,700;1,400" },
+  'Libre Baskerville':   { css: "'Libre Baskerville'",   fallback: "Georgia, serif",          gfParam: "Libre+Baskerville:ital,wght@0,400;0,700;1,400" },
+  'Libre Franklin':      { css: "'Libre Franklin'",      fallback: "Arial, sans-serif",       gfParam: "Libre+Franklin:wght@400;700" },
+  'Lora':                { css: "'Lora'",                fallback: "Georgia, serif",          gfParam: "Lora:ital,wght@0,400;0,600;1,400" },
+  'Merriweather':        { css: "'Merriweather'",        fallback: "Georgia, serif",          gfParam: "Merriweather:ital,wght@0,400;0,700;1,400" },
+  'Montserrat':          { css: "'Montserrat'",          fallback: "Arial, sans-serif",       gfParam: "Montserrat:wght@400;500;700" },
+  'Noto Sans':           { css: "'Noto Sans'",           fallback: "Arial, sans-serif",       gfParam: "Noto+Sans:wght@400;700" },
+  'Noto Serif':          { css: "'Noto Serif'",          fallback: "Georgia, serif",          gfParam: "Noto+Serif:wght@400;700" },
+  'Open Sans':           { css: "'Open Sans'",           fallback: "Arial, sans-serif",       gfParam: "Open+Sans:ital,wght@0,400;0,700;1,400" },
+  'Oswald':              { css: "'Oswald'",              fallback: "Arial, sans-serif",       gfParam: "Oswald:wght@400;700" },
+  'Playfair Display':    { css: "'Playfair Display'",    fallback: "Georgia, serif",          gfParam: "Playfair+Display:ital,wght@0,700;0,900;1,700" },
+  'Poppins':             { css: "'Poppins'",             fallback: "Arial, sans-serif",       gfParam: "Poppins:ital,wght@0,400;0,700;1,400" },
+  'PT Sans':             { css: "'PT Sans'",             fallback: "Arial, sans-serif",       gfParam: "PT+Sans:ital,wght@0,400;0,700;1,400" },
+  'PT Serif':            { css: "'PT Serif'",            fallback: "Georgia, serif",          gfParam: "PT+Serif:ital,wght@0,400;0,700;1,400" },
+  'Raleway':             { css: "'Raleway'",             fallback: "Arial, sans-serif",       gfParam: "Raleway:wght@400;700" },
+  'Roboto':              { css: "'Roboto'",              fallback: "Arial, sans-serif",       gfParam: "Roboto:ital,wght@0,400;0,700;1,400" },
+  'Source Sans 3':       { css: "'Source Sans 3'",       fallback: "Arial, sans-serif",       gfParam: "Source+Sans+3:ital,wght@0,400;0,700;1,400" },
+  'Space Grotesk':       { css: "'Space Grotesk'",       fallback: "Arial, sans-serif",       gfParam: "Space+Grotesk:wght@400;700" },
+  'Space Mono':          { css: "'Space Mono'",          fallback: "'Courier New', monospace", gfParam: "Space+Mono:ital,wght@0,400;0,700;1,400" },
+  'Spectral':            { css: "'Spectral'",            fallback: "Georgia, serif",          gfParam: "Spectral:ital,wght@0,400;0,700;1,400" },
+  'Syne':                { css: "'Syne'",                fallback: "Arial, sans-serif",       gfParam: "Syne:wght@400;700;800" },
+  'Taviraj':             { css: "'Taviraj'",             fallback: "Georgia, serif",          gfParam: "Taviraj:ital,wght@0,400;0,700;1,400" },
+  'Work Sans':           { css: "'Work Sans'",           fallback: "Arial, sans-serif",       gfParam: "Work+Sans:wght@400;500;700" },
+  // ── System fonts (no Google Fonts fetch needed) ───────────────────────
+  'Arial':               { css: "Arial",                 fallback: "Helvetica, sans-serif" },
+  'Courier':             { css: "'Courier New'",         fallback: "Courier, monospace" },
+  'Georgia':             { css: "Georgia",               fallback: "'Times New Roman', serif" },
+  'Helvetica':           { css: "Helvetica",             fallback: "Arial, sans-serif" },
+  'Lucida Console':      { css: "'Lucida Console'",      fallback: "'Courier New', monospace" },
+  'Palatino':            { css: "'Palatino Linotype'",   fallback: "Georgia, serif" },
+  'Times New Roman':     { css: "'Times New Roman'",     fallback: "Times, serif" },
+  'Trebuchet MS':        { css: "'Trebuchet MS'",        fallback: "Arial, sans-serif" },
+  'Verdana':             { css: "Verdana",               fallback: "Geneva, sans-serif" },
+};
+
+/** Builds a Google Fonts CSS2 URL for up to two font names. Returns '' if both are system fonts. */
+export function buildGoogleFontsUrl(heading: string, body: string): string {
+  const hDef = FONT_REGISTRY[heading];
+  const bDef = FONT_REGISTRY[body];
+  const params: string[] = [];
+  if (hDef?.gfParam) params.push(`family=${hDef.gfParam}`);
+  if (bDef?.gfParam && body !== heading) params.push(`family=${bDef.gfParam}`);
+  if (params.length === 0) return '';
+  return `https://fonts.googleapis.com/css2?${params.join('&')}&display=swap`;
+}
+
+/** Returns the full CSS font-family string for a named font (with fallbacks). */
+export function fontFamilyCSS(name: string, genericFallback = 'sans-serif'): string {
+  const def = FONT_REGISTRY[name];
+  if (!def) return genericFallback;
+  return `${def.css}, ${def.fallback}`;
 }
 
 // ─────────────────────────────────────────────
@@ -60,8 +176,8 @@ interface StyleConfig {
 
 export const styleConfigs: Record<string, StyleConfig> = {
   minimalist: {
-    fontFamily: "'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif",
-    headingFontFamily: "'Plus Jakarta Sans', 'Helvetica Neue', Arial, sans-serif",
+    fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
+    headingFontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
     googleFontsUrl: "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&display=swap",
     bodyBg: '#f9f9f9',
     bodyColor: '#1a1a1a',
@@ -79,8 +195,8 @@ export const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#ffffff', borderRadius: '10px', padding: '24px', border: '1px solid #f0f0f0' },
   },
   editorial: {
-    fontFamily: "'Lora', Georgia, 'Times New Roman', serif",
-    headingFontFamily: "'Playfair Display', Georgia, 'Times New Roman', serif",
+    fontFamily: "'Lora', Georgia, 'Palatino Linotype', serif",
+    headingFontFamily: "'Playfair Display', Georgia, 'Palatino Linotype', serif",
     googleFontsUrl: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lora:ital,wght@0,400;0,600;1,400&display=swap",
     bodyBg: '#fefefe',
     bodyColor: '#1a1a1a',
@@ -98,8 +214,8 @@ export const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#f5f5f5', padding: '20px', borderLeft: '3px solid #1a1a1a' },
   },
   retro: {
-    fontFamily: "'Nunito', Georgia, sans-serif",
-    headingFontFamily: "'DM Serif Display', Georgia, 'Times New Roman', serif",
+    fontFamily: "'Nunito', 'Trebuchet MS', Georgia, sans-serif",
+    headingFontFamily: "'DM Serif Display', Georgia, 'Palatino Linotype', serif",
     googleFontsUrl: "https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Nunito:wght@400;700&display=swap",
     bodyBg: '#fdf6e3',
     bodyColor: '#3b2a1a',
@@ -117,8 +233,8 @@ export const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#fffbf0', borderRadius: '16px', padding: '24px', border: '2px solid #c8a96e' },
   },
   brutalist: {
-    fontFamily: "'Space Grotesk', 'Arial Black', Helvetica, sans-serif",
-    headingFontFamily: "'Space Grotesk', 'Arial Black', Helvetica, sans-serif",
+    fontFamily: "'Space Grotesk', Arial, Helvetica, sans-serif",
+    headingFontFamily: "'Space Grotesk', 'Arial Black', Gadget, sans-serif",
     googleFontsUrl: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap",
     bodyBg: '#ffffff',
     bodyColor: '#000000',
@@ -136,8 +252,8 @@ export const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#ffffff', padding: '24px', border: '3px solid #000000', boxShadow: '6px 6px 0px #000000' },
   },
   cyberpunk: {
-    fontFamily: "'Share Tech Mono', 'Courier New', monospace",
-    headingFontFamily: "'Orbitron', 'Courier New', monospace",
+    fontFamily: "'Share Tech Mono', 'Courier New', Courier, monospace",
+    headingFontFamily: "'Orbitron', 'Courier New', Courier, monospace",
     googleFontsUrl: "https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap",
     bodyBg: '#0a0a0f',
     bodyColor: '#e0e0ff',
@@ -155,8 +271,8 @@ export const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#0f0f1a', padding: '20px', border: '1px solid #00ffff', borderRadius: '6px' },
   },
   handwritten: {
-    fontFamily: "'Nunito', Georgia, serif",
-    headingFontFamily: "'Caveat', Georgia, serif",
+    fontFamily: "'Nunito', 'Trebuchet MS', Verdana, Arial, sans-serif",
+    headingFontFamily: "'Caveat', Georgia, 'Palatino Linotype', serif",
     googleFontsUrl: "https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Nunito:wght@400;600&display=swap",
     bodyBg: '#fdfaf5',
     bodyColor: '#2c2c2c',
@@ -174,8 +290,8 @@ export const styleConfigs: Record<string, StyleConfig> = {
     cardStyle: { backgroundColor: '#fffef9', padding: '24px', borderRadius: '14px', border: '1px dashed #d4c5a9' },
   },
   bauhaus: {
-    fontFamily: "'Work Sans', Arial, Helvetica, sans-serif",
-    headingFontFamily: "'Bebas Neue', Arial, Helvetica, sans-serif",
+    fontFamily: "'Work Sans', Verdana, Arial, Helvetica, sans-serif",
+    headingFontFamily: "'Bebas Neue', Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
     googleFontsUrl: "https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;700&display=swap",
     bodyBg: '#ffffff',
     bodyColor: '#000000',
@@ -192,6 +308,202 @@ export const styleConfigs: Record<string, StyleConfig> = {
     sectionBorderStyle: {},
     cardStyle: { backgroundColor: '#f5f5f5', padding: '24px', border: '3px solid #000' },
   },
+};
+
+// ─────────────────────────────────────────────
+// Font variant map — curated heading + body pairs per design style
+// ─────────────────────────────────────────────
+
+export interface FontVariant {
+  label: string;
+  fontFamily: string;
+  headingFontFamily: string;
+  googleFontsUrl: string;
+}
+
+export const fontVariants: Record<string, FontVariant[]> = {
+  minimalist: [
+    {
+      label: 'Plus Jakarta Sans',
+      fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+      headingFontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&display=swap',
+    },
+    {
+      label: 'Inter + DM Sans',
+      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      headingFontFamily: "'DM Sans', system-ui, -apple-system, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap',
+    },
+    {
+      label: 'Outfit',
+      fontFamily: "'Outfit', system-ui, -apple-system, sans-serif",
+      headingFontFamily: "'Outfit', system-ui, -apple-system, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&display=swap',
+    },
+    {
+      label: 'Manrope + Syne',
+      fontFamily: "'Manrope', system-ui, -apple-system, sans-serif",
+      headingFontFamily: "'Syne', system-ui, -apple-system, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Syne:wght@700;800&display=swap',
+    },
+  ],
+  editorial: [
+    {
+      label: 'Lora + Playfair',
+      fontFamily: "'Lora', Georgia, 'Palatino Linotype', serif",
+      headingFontFamily: "'Playfair Display', Georgia, 'Palatino Linotype', serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lora:ital,wght@0,400;0,600;1,400&display=swap',
+    },
+    {
+      label: 'Crimson Pro + Cormorant',
+      fontFamily: "'Crimson Pro', Georgia, serif",
+      headingFontFamily: "'Cormorant Garamond', Georgia, serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap',
+    },
+    {
+      label: 'EB Garamond + DM Serif',
+      fontFamily: "'EB Garamond', Georgia, serif",
+      headingFontFamily: "'DM Serif Display', Georgia, serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap',
+    },
+    {
+      label: 'Libre Baskerville',
+      fontFamily: "'Libre Baskerville', Georgia, serif",
+      headingFontFamily: "'Libre Baskerville', Georgia, serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap',
+    },
+  ],
+  retro: [
+    {
+      label: 'Nunito + DM Serif',
+      fontFamily: "'Nunito', 'Trebuchet MS', sans-serif",
+      headingFontFamily: "'DM Serif Display', Georgia, serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Nunito:wght@400;700&display=swap',
+    },
+    {
+      label: 'Josefin Sans + Abril Fatface',
+      fontFamily: "'Josefin Sans', Arial, sans-serif",
+      headingFontFamily: "'Abril Fatface', Georgia, serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Abril+Fatface&family=Josefin+Sans:wght@400;700&display=swap',
+    },
+    {
+      label: 'Raleway + Lobster Two',
+      fontFamily: "'Raleway', Arial, sans-serif",
+      headingFontFamily: "'Lobster Two', Georgia, cursive",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Lobster+Two:ital,wght@0,700;1,700&family=Raleway:wght@400;700&display=swap',
+    },
+    {
+      label: 'Karla + Fredoka',
+      fontFamily: "'Karla', Arial, sans-serif",
+      headingFontFamily: "'Fredoka', Arial, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Fredoka:wght@400;700&family=Karla:wght@400;700&display=swap',
+    },
+  ],
+  brutalist: [
+    {
+      label: 'Space Grotesk',
+      fontFamily: "'Space Grotesk', Arial, sans-serif",
+      headingFontFamily: "'Space Grotesk', 'Arial Black', sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap',
+    },
+    {
+      label: 'Archivo Black',
+      fontFamily: "'Archivo Black', Impact, sans-serif",
+      headingFontFamily: "'Archivo Black', Impact, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap',
+    },
+    {
+      label: 'Barlow Condensed',
+      fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif",
+      headingFontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;700;900&display=swap',
+    },
+    {
+      label: 'Teko',
+      fontFamily: "'Teko', Impact, sans-serif",
+      headingFontFamily: "'Teko', Impact, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Teko:wght@400;700&display=swap',
+    },
+  ],
+  cyberpunk: [
+    {
+      label: 'Share Tech Mono + Orbitron',
+      fontFamily: "'Share Tech Mono', 'Courier New', monospace",
+      headingFontFamily: "'Orbitron', 'Courier New', monospace",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Share+Tech+Mono&display=swap',
+    },
+    {
+      label: 'Exo 2 + Russo One',
+      fontFamily: "'Exo 2', sans-serif",
+      headingFontFamily: "'Russo One', sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Russo+One&family=Exo+2:wght@400;700&display=swap',
+    },
+    {
+      label: 'Rajdhani + Audiowide',
+      fontFamily: "'Rajdhani', sans-serif",
+      headingFontFamily: "'Audiowide', sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Audiowide&family=Rajdhani:wght@400;700&display=swap',
+    },
+    {
+      label: 'Oxanium',
+      fontFamily: "'Oxanium', monospace",
+      headingFontFamily: "'Oxanium', monospace",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Oxanium:wght@400;700&display=swap',
+    },
+  ],
+  handwritten: [
+    {
+      label: 'Nunito + Caveat',
+      fontFamily: "'Nunito', 'Trebuchet MS', sans-serif",
+      headingFontFamily: "'Caveat', Georgia, 'Palatino Linotype', serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Nunito:wght@400;600&display=swap',
+    },
+    {
+      label: 'Quicksand + Patrick Hand',
+      fontFamily: "'Quicksand', sans-serif",
+      headingFontFamily: "'Patrick Hand', Georgia, serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Quicksand:wght@400;600&display=swap',
+    },
+    {
+      label: 'Comfortaa + Pacifico',
+      fontFamily: "'Comfortaa', sans-serif",
+      headingFontFamily: "'Pacifico', Georgia, serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Pacifico&family=Comfortaa:wght@400;700&display=swap',
+    },
+    {
+      label: 'Lato + Kalam',
+      fontFamily: "'Lato', sans-serif",
+      headingFontFamily: "'Kalam', Georgia, serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Lato:wght@400;700&display=swap',
+    },
+  ],
+  bauhaus: [
+    {
+      label: 'Work Sans + Bebas Neue',
+      fontFamily: "'Work Sans', Verdana, sans-serif",
+      headingFontFamily: "'Bebas Neue', Impact, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Work+Sans:wght@400;700&display=swap',
+    },
+    {
+      label: 'Raleway + Anton',
+      fontFamily: "'Raleway', Arial, sans-serif",
+      headingFontFamily: "'Anton', Impact, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Anton&family=Raleway:wght@400;700&display=swap',
+    },
+    {
+      label: 'Montserrat + Black Han Sans',
+      fontFamily: "'Montserrat', Arial, sans-serif",
+      headingFontFamily: "'Black Han Sans', Impact, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Montserrat:wght@400;700&display=swap',
+    },
+    {
+      label: 'Fjalla One',
+      fontFamily: "'Fjalla One', Impact, sans-serif",
+      headingFontFamily: "'Fjalla One', Impact, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Fjalla+One&display=swap',
+    },
+  ],
 };
 
 // ─────────────────────────────────────────────
@@ -1859,7 +2171,21 @@ export async function generateEmailHtml(
   brandProfile: BrandProfile | null,
   preview = false,
 ): Promise<{ html: string; reactCode: string }> {
-  const config = styleConfigs[designStyle] || styleConfigs.minimalist;
+  // Start with the base style config and overlay the chosen font variant
+  const config = { ...(styleConfigs[designStyle] || styleConfigs.minimalist) };
+  const styleVariants = fontVariants[designStyle] || fontVariants.minimalist;
+  const chosenVariant = styleVariants[email.fontVariant ?? 0] ?? styleVariants[0];
+
+  if (email.fontPairing) {
+    // Explicit font pairing set by user — override the curated variant
+    config.headingFontFamily = fontFamilyCSS(email.fontPairing.heading, 'serif');
+    config.fontFamily        = fontFamilyCSS(email.fontPairing.body,    'sans-serif');
+    config.googleFontsUrl    = buildGoogleFontsUrl(email.fontPairing.heading, email.fontPairing.body);
+  } else {
+    config.fontFamily        = chosenVariant.fontFamily;
+    config.headingFontFamily = chosenVariant.headingFontFamily;
+    config.googleFontsUrl    = chosenVariant.googleFontsUrl;
+  }
   const primaryColor    = brandProfile?.primary_color    || '#5c5cf0';
   const secondaryColor  = brandProfile?.secondary_color  || primaryColor;
   const backgroundColor = brandProfile?.background_color || null;
@@ -1906,6 +2232,11 @@ export async function generateEmailHtml(
     .map((s, i) => renderSection(s, i, config, primaryColor, secondaryColor, preview))
     .filter((el): el is React.ReactElement => el !== null);
 
+  // Fetch @font-face declarations from Google Fonts on the server using a real browser
+  // User-Agent. The returned src URLs point to fonts.gstatic.com — a static CDN with
+  // no UA checks — so email clients can fetch the actual font files directly.
+  const fontFaceCSS = await resolveFontFaceCSS(config.googleFontsUrl);
+
   // Build full email element
   const emailElement = React.createElement(
     Html, { lang: 'en' },
@@ -1914,11 +2245,9 @@ export async function generateEmailHtml(
         name: 'viewport',
         content: 'width=device-width, initial-scale=1.0',
       }),
-      React.createElement('link', {
-        href: config.googleFontsUrl,
-        rel: 'stylesheet',
-      }),
+      // All fonts are system fonts — no external loading needed, renders correctly on every client
       React.createElement('style', null,
+        fontFaceCSS + '\n' +
         '@media only screen and (max-width:620px){' +
         '.em-wrap{width:100%!important;padding:0 16px!important;border-left:none!important;border-right:none!important;border-radius:0!important;box-sizing:border-box!important}' +
         '.em-col{display:block!important;width:100%!important;max-width:100%!important;padding-left:0!important;padding-right:0!important;box-sizing:border-box!important;margin-bottom:12px!important}' +

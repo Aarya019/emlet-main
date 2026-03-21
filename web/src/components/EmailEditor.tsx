@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { EmailGeneration } from '@/lib/db/types';
 import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
+import { FONT_REGISTRY } from '@/lib/email/renderer';
 import ImageUploadInput from '@/components/ImageUploadInput';
 import {
   DndContext,
@@ -725,6 +726,59 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       placeholder="Enter preview text…"
                     />
                   </div>
+
+                  {/* Font Picker */}
+                  {(() => {
+                    const fontNames = Object.keys(FONT_REGISTRY);
+                    const currentHeading = editedEmail.fontPairing?.heading ?? '';
+                    const currentBody    = editedEmail.fontPairing?.body    ?? '';
+                    const setPairing = (heading: string, body: string) => {
+                      setEditedEmail(prev => prev ? { ...prev, fontPairing: { heading, body }, fontVariant: undefined } : prev);
+                      setIsDirty(true);
+                    };
+                    return (
+                      <div className="p-4 rounded-lg border border-white/10 bg-white/5 space-y-3">
+                        <label className="block text-xs font-medium text-white/40 uppercase tracking-wider">Fonts</label>
+                        <div>
+                          <span className="block text-[11px] text-white/40 mb-1">Heading</span>
+                          <select
+                            value={currentHeading}
+                            onChange={e => setPairing(e.target.value, currentBody || e.target.value)}
+                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+                          >
+                            <option value="">— style default —</option>
+                            {fontNames.map(name => (
+                              <option key={name} value={name}>{name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <span className="block text-[11px] text-white/40 mb-1">Body</span>
+                          <select
+                            value={currentBody}
+                            onChange={e => setPairing(currentHeading || e.target.value, e.target.value)}
+                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
+                          >
+                            <option value="">— style default —</option>
+                            {fontNames.map(name => (
+                              <option key={name} value={name}>{name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        {(currentHeading || currentBody) && (
+                          <button
+                            onClick={() => {
+                              setEditedEmail(prev => prev ? { ...prev, fontPairing: undefined, fontVariant: 0 } : prev);
+                              setIsDirty(true);
+                            }}
+                            className="text-[11px] text-white/30 hover:text-white/60 transition-colors"
+                          >
+                            ✕ reset to style default
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {/* Sections */}
                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

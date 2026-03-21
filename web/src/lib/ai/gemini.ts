@@ -145,6 +145,16 @@ export interface GeneratedEmail {
   subject: string;
   previewText: string;
   emailType: 'promotional' | 'newsletter' | 'educational' | 'transactional' | 'other';
+  /**
+   * Index into the font pair variants for this design style (0–3).
+   * Legacy field — superseded by fontPairing when present.
+   */
+  fontVariant?: number;
+  /**
+   * Explicit font selection. When set, overrides fontVariant entirely.
+   * heading/body must be keys of FONT_REGISTRY exported from renderer.tsx.
+   */
+  fontPairing?: { heading: string; body: string };
   sections: EmailSection[];
 }
 
@@ -378,6 +388,19 @@ DESIGN STYLE (Bauhaus/Geometric Modern):
 
   const designRules = styleRules[designStyle] || styleRules.minimalist;
 
+  // Per-style font variant labels for the AI prompt
+  const fontVariantLabels: Record<string, string[]> = {
+    minimalist:   ['Plus Jakarta Sans (clean geometric)', 'Inter + DM Sans (neutral precision)', 'Outfit (rounded modern)', 'Manrope + Syne (editorial sans)'],
+    editorial:    ['Lora + Playfair Display (classic)', 'Crimson Pro + Cormorant (luxury)', 'EB Garamond + DM Serif (scholarly)', 'Libre Baskerville (timeless)'],
+    retro:        ['Nunito + DM Serif (warm vintage)', 'Josefin Sans + Abril Fatface (poster)', 'Raleway + Lobster Two (art deco)', 'Karla + Fredoka (friendly retro)'],
+    brutalist:    ['Space Grotesk (techy raw)', 'Archivo Black (maximum impact)', 'Barlow Condensed (industrial)', 'Teko (ultra-compressed)'],
+    cyberpunk:    ['Share Tech Mono + Orbitron (classic cyber)', 'Exo 2 + Russo One (futuristic)', 'Rajdhani + Audiowide (tech)', 'Oxanium (digital mono)'],
+    handwritten:  ['Nunito + Caveat (casual sketch)', 'Quicksand + Patrick Hand (soft)', 'Comfortaa + Pacifico (playful)', 'Lato + Kalam (personal note)'],
+    bauhaus:      ['Work Sans + Bebas Neue (bauhaus classic)', 'Raleway + Anton (bold grid)', 'Montserrat + Black Han Sans (geometric)', 'Fjalla One (condensed impact)'],
+  };
+  const variantList = (fontVariantLabels[designStyle] || fontVariantLabels.minimalist)
+    .map((label, i) => `  ${i}: ${label}`).join('\n');
+
   return `You are an expert email marketing copywriter and designer. Your task is to generate email content in the specified design style.
 
 ${brandContext}
@@ -473,12 +496,18 @@ COPY QUALITY RULES (non-negotiable):
 4. Every CTA button must use a value-verb: "Start Free Trial", "Claim Your Discount", "See Live Demo", "Get Instant Access" — never just "Click Here" or "Learn More" alone.
 5. eyebrow labels must be 2–4 words: "New Release", "Case Study", "Limited Offer", "Just Launched", "Behind The Scenes".
 
+FONT VARIANT — pick the pairing that best fits the email topic and brand personality. Output a "fontVariant" number (0–3) in the root JSON object.
+Available variants for ${designStyle}:
+${variantList}
+Choose thoughtfully — consider the brand industry, campaign tone, and email content. Avoid always picking 0.
+
 OUTPUT FORMAT:
 Return a JSON object with this exact structure:
 {
   "subject": "Short punchy subject line (30 characters max, ideally under 20)",
   "previewText": "Preview text shown in inbox (80-100 characters)",
   "emailType": "promotional|newsletter|educational|transactional|other",
+  "fontVariant": 0,
   "sections": [
     {
       "type": "hero",
