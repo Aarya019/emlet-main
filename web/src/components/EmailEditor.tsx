@@ -5,9 +5,42 @@ import { useRouter } from 'next/navigation';
 import type { EmailGeneration } from '@/lib/db/types';
 import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
 import ImageUploadInput from '@/components/ImageUploadInput';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface EmailEditorProps {
   emailId: string;
+}
+
+function SortableSectionItem({ id, children }: { id: number; children: (dragHandleProps: React.HTMLAttributes<HTMLElement>) => React.ReactNode }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    position: 'relative',
+    zIndex: isDragging ? 50 : undefined,
+  };
+  return (
+    <div ref={setNodeRef} style={style}>
+      {children({ ...attributes, ...listeners })}
+    </div>
+  );
 }
 
 export default function EmailEditor({ emailId }: EmailEditorProps) {
@@ -35,12 +68,16 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [defaultColors, setDefaultColors] = useState<{ bodyBg: string; bodyColor: string; primaryColor: string; secondaryColor: string } | null>(null);
   const [regeneratingSection, setRegeneratingSection] = useState<number | null>(null);
   const [blockError, setBlockError] = useState<{ index: number; message: string } | null>(null);
+  const [selectedSection, setSelectedSection] = useState<number | null>(null);
+  const [aiOpenSection, setAiOpenSection] = useState<number | null>(null);
 
   // Live preview state
   const [livePreviewHtml, setLivePreviewHtml] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState(false);
   const previewDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const previewAbortRef = useRef<AbortController | null>(null);
+  const sectionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   const BLOCK_TYPES: Array<{ type: EmailSection['type']; label: string; description: string; icon: string }> = [
     { type: 'hero',          label: 'Hero',          description: 'Large banner with heading & image',   icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
@@ -103,6 +140,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
         })),
       };
       setEditedEmail(seeded);
+      // Collapse all sections by default
+      setCollapsedSections(new Set(seeded.sections.map((_, i) => i)));
     }
   }, [email, editedEmail, defaultColors]);
 
@@ -208,6 +247,32 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     });
   }, []);
 
+  const reorderSections = useCallback((oldIndex: number, newIndex: number) => {
+    setEditedEmail(prev => {
+      if (!prev) return prev;
+      return { ...prev, sections: arrayMove(prev.sections, oldIndex, newIndex) };
+    });
+    setCollapsedSections(prev => {
+      if (prev.size === 0) return prev;
+      const next = new Set<number>();
+      prev.forEach(i => {
+        if (i === oldIndex) { next.add(newIndex); return; }
+        if (oldIndex < newIndex && i > oldIndex && i <= newIndex) { next.add(i - 1); return; }
+        if (oldIndex > newIndex && i >= newIndex && i < oldIndex) { next.add(i + 1); return; }
+        next.add(i);
+      });
+      return next;
+    });
+    setSelectedSection(prev => {
+      if (prev === null) return null;
+      if (prev === oldIndex) return newIndex;
+      if (oldIndex < newIndex && prev > oldIndex && prev <= newIndex) return prev - 1;
+      if (oldIndex > newIndex && prev >= newIndex && prev < oldIndex) return prev + 1;
+      return prev;
+    });
+    setIsDirty(true);
+  }, []);
+
   const addSection = useCallback((type: EmailSection['type']) => {
     const newSection: EmailSection = { type, ...DEFAULT_SECTION[type] } as EmailSection;
     setEditedEmail(prev => {
@@ -281,7 +346,52 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     }
   };
 
+  // Click-to-edit: listen for postMessages from the preview iframe
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      if (e.data?.type === 'section-click' && typeof e.data.index === 'number') {
+        const idx = e.data.index;
+        setSelectedSection(idx);
+        setCollapsedSections(prev => {
+          const next = new Set(prev);
+          next.delete(idx);
+          return next;
+        });
+        setTimeout(() => {
+          sectionRefs.current.get(idx)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }, 50);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  // dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = active.id as number;
+      const newIndex = over.id as number;
+      reorderSections(oldIndex, newIndex);
+    }
+  }, [reorderSections]);
+
   const emailContent = email?.content_json as GeneratedEmail | null;
+
+  // Block type → accent color for left border
+  const BLOCK_COLORS: Record<string, string> = {
+    hero: '#a855f7', content: '#3b82f6', cta: '#00ffff', announcement: '#f59e0b',
+    'image-text': '#10b981', 'feature-list': '#6366f1', testimonial: '#ec4899',
+    testimonials: '#ec4899', stats: '#f97316', gallery: '#14b8a6',
+    'pricing-table': '#8b5cf6', coupon: '#ef4444', columns: '#06b6d4',
+    'social-links': '#84cc16', header: '#94a3b8', footer: '#64748b',
+    divider: '#475569', quote: '#d946ef', 'code-block': '#22d3ee',
+  };
 
   if (loading) {
     return (
@@ -429,14 +539,21 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
             <div className="h-[calc(100vh-73px)] overflow-y-auto p-6 space-y-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-xl font-bold text-white">Content Editor</h2>
-                  <p className="text-sm text-white/60">
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-base font-bold text-white">Blocks</h2>
+                    {editedEmail && (
+                      <span className="px-2 py-0.5 rounded-full bg-white/[0.08] border border-white/10 text-[10px] font-bold text-white/50 uppercase tracking-wide">
+                        {editedEmail.sections.length} blocks
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-white/40 mt-0.5">
                     {isDirty ? (
                       <span className="text-yellow-400 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block" />
                         Unsaved changes
                       </span>
-                    ) : 'All changes saved'}
+                    ) : 'Drag to reorder · click to edit'}
                   </p>
                 </div>
               </div>
@@ -468,98 +585,97 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   </div>
 
                   {/* Sections */}
+                  <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={editedEmail.sections.map((_, i) => i)} strategy={verticalListSortingStrategy}>
                   <div className="space-y-3">
                     {editedEmail.sections.map((section, index) => {
                       const isCollapsed = collapsedSections.has(index);
-                      const canMoveUp = index > 0;
-                      const canMoveDown = index < editedEmail.sections.length - 1;
+                      const isSelected = selectedSection === index;
+                      const blockColor = BLOCK_COLORS[section.type] ?? '#94a3b8';
+                      const blockMeta = BLOCK_TYPES.find(b => b.type === section.type);
                       return (
-                        <div key={index} className="group rounded-lg border border-white/10 bg-white/5 hover:border-white/20 transition-all">
+                        <SortableSectionItem key={index} id={index}>
+                          {(dragHandleProps) => (
+                        <div
+                          ref={el => { if (el) sectionRefs.current.set(index, el); else sectionRefs.current.delete(index); }}
+                          className={`group rounded-lg border bg-white/5 transition-all ${
+                            isSelected
+                              ? 'border-[#00ffff] shadow-[0_0_0_1px_#00ffff40]'
+                              : 'border-white/10 hover:border-white/20'
+                          }`}
+                          style={{ borderLeftColor: blockColor, borderLeftWidth: '3px' }}
+                        >
                           {/* Section header */}
                           <div
                             className="flex items-center justify-between p-3 cursor-pointer select-none"
-                            onClick={() => toggleCollapse(index)}
+                            onClick={() => { toggleCollapse(index); setSelectedSection(index); }}
                           >
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded bg-[#00ffff]/10 flex items-center justify-center flex-shrink-0">
-                                <span className="text-xs font-bold text-[#00ffff]">{index + 1}</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                              {/* Drag handle */}
+                              <div
+                                {...dragHandleProps}
+                                className="flex-shrink-0 cursor-grab active:cursor-grabbing p-1 -m-1 rounded text-white/20 hover:text-white/50 transition-colors touch-none"
+                                onClick={e => e.stopPropagation()}
+                                title="Drag to reorder"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm8-12a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0zm0 6a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
+                                </svg>
                               </div>
-                              <span className="text-xs font-bold text-white/60 uppercase tracking-wide">{section.type}</span>
-                              {section.heading && (
-                                <span className="text-xs text-white/30 truncate max-w-[100px]">{section.heading}</span>
+                              {/* Block type icon */}
+                              {blockMeta && (
+                                <div className="w-6 h-6 rounded flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${blockColor}20` }}>
+                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ color: blockColor }}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={blockMeta.icon} />
+                                  </svg>
+                                </div>
                               )}
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-bold text-white/80 uppercase tracking-wide">{blockMeta?.label ?? section.type}</span>
+                                  <span className="text-[10px] text-white/25 font-normal">#{index + 1}</span>
+                                </div>
+                                {(section.heading || section.quote || section.text) && (
+                                  <span className="text-[11px] text-white/35 truncate block max-w-[130px]">
+                                    {section.heading || section.quote || section.text}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
-                              {/* Wand / regenerate button */}
-                              {!['divider', 'header', 'social-links', 'footer'].includes(section.type) && (
-                                <button
-                                  disabled={regeneratingSection !== null}
-                                  onClick={async () => {
-                                    if (!email || regeneratingSection !== null) return;
-                                    setBlockError(null);
-                                    setRegeneratingSection(index);
-                                    try {
-                                      const res = await fetch('/api/regenerate-block', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                          emailGenerationId: email.id,
-                                          sectionIndex: index,
-                                          designStyle: email.design_style,
-                                        }),
-                                      });
-                                      const data = await res.json();
-                                      if (!res.ok) throw new Error(data.error || 'Failed to regenerate');
-                                      updateSection(index, data.section);
-                                      if (data.html_code) {
-                                        setLivePreviewHtml(data.html_code);
-                                        setPreviewKey(k => k + 1);
-                                      }
-                                    } catch (err) {
-                                      setBlockError({ index, message: err instanceof Error ? err.message : 'Regeneration failed' });
-                                    } finally {
-                                      setRegeneratingSection(null);
-                                    }
-                                  }}
-                                  className={`p-1.5 rounded transition-all ${
-                                    (section.sectionTone || section.sectionStyle)
-                                      ? 'text-[#00ffff] hover:bg-[#00ffff]/10'
-                                      : 'text-white/20 hover:text-[#00ffff] hover:bg-[#00ffff]/10 opacity-0 group-hover:opacity-100'
-                                  } disabled:opacity-30 disabled:cursor-not-allowed`}
-                                  title={section.sectionTone || section.sectionStyle ? `Regenerate (${[section.sectionTone, section.sectionStyle].filter(Boolean).join(', ')})` : 'Regenerate block with AI'}
-                                >
-                                  {regeneratingSection === index ? (
-                                    <div className="w-3.5 h-3.5 border-2 border-[#00ffff]/30 border-t-[#00ffff] rounded-full animate-spin" />
-                                  ) : (
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                    </svg>
-                                  )}
-                                </button>
+                            <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                              {/* AI Rewrite button */}
+                              {!['divider', 'header', 'social-links'].includes(section.type) && (
+                                <div className="relative group/ai">
+                                  <button
+                                    onClick={() => setAiOpenSection(prev => prev === index ? null : index)}
+                                    className={`p-1.5 rounded transition-all ${
+                                      regeneratingSection === index
+                                        ? 'text-[#00ffff] cursor-wait'
+                                        : aiOpenSection === index || section.sectionPrompt
+                                          ? 'text-[#00ffff] bg-[#00ffff]/10'
+                                          : 'text-white/25 hover:text-[#00ffff] hover:bg-[#00ffff]/10 opacity-0 group-hover:opacity-100'
+                                    }`}
+                                    title="Rewrite with AI"
+                                  >
+                                    {regeneratingSection === index ? (
+                                      <div className="w-3.5 h-3.5 border-2 border-[#00ffff]/30 border-t-[#00ffff] rounded-full animate-spin" />
+                                    ) : (
+                                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                  {/* Hover tooltip */}
+                                  <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-30 opacity-0 group-hover/ai:opacity-100 transition-opacity duration-150">
+                                    <div className="px-2 py-1 rounded bg-[#1a1a1a] border border-white/10 text-[10px] text-white/70 whitespace-nowrap shadow-lg">
+                                      {section.sectionPrompt ? 'Edit AI instructions' : 'Rewrite with AI'}
+                                    </div>
+                                  </div>
+                                </div>
                               )}
-                              <button
-                                disabled={!canMoveUp}
-                                onClick={() => moveSection(index, 'up')}
-                                className="p-1.5 rounded text-white/30 hover:text-white hover:bg-white/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
-                                title="Move up"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                                </svg>
-                              </button>
-                              <button
-                                disabled={!canMoveDown}
-                                onClick={() => moveSection(index, 'down')}
-                                className="p-1.5 rounded text-white/30 hover:text-white hover:bg-white/10 transition-all disabled:opacity-20 disabled:cursor-not-allowed"
-                                title="Move down"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                              </button>
                               <button
                                 onClick={() => deleteSection(index)}
-                                className="p-1.5 rounded text-white/30 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                className="p-1.5 rounded text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
                                 title="Delete section"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -574,6 +690,76 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                               </svg>
                             </div>
                           </div>
+
+                          {/* AI rewrite panel */}
+                          {aiOpenSection === index && !['divider', 'header', 'social-links'].includes(section.type) && (
+                            <div className="px-3 py-2.5 border-t border-[#00ffff]/20 bg-[#00ffff]/[0.04]">
+                              <div className="flex gap-2 items-start">
+                                <textarea
+                                  autoFocus
+                                  value={section.sectionPrompt || ''}
+                                  onChange={e => updateSection(index, { sectionPrompt: e.target.value || undefined })}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                                      e.preventDefault();
+                                      e.currentTarget.closest('div')?.parentElement?.querySelector<HTMLButtonElement>('[data-ai-run]')?.click();
+                                    }
+                                    if (e.key === 'Escape') setAiOpenSection(null);
+                                  }}
+                                  rows={2}
+                                  placeholder="Instructions… e.g. make it more urgent, write for startup founders, use bullet points"
+                                  className="flex-1 px-2.5 py-1.5 bg-black/30 border border-[#00ffff]/20 rounded-lg text-white text-xs focus:outline-none focus:border-[#00ffff]/60 transition-colors resize-none placeholder-white/20 leading-relaxed"
+                                />
+                                <div className="flex flex-col gap-1.5">
+                                  <button
+                                    data-ai-run
+                                    disabled={regeneratingSection !== null}
+                                    onClick={async () => {
+                                      if (!email || regeneratingSection !== null) return;
+                                      setBlockError(null);
+                                      setRegeneratingSection(index);
+                                      try {
+                                        const res = await fetch('/api/regenerate-block', {
+                                          method: 'POST',
+                                          headers: { 'Content-Type': 'application/json' },
+                                          body: JSON.stringify({
+                                            emailGenerationId: email.id,
+                                            sectionIndex: index,
+                                            designStyle: email.design_style,
+                                          }),
+                                        });
+                                        const data = await res.json();
+                                        if (!res.ok) throw new Error(data.error || 'Failed to regenerate');
+                                        updateSection(index, data.section);
+                                        if (data.html_code) {
+                                          setLivePreviewHtml(data.html_code);
+                                          setPreviewKey(k => k + 1);
+                                        }
+                                        setAiOpenSection(null);
+                                      } catch (err) {
+                                        setBlockError({ index, message: err instanceof Error ? err.message : 'Regeneration failed' });
+                                      } finally {
+                                        setRegeneratingSection(null);
+                                      }
+                                    }}
+                                    className="px-2.5 py-1.5 rounded-lg bg-[#00ffff]/15 border border-[#00ffff]/30 text-[#00ffff] hover:bg-[#00ffff]/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap"
+                                  >
+                                    {regeneratingSection === index ? (
+                                      <div className="w-3 h-3 border-2 border-[#00ffff]/30 border-t-[#00ffff] rounded-full animate-spin" />
+                                    ) : (
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                      </svg>
+                                    )}
+                                    Run
+                                  </button>
+                                </div>
+                              </div>
+                              {blockError?.index === index && (
+                                <p className="mt-1.5 text-[11px] text-red-400">{blockError.message}</p>
+                              )}
+                            </div>
+                          )}
 
                           {/* Section fields */}
                           {!isCollapsed && (
@@ -1085,43 +1271,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 </>
                               )}
 
-                              {/* ── AI Generation Hints ── */}
-                              {!['divider', 'header', 'social-links'].includes(section.type) && (
-                                <div className="pt-3 mt-1 border-t border-white/10">
-                                  <label className="block text-xs text-white/40 mb-2 uppercase tracking-wider">AI Hints <span className="normal-case text-white/20 font-normal">(guide block regeneration)</span></label>
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                      <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Tone</label>
-                                      <select
-                                        value={section.sectionTone || ''}
-                                        onChange={e => updateSection(index, { sectionTone: e.target.value || undefined })}
-                                        className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors"
-                                      >
-                                        <option value="" className="bg-[#0a0a0a]">— default —</option>
-                                        {['urgent', 'playful', 'professional', 'casual', 'warm', 'inspiring', 'formal', 'humorous'].map(t => (
-                                          <option key={t} value={t} className="bg-[#0a0a0a]">{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                    <div>
-                                      <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Style</label>
-                                      <select
-                                        value={section.sectionStyle || ''}
-                                        onChange={e => updateSection(index, { sectionStyle: e.target.value || undefined })}
-                                        className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors"
-                                      >
-                                        <option value="" className="bg-[#0a0a0a]">— default —</option>
-                                        {['punchy', 'storytelling', 'data-driven', 'conversational', 'minimal', 'detailed'].map(s => (
-                                          <option key={s} value={s} className="bg-[#0a0a0a]">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                                        ))}
-                                      </select>
-                                    </div>
-                                  </div>
-                                  {blockError?.index === index && (
-                                    <p className="mt-1.5 text-[11px] text-red-400">{blockError.message}</p>
-                                  )}
-                                </div>
-                              )}
+
 
                               {/* ── Color overrides ── */}
                               {section.type !== 'divider' && (
@@ -1201,9 +1351,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                             </div>
                           )}
                         </div>
+                          )}
+                        </SortableSectionItem>
                       );
                     })}
                   </div>
+                    </SortableContext>
+                  </DndContext>
 
                   {/* Add Block button */}
                   <button
@@ -1482,15 +1636,20 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-bold text-white mb-1">Live Preview</h3>
+                    <h3 className="text-base font-bold text-white">Live Preview</h3>
                     {previewing && (
                       <span className="flex items-center gap-1 text-xs text-cyan-400 animate-pulse">
                         <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 inline-block" />
                         Updating…
                       </span>
                     )}
+                    {selectedSection !== null && (
+                      <span className="px-2 py-0.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 text-[10px] font-bold text-[#00ffff] uppercase tracking-wide">
+                        Block #{selectedSection + 1} selected
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm text-white/60">See how your email looks</p>
+                  <p className="text-xs text-white/40 mt-0.5">Click a section in the preview to jump to it</p>
                 </div>
 
                 {/* View Mode Toggle */}
@@ -1528,17 +1687,123 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 previewMode === 'mobile' ? 'max-w-[375px]' : 'max-w-full'
               }`}>
                 {email.html_code ? (
-                  // Use generated HTML for accurate design-style preview
-                  <div className="rounded-lg overflow-hidden shadow-2xl border border-white/20">
-                    <iframe
-                      key={previewKey}
-                      srcDoc={livePreviewHtml ?? email.html_code}
-                      title="Email Preview"
-                      className="w-full border-0"
-                      style={{ height: '700px' }}
-                      sandbox="allow-same-origin"
-                    />
-                  </div>
+                  previewMode === 'desktop' ? (
+                    // Desktop: browser chrome frame
+                    <div className="rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-[#1c1c1e]">
+                      {/* Chrome bar */}
+                      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.07] bg-[#2a2a2d]">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-3 h-3 rounded-full bg-[#ff5f57]" />
+                          <div className="w-3 h-3 rounded-full bg-[#ffbd2e]" />
+                          <div className="w-3 h-3 rounded-full bg-[#28c840]" />
+                        </div>
+                        <div className="flex-1 mx-3">
+                          <div className="flex items-center gap-1.5 px-3 py-1 bg-[#1c1c1e] rounded-md border border-white/[0.07]">
+                            <svg className="w-3 h-3 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            <span className="text-[11px] text-white/30 truncate">Email Preview</span>
+                          </div>
+                        </div>
+                        {previewing && (
+                          <div className="w-3 h-3 border-2 border-white/20 border-t-white/60 rounded-full animate-spin flex-shrink-0" />
+                        )}
+                      </div>
+                      <iframe
+                        ref={iframeRef}
+                        key={previewKey}
+                        srcDoc={livePreviewHtml ?? email.html_code}
+                        title="Email Preview"
+                        className="w-full border-0 block"
+                        style={{ height: '700px' }}
+                        sandbox="allow-same-origin"
+                        onLoad={() => {
+                          const iframe = iframeRef.current;
+                          if (!iframe?.contentDocument) return;
+                          const doc = iframe.contentDocument;
+                          // Inject hover/selected styles
+                          const style = doc.createElement('style');
+                          style.textContent = `
+                            .em-section { cursor: pointer !important; outline: 2px solid transparent !important; outline-offset: 2px !important; transition: outline 0.12s ease !important; }
+                            .em-section:hover { outline: 2px solid rgba(0,255,255,0.4) !important; }
+                            .em-section.em-selected { outline: 2px solid #00ffff !important; }
+                          `;
+                          doc.head.appendChild(style);
+                          // Inject click detection script
+                          const script = doc.createElement('script');
+                          script.textContent = `
+                            (function() {
+                              var sections = document.querySelectorAll('.em-section');
+                              sections.forEach(function(el, i) {
+                                el.addEventListener('click', function(e) {
+                                  e.stopPropagation();
+                                  sections.forEach(function(s) { s.classList.remove('em-selected'); });
+                                  el.classList.add('em-selected');
+                                  window.parent.postMessage({ type: 'section-click', index: i }, '*');
+                                });
+                              });
+                            })();
+                          `;
+                          doc.body.appendChild(script);
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    // Mobile: phone frame
+                    <div className="mx-auto" style={{ maxWidth: '375px' }}>
+                      <div className="rounded-[2.5rem] overflow-hidden shadow-2xl border-2 border-white/20 bg-[#1c1c1e]" style={{ padding: '12px' }}>
+                        {/* Notch */}
+                        <div className="flex justify-center mb-2">
+                          <div className="w-24 h-5 bg-[#2a2a2d] rounded-full flex items-center justify-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-[#3a3a3d]" />
+                            <div className="w-2 h-2 rounded-full bg-[#3a3a3d]" />
+                          </div>
+                        </div>
+                        <div className="rounded-2xl overflow-hidden">
+                          <iframe
+                            ref={iframeRef}
+                            key={previewKey}
+                            srcDoc={livePreviewHtml ?? email.html_code}
+                            title="Email Preview"
+                            className="w-full border-0 block"
+                            style={{ height: '620px' }}
+                            sandbox="allow-same-origin"
+                            onLoad={() => {
+                              const iframe = iframeRef.current;
+                              if (!iframe?.contentDocument) return;
+                              const doc = iframe.contentDocument;
+                              const style = doc.createElement('style');
+                              style.textContent = `
+                                .em-section { cursor: pointer !important; outline: 2px solid transparent !important; outline-offset: 2px !important; transition: outline 0.12s ease !important; }
+                                .em-section:hover { outline: 2px solid rgba(0,255,255,0.4) !important; }
+                                .em-section.em-selected { outline: 2px solid #00ffff !important; }
+                              `;
+                              doc.head.appendChild(style);
+                              const script = doc.createElement('script');
+                              script.textContent = `
+                                (function() {
+                                  var sections = document.querySelectorAll('.em-section');
+                                  sections.forEach(function(el, i) {
+                                    el.addEventListener('click', function(e) {
+                                      e.stopPropagation();
+                                      sections.forEach(function(s) { s.classList.remove('em-selected'); });
+                                      el.classList.add('em-selected');
+                                      window.parent.postMessage({ type: 'section-click', index: i }, '*');
+                                    });
+                                  });
+                                })();
+                              `;
+                              doc.body.appendChild(script);
+                            }}
+                          />
+                        </div>
+                        {/* Home indicator */}
+                        <div className="flex justify-center mt-3">
+                          <div className="w-28 h-1 bg-white/20 rounded-full" />
+                        </div>
+                      </div>
+                    </div>
+                  )
                 ) : (
                   // Fallback: manual render from JSON
                   <div className="bg-white rounded-lg overflow-hidden shadow-2xl border-4 border-black">

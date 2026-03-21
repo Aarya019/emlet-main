@@ -116,10 +116,8 @@ export interface EmailSection {
     buttonUrl?: string;
   }>;
   // Per-section generation hints (used by the AI block-regeneration feature)
-  /** Tone hint for AI block regeneration — e.g. 'urgent', 'playful', 'professional', 'casual', 'warm', 'inspiring', 'formal', 'humorous' */
-  sectionTone?: string;
-  /** Writing-style hint for AI block regeneration — e.g. 'punchy', 'storytelling', 'data-driven', 'conversational', 'minimal', 'detailed' */
-  sectionStyle?: string;
+  /** Free-form instruction for AI block regeneration — e.g. 'make it more urgent', 'rewrite for startup founders', 'use bullet points' */
+  sectionPrompt?: string;
   // Per-section color overrides
   /** Override the section background color (hex, e.g. "#f0f4ff") */
   backgroundColor?: string;
@@ -738,8 +736,7 @@ export async function regenerateSingleSection(
   brandProfile: BrandProfile | null,
   designStyle: string,
 ): Promise<Partial<EmailSection>> {
-  const tone  = section.sectionTone  || 'professional';
-  const style = section.sectionStyle || 'conversational';
+  const userInstruction = section.sectionPrompt?.trim() || null;
 
   const palette = buildEmailPalette(
     brandProfile?.primary_color ?? '#5c5cf0',
@@ -786,9 +783,7 @@ EMAIL SUBJECT: "${emailSubject}"
 SURROUNDING SECTIONS: ${surroundingContext}
 DESIGN STYLE: ${designStyle}
 ${brandContext}
-
-TONE: ${tone}
-WRITING STYLE: ${style}
+${userInstruction ? `\nUSER INSTRUCTIONS: ${userInstruction}` : ''}
 
 CURRENT BLOCK (JSON):
 ${JSON.stringify(section, null, 2)}
@@ -796,12 +791,12 @@ ${JSON.stringify(section, null, 2)}
 INSTRUCTIONS:
 1. Rewrite ONLY these fields: ${fieldsToReturn}
 2. Keep the exact same JSON field names — do not rename or add/remove fields
-3. Do NOT change: type, imageUrl, imageKeyword, backgroundImageKeyword, backgroundColor, textColor, buttonColor, backgroundGradient, buttonUrl, secondaryButtonUrl, sectionTone, sectionStyle, or any URL/color/image fields
-4. Apply the tone "${tone}" and writing style "${style}" strictly
+3. Do NOT change: type, imageUrl, imageKeyword, backgroundImageKeyword, backgroundColor, textColor, buttonColor, backgroundGradient, buttonUrl, secondaryButtonUrl, sectionPrompt, or any URL/color/image fields
+4. If USER INSTRUCTIONS are provided above, follow them closely — they take priority over everything else
 5. Keep within the same general topic — do not change the subject matter
 6. Return ONLY a valid JSON object containing the rewritten fields — no markdown, no explanation
 7. NO emojis anywhere. Plain text only.
-8. Short, punchy copy wins over verbose prose (unless style = 'detailed' or 'storytelling')
+8. Short, punchy copy wins over verbose prose
 
 Return ONLY the JSON object with the rewritten content fields.`;
 
