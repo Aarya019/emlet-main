@@ -50,6 +50,9 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [error, setError] = useState<string | null>(null);
   const [aiChatOpen, setAiChatOpen] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiHistory, setAiHistory] = useState<Array<{ role: 'user' | 'ai'; content: string }>>([]);
+  const aiInputRef = useRef<HTMLInputElement | null>(null);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
 
   // Editor state
@@ -315,6 +318,40 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     }
   };
 
+  const handleAiEdit = async () => {
+    const instruction = aiMessage.trim();
+    if (!instruction || aiLoading) return;
+
+    setAiMessage('');
+    setAiLoading(true);
+    setAiHistory(prev => [...prev, { role: 'user', content: instruction }]);
+
+    try {
+      const res = await fetch('/api/edit-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emailGenerationId: emailId, instruction }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setAiHistory(prev => [...prev, { role: 'ai', content: `Sorry, something went wrong: ${data.error || 'Unknown error'}` }]);
+        return;
+      }
+
+      setEditedEmail(data.content_json);
+      setLivePreviewHtml(data.html_code);
+      setPreviewKey(k => k + 1);
+      setIsDirty(true);
+      setAiHistory(prev => [...prev, { role: 'ai', content: 'Done! The email has been updated. You can keep refining or close this panel.' }]);
+    } catch {
+      setAiHistory(prev => [...prev, { role: 'ai', content: 'Network error. Please try again.' }]);
+    } finally {
+      setAiLoading(false);
+      setTimeout(() => aiInputRef.current?.focus(), 50);
+    }
+  };
+
   const copyHtml = () => {
     if (!email?.html_code) return;
     navigator.clipboard.writeText(email.html_code).then(() => {
@@ -446,17 +483,14 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               )}
               <div className="relative">
                 <button
-                  disabled
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff]/40 to-[#00ff00]/40 text-black/60 text-sm font-bold flex items-center gap-2 cursor-not-allowed"
+                  onClick={() => setAiChatOpen(true)}
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-sm font-bold flex items-center gap-2 hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                   Edit with AI
                 </button>
-                <span className="absolute -top-2 -right-2 px-1.5 py-0.5 rounded-full bg-yellow-400 text-black text-[10px] font-black leading-none whitespace-nowrap">
-                  Coming soon
-                </span>
               </div>
               {isDirty && (
                 <button
@@ -1527,7 +1561,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 {/* Backdrop */}
                 <div 
                   className="absolute inset-0 bg-black/60 backdrop-blur-sm z-10 animate-in fade-in duration-300"
-                  onClick={() => setAiChatOpen(false)}
+                  onClick={() => { if (!aiLoading) setAiChatOpen(false); }}
                 />
                 
                 {/* AI Chat Overlay */}
@@ -1545,8 +1579,9 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                           AI Assistant
                         </h3>
                         <button 
-                          onClick={() => setAiChatOpen(false)}
-                          className="text-white/40 hover:text-white transition-colors"
+                          onClick={() => { if (!aiLoading) setAiChatOpen(false); }}
+                          className="text-white/40 hover:text-white transition-colors disabled:opacity-30"
+                          disabled={aiLoading}
                         >
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1554,73 +1589,130 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                         </button>
                       </div>
                       <p className="text-xs text-white/60">
-                        Ask AI to modify your email content
+                        Describe any change — AI will rewrite the content across the whole email.
                       </p>
                     </div>
 
                     {/* Chat Messages */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                      {/* Welcome message */}
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0">
-                          <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                          </svg>
-                        </div>
-                        <div className="flex-1">
-                          <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                            <p className="text-sm text-white mb-2">
-                              Hi! I can help you edit your email. Try asking me to:
-                            </p>
-                            <ul className="space-y-1 text-xs text-white/70">
-                              <li>• Make the tone more casual</li>
-                              <li>• Shorten the content</li>
-                              <li>• Add urgency to the CTA</li>
-                              <li>• Change the hero heading</li>
-                            </ul>
+                      {/* Welcome message (shown only before any messages) */}
+                      {aiHistory.length === 0 && (
+                        <>
+                          <div className="flex gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0">
+                              <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                            </div>
+                            <div className="flex-1">
+                              <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                                <p className="text-sm text-white mb-2">
+                                  Hi! Tell me how to improve your email. Try:
+                                </p>
+                                <ul className="space-y-1 text-xs text-white/70">
+                                  <li>• Make the tone more casual</li>
+                                  <li>• Shorten the content</li>
+                                  <li>• Add urgency to the CTA</li>
+                                  <li>• Rewrite for enterprise buyers</li>
+                                </ul>
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-xs text-white/40 mt-1">Just now</p>
-                        </div>
-                      </div>
 
-                      {/* Quick suggestions */}
-                      <div className="space-y-2">
-                        <p className="text-xs text-white/40 font-medium">Quick suggestions:</p>
-                        {[
-                          'Make it more professional',
-                          'Add a discount code section',
-                          'Shorten the hero text',
-                          'Make CTA more urgent'
-                        ].map((suggestion, i) => (
-                          <button
-                            key={i}
-                            className="w-full text-left px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-[#00ffff]/50 transition-all text-sm text-white/70 hover:text-white"
-                          >
-                            {suggestion}
-                          </button>
-                        ))}
-                      </div>
+                          {/* Quick suggestions */}
+                          <div className="space-y-2">
+                            <p className="text-xs text-white/40 font-medium">Quick suggestions:</p>
+                            {[
+                              'Make it more professional',
+                              'Make the CTA more urgent',
+                              'Shorten all sections',
+                              'Rewrite for a younger audience',
+                            ].map((suggestion, i) => (
+                              <button
+                                key={i}
+                                disabled={aiLoading}
+                                onClick={() => {
+                                  setAiMessage(suggestion);
+                                  setTimeout(() => aiInputRef.current?.focus(), 50);
+                                }}
+                                className="w-full text-left px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-[#00ffff]/50 transition-all text-sm text-white/70 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                {suggestion}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      {/* Chat history */}
+                      {aiHistory.map((msg, i) => (
+                        <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                          {msg.role === 'ai' && (
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0">
+                              <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              </svg>
+                            </div>
+                          )}
+                          <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                            msg.role === 'user'
+                              ? 'bg-[#00ffff]/10 border border-[#00ffff]/20 text-white ml-auto'
+                              : 'bg-white/5 border border-white/10 text-white/90'
+                          }`}>
+                            {msg.content}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Loading indicator */}
+                      {aiLoading && (
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0 animate-pulse">
+                            <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                          </div>
+                          <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#00ffff] animate-bounce [animation-delay:0ms]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#00ffff] animate-bounce [animation-delay:150ms]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#00ffff] animate-bounce [animation-delay:300ms]" />
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Chat Input */}
                     <div className="p-4 border-t border-white/10">
                       <div className="flex gap-2">
                         <input
+                          ref={aiInputRef}
                           type="text"
                           value={aiMessage}
                           onChange={(e) => setAiMessage(e.target.value)}
-                          placeholder="Ask AI to modify your email..."
-                          className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] text-sm"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && aiMessage.trim()) {
-                              console.log('Send:', aiMessage);
+                          placeholder="Describe what to change..."
+                          disabled={aiLoading}
+                          className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] text-sm disabled:opacity-50"
+                          onKeyDown={async (e) => {
+                            if (e.key === 'Enter' && aiMessage.trim() && !aiLoading) {
+                              await handleAiEdit();
                             }
                           }}
                         />
-                        <button className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex-shrink-0">
-                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                          </svg>
+                        <button
+                          disabled={!aiMessage.trim() || aiLoading}
+                          onClick={handleAiEdit}
+                          className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+                        >
+                          {aiLoading ? (
+                            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
+                          )}
                         </button>
                       </div>
                     </div>

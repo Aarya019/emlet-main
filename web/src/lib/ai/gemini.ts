@@ -845,6 +845,68 @@ Return ONLY the JSON object with the rewritten content fields.`;
 }
 
 /**
+ * Apply a free-form instruction to an entire email — anything can be changed:
+ * copy, colors, images, URLs, structure, section types, order, etc.
+ */
+export async function editEmailWithInstruction(
+  instruction: string,
+  currentEmail: GeneratedEmail,
+  brandProfile: BrandProfile | null,
+  designStyle: string,
+): Promise<GeneratedEmail> {
+  const brandContext = brandProfile
+    ? `Brand: ${brandProfile.brand_name}. Voice: ${brandProfile.brand_voice}. Industry: ${brandProfile.industry || 'not specified'}. Primary color: ${brandProfile.primary_color}.`
+    : 'No brand profile — use neutral professional tone.';
+
+  const prompt = `You are an expert email designer and copywriter editing an existing email.
+
+USER INSTRUCTION: "${instruction}"
+
+BRAND: ${brandContext}
+DESIGN STYLE: ${designStyle}
+
+CURRENT EMAIL JSON:
+${JSON.stringify(currentEmail, null, 2)}
+
+TASK:
+Apply the user instruction to the email. You may modify ANY field — copy, colors (backgroundColor, textColor, buttonColor, backgroundGradient), layout, structure, section types, URLs (buttonUrl, secondaryButtonUrl), section order, imagePosition, numbered, layout, etc.
+
+RULES:
+1. Return the COMPLETE GeneratedEmail JSON with ALL sections (unless the instruction asks to remove some). You may add, remove, or reorder sections.
+2. IMAGE KEYWORDS ONLY: output only imageKeyword / backgroundImageKeyword / gallery image keyword fields to describe desired photos — NEVER output imageUrl / backgroundImageUrl / gallery image url (those are server-resolved). To keep an existing image, copy its keyword exactly as-is from the input.
+3. Preserve logoUrl and authorImage values exactly as they appear in the input.
+4. Copy sectionPrompt fields exactly from the input.
+5. NO emojis anywhere. Plain text only.
+6. Return ONLY the JSON object — no markdown, no code fences, no explanation.`;
+
+  async function callModel(modelName: string): Promise<GeneratedEmail> {
+    const model = genAI.getGenerativeModel({
+      model: modelName,
+      generationConfig: { temperature: 0.9, topP: 0.95, topK: 40, maxOutputTokens: 8192 },
+    });
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+    const jsonMatch = stripped.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('No JSON in response');
+    const parsed = JSON.parse(jsonMatch[0]) as GeneratedEmail;
+    if (!parsed.subject || !parsed.sections?.length) throw new Error('Invalid email structure returned');
+    return parsed;
+  }
+
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      if (attempt > 0) await new Promise(res => setTimeout(res, 2000));
+      return await callModel(MODEL_PRIMARY);
+    } catch {
+      if (attempt === 1) break;
+    }
+  }
+
+  return await callModel(MODEL_FALLBACK);
+}
+
+/**
  * Test the Gemini API connection
  */
 export async function testGeminiConnection(): Promise<boolean> {
