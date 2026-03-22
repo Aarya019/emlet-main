@@ -2264,7 +2264,7 @@ export async function generateEmailHtml(
     React.createElement(Preview, null, email.previewText),
     React.createElement(Body, {
       style: {
-        backgroundColor: backgroundColor || config.bodyBg,
+        backgroundColor: email.emailStyle?.outerBackground || backgroundColor || config.bodyBg,
         margin: '0',
         padding: '20px 0',
         fontFamily: config.fontFamily,
@@ -2275,12 +2275,18 @@ export async function generateEmailHtml(
         style: {
           maxWidth: '600px',
           margin: '0 auto',
-          backgroundColor: config.bodyBg,
-          border: config.containerBorder,
+          backgroundColor: email.emailStyle?.containerBackground || config.bodyBg,
+          border: email.emailStyle?.containerBorderColor !== undefined
+            ? (email.emailStyle.containerBorderColor
+                ? `${email.emailStyle.containerBorderWidth ?? 1}px solid ${email.emailStyle.containerBorderColor}`
+                : 'none')
+            : config.containerBorder,
           borderRadius: config.borderRadius,
           overflow: 'hidden',
           padding: '0 40px',
-          borderTop: `4px solid ${primaryColor}`,
+          borderTop: email.emailStyle?.accentBarColor !== undefined
+            ? (email.emailStyle.accentBarColor ? `4px solid ${email.emailStyle.accentBarColor}` : 'none')
+            : `4px solid ${primaryColor}`,
         }
       },
         ...sectionElements

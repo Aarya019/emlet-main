@@ -727,6 +727,149 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     />
                   </div>
 
+                  {/* Email Style */}
+                  {(() => {
+                    const es = editedEmail.emailStyle ?? {};
+                    const setEs = (patch: Partial<NonNullable<typeof editedEmail.emailStyle>>) => {
+                      setEditedEmail(prev => prev ? { ...prev, emailStyle: { ...(prev.emailStyle ?? {}), ...patch } } : prev);
+                      setIsDirty(true);
+                    };
+                    return (
+                      <div className="p-4 rounded-lg border border-white/10 bg-white/5 space-y-3">
+                        <label className="block text-xs font-medium text-white/40 uppercase tracking-wider">Email Style</label>
+
+                        {/* Outer background */}
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-[11px] text-white/50 flex-1">Outer background</span>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={es.outerBackground ?? '#f9f9f9'}
+                              onChange={e => setEs({ outerBackground: e.target.value })}
+                              className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5"
+                            />
+                            <input
+                              type="text"
+                              value={es.outerBackground ?? ''}
+                              onChange={e => setEs({ outerBackground: e.target.value })}
+                              placeholder="default"
+                              className="w-20 bg-black/30 border border-white/10 rounded px-1.5 py-1 text-xs text-white focus:outline-none focus:border-white/30 placeholder-white/20"
+                            />
+                            {es.outerBackground && (
+                              <button onClick={() => setEs({ outerBackground: undefined })} className="text-white/20 hover:text-white/60 text-xs">✕</button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Container background */}
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-[11px] text-white/50 flex-1">Card background</span>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={es.containerBackground ?? '#ffffff'}
+                              onChange={e => setEs({ containerBackground: e.target.value })}
+                              className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5"
+                            />
+                            <input
+                              type="text"
+                              value={es.containerBackground ?? ''}
+                              onChange={e => setEs({ containerBackground: e.target.value })}
+                              placeholder="default"
+                              className="w-20 bg-black/30 border border-white/10 rounded px-1.5 py-1 text-xs text-white focus:outline-none focus:border-white/30 placeholder-white/20"
+                            />
+                            {es.containerBackground && (
+                              <button onClick={() => setEs({ containerBackground: undefined })} className="text-white/20 hover:text-white/60 text-xs">✕</button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Container border color */}
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-[11px] text-white/50 flex-1">Border color</span>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={es.containerBorderColor || '#e8e8e8'}
+                              onChange={e => setEs({ containerBorderColor: e.target.value })}
+                              className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5"
+                            />
+                            <input
+                              type="text"
+                              value={es.containerBorderColor ?? ''}
+                              onChange={e => setEs({ containerBorderColor: e.target.value })}
+                              placeholder="default"
+                              className="w-20 bg-black/30 border border-white/10 rounded px-1.5 py-1 text-xs text-white focus:outline-none focus:border-white/30 placeholder-white/20"
+                            />
+                            {es.containerBorderColor !== undefined && (
+                              <button onClick={() => setEs({ containerBorderColor: undefined })} className="text-white/20 hover:text-white/60 text-xs">✕</button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Border width — only shown when a border color is set */}
+                        {es.containerBorderColor && (
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-[11px] text-white/50 flex-1">Border width</span>
+                            <select
+                              value={es.containerBorderWidth ?? 1}
+                              onChange={e => setEs({ containerBorderWidth: Number(e.target.value) })}
+                              className="w-24 bg-black/30 border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-white/30"
+                            >
+                              {[1, 2, 3, 4, 6].map(w => <option key={w} value={w}>{w}px</option>)}
+                            </select>
+                          </div>
+                        )}
+
+                        {/* Accent bar color */}
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-[11px] text-white/50 flex-1">Top accent bar</span>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={es.accentBarColor || '#5c5cf0'}
+                              onChange={e => setEs({ accentBarColor: e.target.value })}
+                              className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5"
+                            />
+                            <input
+                              type="text"
+                              value={es.accentBarColor ?? ''}
+                              onChange={e => setEs({ accentBarColor: e.target.value })}
+                              placeholder="brand primary"
+                              className="w-20 bg-black/30 border border-white/10 rounded px-1.5 py-1 text-xs text-white focus:outline-none focus:border-white/30 placeholder-white/20"
+                            />
+                            {es.accentBarColor !== undefined && (
+                              <button onClick={() => setEs({ accentBarColor: undefined })} className="text-white/20 hover:text-white/60 text-xs">✕</button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Hide accent bar toggle */}
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={es.accentBarColor === ''}
+                            onChange={e => setEs({ accentBarColor: e.target.checked ? '' : undefined })}
+                            className="w-3.5 h-3.5 rounded accent-white/60"
+                          />
+                          <span className="text-[11px] text-white/40">Hide top accent bar</span>
+                        </label>
+
+                        {Object.keys(es).length > 0 && (
+                          <button
+                            onClick={() => {
+                              setEditedEmail(prev => prev ? { ...prev, emailStyle: undefined } : prev);
+                              setIsDirty(true);
+                            }}
+                            className="text-[11px] text-white/30 hover:text-white/60 transition-colors"
+                          >
+                            ✕ reset all to style defaults
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {/* Font Picker */}
                   {(() => {
                     const fontNames = Object.keys(FONT_REGISTRY);

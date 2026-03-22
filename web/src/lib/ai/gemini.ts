@@ -141,6 +141,19 @@ export interface EmailSection {
   backgroundImageOverlay?: string;
 }
 
+export interface EmailStyleOverrides {
+  /** Background color of the outer email page/gutter — the area around the card. Uses palette color. */
+  outerBackground?: string;
+  /** Background color of the email content card itself. Uses palette color. */
+  containerBackground?: string;
+  /** Border color for the email container card. Empty string = no border. */
+  containerBorderColor?: string;
+  /** Border width in px for the email container card (default: 1). */
+  containerBorderWidth?: number;
+  /** Color for the top accent bar. Empty string = hide it. Default: brand primary. */
+  accentBarColor?: string;
+}
+
 export interface GeneratedEmail {
   subject: string;
   previewText: string;
@@ -155,6 +168,8 @@ export interface GeneratedEmail {
    * heading/body must be keys of FONT_REGISTRY exported from renderer.tsx.
    */
   fontPairing?: { heading: string; body: string };
+  /** Email-level visual overrides for outer background, container, border, and accent bar. */
+  emailStyle?: EmailStyleOverrides;
   sections: EmailSection[];
 }
 
@@ -470,7 +485,14 @@ MANDATORY EMAIL COMPOSITION RULES (non-negotiable):
 6. Use stats section with 3–4 concrete metric numbers for emails about growth, performance, or social proof.
 7. BACKGROUND IMAGES: Hero sections MUST set backgroundImageKeyword — a cinematic 5–8 word wide-angle descriptor (e.g. "aerial city lights highway night exposure", "misty mountain valley golden sunrise fog", "minimal concrete office architecture overhead"). CTA sections MAY include backgroundImageKeyword for visual/lifestyle brands. When set, ALWAYS pair with textColor: '#ffffff'. The renderer applies a dark gradient overlay automatically. Do NOT also set backgroundGradient.
    MINIMAL OVERLAY TEXT RULE: When a section has a background image, keep ALL overlaid content to an absolute minimum — the photo must breathe. Limit to: eyebrow (optional, 2–3 words max) + heading (5 words max) + one single-sentence subheading OR intro (not both) + one CTA button. Do NOT include secondaryButtonText on photo backgrounds. No long paragraphs, no lists, no extra fields — the image carries the visual weight, text is just a caption.
-8. ICONS: For every feature in feature-list, every stat in stats, and every column in columns, set BOTH fields:
+8. EMAIL STYLE: Always output an "emailStyle" object at the root level. Set it using palette colors only:
+   - outerBackground: the gutter/page color wrapping the email card. Usually "${palette.surfaceAlt}" or "${palette.primaryDark}" for dark themes.
+   - containerBackground: the email card background. Usually "${palette.surface}" for light themes or "${palette.primaryDark}" for dark.
+   - containerBorderColor: the card border color. Use a subtle palette value or empty string "" for no border.
+   - containerBorderWidth: integer 1–4 (default 1). Use 2–4 only for brutalist/retro styles.
+   - accentBarColor: the 4px top accent strip color. Usually "${palette.primary}". Use empty string "" to hide it.
+   Match these to the design style: dark cyberpunk emails → dark outerBackground + no border; minimalist → light grey outer + thin border; brutalist → white container + thick black border.
+9. ICONS: For every feature in feature-list, every stat in stats, and every column in columns, set BOTH fields:
    - "icon": an emoji fallback (renders in basic clients)
    - "iconName": a Phosphor Icons name (renders as a crisp SVG in modern clients)
    Valid Phosphor icon names are lowercase kebab-case, e.g.: rocket, check-circle, lightning, chart-bar, users, shield-check, clock, star, arrow-right, code, globe, lock, chat-circle, gear, trophy, chart-line-up, currency-dollar, envelope, bell, image-square, device-mobile, hand-heart, leaf, magnifying-glass, paint-brush, person, planet, plug, question, sparkle, tag, target, thumbs-up, timer, translate, vault, warning, wifi, wrench
@@ -517,6 +539,13 @@ Return a JSON object with this exact structure:
   "previewText": "Preview text shown in inbox (80-100 characters)",
   "emailType": "promotional|newsletter|educational|transactional|other",
   "fontVariant": 0,
+  "emailStyle": {
+    "outerBackground": "#f0f0f5",
+    "containerBackground": "#ffffff",
+    "containerBorderColor": "#e0e0e8",
+    "containerBorderWidth": 1,
+    "accentBarColor": "#5c5cf0"
+  },
   "sections": [
     {
       "type": "hero",
