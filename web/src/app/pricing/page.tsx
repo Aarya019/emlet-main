@@ -182,31 +182,42 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <div className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-lg font-black tracking-tight">
-          <span className="bg-gradient-to-r from-[#00ffff] to-[#00ff00] bg-clip-text text-transparent">emlet</span>
-        </Link>
-        <div className="flex items-center gap-4">
-          {isPaidUser && (
-            <button
-              onClick={handleManageBilling}
-              disabled={portalLoading}
-              className="px-4 py-1.5 text-sm border border-white/20 rounded-lg text-white/70 hover:border-white/40 hover:text-white transition-all disabled:opacity-50"
-            >
-              {portalLoading ? 'Loading…' : 'Manage Billing'}
-            </button>
-          )}
-          {user ? (
-            <Link href="/dashboard" className="px-4 py-1.5 text-sm rounded-lg bg-white/10 hover:bg-white/15 transition-all">
-              Dashboard
-            </Link>
-          ) : (
-            <Link href="/sign-in" className="px-4 py-1.5 text-sm rounded-lg bg-white/10 hover:bg-white/15 transition-all">
-              Sign in
-            </Link>
-          )}
+      <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5">
+        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-3 md:px-6 md:py-4">
+          <Link href="/" className="flex items-center">
+            <img src="/logo.png" alt="Emlet" className="h-7 w-auto md:h-8" />
+          </Link>
+          <nav className="hidden items-center justify-center gap-8 text-sm text-white/70 md:flex">
+            <Link href="/#features" className="transition-colors hover:text-white">Features</Link>
+            <Link href="/#faq" className="transition-colors hover:text-white">FAQ</Link>
+          </nav>
+          <div className="flex items-center justify-end gap-3">
+            {isPaidUser && (
+              <button
+                onClick={handleManageBilling}
+                disabled={portalLoading}
+                className="hidden sm:block rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-white/40 disabled:opacity-50"
+              >
+                {portalLoading ? 'Loading…' : 'Manage Billing'}
+              </button>
+            )}
+            {user ? (
+              <Link href="/dashboard" className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
+                  Sign in
+                </Link>
+                <Link href="/sign-up" className="hidden sm:block rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
+                  Get started free
+                </Link>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Hero */}
       <div className="max-w-3xl mx-auto px-6 pt-20 pb-14 text-center">

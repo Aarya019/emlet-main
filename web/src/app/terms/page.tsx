@@ -13,17 +13,25 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <div className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-lg font-black tracking-tight">
-          <span className="bg-gradient-to-r from-[#00ffff] to-[#00ff00] bg-clip-text text-transparent">
-            emlet
-          </span>
-        </Link>
-        <div className="flex items-center gap-4 text-sm text-white/60">
-          <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
-          <Link href="/sign-in" className="hover:text-white transition-colors">Sign in</Link>
+      <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5">
+        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-3 md:px-6 md:py-4">
+          <Link href="/" className="flex items-center">
+            <img src="/logo.png" alt="Emlet" className="h-7 w-auto md:h-8" />
+          </Link>
+          <nav className="hidden items-center justify-center gap-8 text-sm text-white/70 md:flex">
+            <Link href="/pricing" className="transition-colors hover:text-white">Pricing</Link>
+            <Link href="/#features" className="transition-colors hover:text-white">Features</Link>
+          </nav>
+          <div className="flex items-center justify-end gap-3">
+            <Link href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
+              Sign in
+            </Link>
+            <Link href="/sign-up" className="hidden sm:block rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
+              Get started free
+            </Link>
+          </div>
         </div>
-      </div>
+      </header>
 
       {/* Content */}
       <div className="max-w-3xl mx-auto px-6 py-16">
