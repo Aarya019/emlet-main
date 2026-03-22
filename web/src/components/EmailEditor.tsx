@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import type { EmailGeneration } from '@/lib/db/types';
 import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
-import { FONT_REGISTRY } from '@/lib/email/renderer';
+import { FONT_REGISTRY, fontVariants } from '@/lib/email/renderer';
 import ImageUploadInput from '@/components/ImageUploadInput';
 import {
   DndContext,
@@ -736,6 +736,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       setEditedEmail(prev => prev ? { ...prev, fontPairing: { heading, body }, fontVariant: undefined } : prev);
                       setIsDirty(true);
                     };
+                    // Resolve the actual default fonts from the style variant
+                    const styleKey = (email?.design_style || 'minimalist') as string;
+                    const styleVars = fontVariants[styleKey] ?? fontVariants.minimalist;
+                    const activeVariant = styleVars[editedEmail.fontVariant ?? 0] ?? styleVars[0];
+                    const extractFont = (family: string) => /'([^']+)'/.exec(family)?.[1] ?? family.split(',')[0].trim();
+                    const defaultHeadingName = extractFont(activeVariant.headingFontFamily);
+                    const defaultBodyName    = extractFont(activeVariant.fontFamily);
                     return (
                       <div className="p-4 rounded-lg border border-white/10 bg-white/5 space-y-3">
                         <label className="block text-xs font-medium text-white/40 uppercase tracking-wider">Fonts</label>
@@ -746,7 +753,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                             onChange={e => setPairing(e.target.value, currentBody || e.target.value)}
                             className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
                           >
-                            <option value="">— style default —</option>
+                            <option value="">— {defaultHeadingName} (default) —</option>
                             {fontNames.map(name => (
                               <option key={name} value={name}>{name}</option>
                             ))}
@@ -759,7 +766,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                             onChange={e => setPairing(currentHeading || e.target.value, e.target.value)}
                             className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
                           >
-                            <option value="">— style default —</option>
+                            <option value="">— {defaultBodyName} (default) —</option>
                             {fontNames.map(name => (
                               <option key={name} value={name}>{name}</option>
                             ))}

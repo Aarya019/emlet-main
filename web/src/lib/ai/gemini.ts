@@ -407,12 +407,12 @@ ${brandContext}
 
 ${designRules}
 
-IMPORTANT: Analyze the user's prompt to identify:
-- Target audience (e.g., existing customers, new leads, enterprise clients)
-- Campaign goal (e.g., announce, nurture, convert, educate)
-- Campaign type (e.g., welcome series, product launch, newsletter, promotional)
+BEFORE WRITING ANYTHING, answer these three questions about the user's prompt:
+1. THE ONE ACTION — What is the single thing the reader should do after reading this email? (Not two things. One.)
+2. THE READER — Who exactly is this for? What do they already know, fear, or want?
+3. THE HOOK — What is the first sentence that would make this specific reader stop scrolling?
 
-Use these insights to tailor the content, tone, and structure appropriately.
+Use those answers to drive every decision: tone, structure, copy, CTA, and section count.
 
 COPYWRITING FRAMEWORKS (Use appropriate framework based on goal):
 
@@ -438,13 +438,11 @@ COPYWRITING FRAMEWORKS (Use appropriate framework based on goal):
    - Social proof: "Join 10,000+ customers"
    - Exclusive access: "VIP members only"
 
-VARIETY GUIDELINES (CRITICAL - Make each email unique):
-- Vary headline styles: questions, statements, numbers, power words
-- Mix content structures: storytelling, data-driven, benefit-focused
-- Alternate CTA approaches: direct ("Buy Now"), curiosity ("Discover How"), value ("Get Started Free")
-- Change tone intensity: excited, empathetic, authoritative, playful
-- Vary section lengths: some short and punchy, others detailed
-- Use different emotional triggers: excitement, relief, curiosity, belonging, achievement
+ONE GOAL STRATEGY (CRITICAL):
+- Every email must have exactly ONE goal. Pick the most important action and build everything around it.
+- Identify a single emotional driver: urgency, curiosity, relief, pride, FOMO, or belonging — and thread it through every section.
+- Cut anything that dilutes that main message. Two competing CTAs = zero conversions.
+- Vary the approach per email: storytelling, proof-led, contrast (before/after), scarcity, or insider reveal — but always in service of the one goal.
 
 COLOR PALETTE — use ONLY these exact hex values for backgroundColor, textColor, buttonColor. NEVER invent or use any other hex colors:
 - SURFACE        (default light section bg):    "${palette.surface}"
@@ -456,7 +454,7 @@ COLOR PALETTE — use ONLY these exact hex values for backgroundColor, textColor
 - BODY_TEXT      (default body text):           "${palette.bodyText}"
 
 MANDATORY EMAIL COMPOSITION RULES (non-negotiable):
-1. STRUCTURE: Always generate 6–8 sections minimum. Required sequence: header → hero → [2–4 body sections] → cta → footer. Body sections must include a mix of at least one feature-list or stats, one content or image-text, and optionally a testimonials grid (preferred over single testimonial when showing multiple quotes) or quote.
+1. STRUCTURE: 6–9 total sections, quality over quantity. Required sequence: header → hero → [2–5 body sections] → cta → footer. Body sections must include a mix of at least one feature-list or stats, one content or image-text, and optionally a testimonials grid (preferred over single testimonial when showing multiple quotes) or quote. Every section must earn its place — cut anything that doesn't advance the single email goal.
 2. VISUAL RHYTHM — set backgroundColor on EVERY section using ONLY the palette above:
    - Default light sections:        "${palette.surface}"
    - Alternate light sections:      "${palette.surfaceAlt}"
@@ -491,10 +489,21 @@ IMAGE KEYWORD RULES (non-negotiable):
 
 COPY QUALITY RULES (non-negotiable):
 1. Use SPECIFIC numbers, percentages, and timeframes — never vague claims. Write "Reduce churn by 34%" not "reduce churn significantly".
-2. Every hero heading must be outcome-focused and under 8 words.
+2. Every hero heading must be outcome-focused and under 8 words. The first two lines of the email are the hook — make them impossible to ignore.
 3. Every content section intro must open with a compelling hook — a surprising fact, bold claim, or direct benefit statement.
 4. Every CTA button must use a value-verb: "Start Free Trial", "Claim Your Discount", "See Live Demo", "Get Instant Access" — never just "Click Here" or "Learn More" alone.
 5. eyebrow labels must be 2–4 words: "New Release", "Case Study", "Limited Offer", "Just Launched", "Behind The Scenes".
+6. Write like a human, not a press release. Use contractions. Write in second person ("you", "your"). Be direct. Avoid: "leverage", "robust", "seamless", "synergy", "game-changing", "best-in-class", "world-class", "innovative", "cutting-edge", "revolutionary".
+7. Place a trust signal (social proof stat, customer name, "used by X companies", or money-back guarantee) within one section above or adjacent to the main CTA.
+8. Keep body paragraphs to 2–3 sentences maximum. Long walls of text get skipped.
+9. Create a through-line of tension or curiosity from the subject line → hero heading → first CTA — each feels like the next step in a single narrative.
+
+DESIGN PRINCIPLES (non-negotiable):
+1. Use whitespace generously — every section needs breathing room, never stack dense content blocks back-to-back.
+2. One visual focus per email — either a single hero image or a single strong stats/feature section, not both fighting for attention.
+3. Mobile-first: all section content must be intelligible at 375px width. No side-by-side text columns with more than 3 words each.
+4. Section budget: 6–8 sections hits the sweet spot. 9 is the ceiling unless the campaign type genuinely requires it (e.g. product launch with pricing).
+5. Dark mode safe: use palette colors only (never raw whites or blacks). The renderer handles dark mode — trust the palette system.
 
 FONT VARIANT — pick the pairing that best fits the email topic and brand personality. Output a "fontVariant" number (0–3) in the root JSON object.
 Available variants for ${designStyle}:
@@ -704,35 +713,33 @@ SECTION TYPES:
 - cta: Call-to-action with heading + button. MUST set backgroundColor (brand primary or dark color) and textColor: "#ffffff". Add secondaryButtonText+secondaryButtonUrl for a secondary link below the main button.
 - footer: Footer with company details, address, and unsubscribe notice
 
-SECTION USAGE GUIDELINES (use as starting templates — always build a full, rich email, never a sparse one):
-- Product launch: header + hero + announcement (launch news) + feature-list + image-text + image-text (reversed) + stats + testimonials + pricing-table + cta + social-links + footer
-- Newsletter: header + hero + content + divider + content + image-text + announcement + columns + cta + social-links + footer
-- Promotional/Sale: header + hero + announcement + coupon + stats + feature-list + testimonials + pricing-table + cta + footer
-- Educational: header + hero + content + quote + columns + image-text + feature-list + stats + testimonial + cta + footer
-- Software/Dev: header + hero + content + code-block + feature-list + image-text + quote + stats + testimonial + cta + footer
-- Social proof: header + hero + stats + testimonials + gallery + image-text + columns + cta + footer
-- Product spotlight: header + hero + content + image-text + image-text (reversed) + feature-list + testimonials + cta + footer
-- Welcome email: header + hero + content + columns + feature-list + testimonial + cta + social-links + footer
+SECTION USAGE GUIDELINES (starting templates — trim ruthlessly, every section must earn its place):
+- Product launch: header + hero + feature-list + image-text + stats + testimonials + cta + footer (8 sections)
+- Newsletter: header + hero + content + image-text + columns + cta + footer (7 sections)
+- Promotional/Sale: header + hero + coupon + stats + testimonials + cta + footer (7 sections)
+- Educational: header + hero + content + quote + feature-list + image-text + cta + footer (8 sections)
+- Software/Dev: header + hero + code-block + feature-list + stats + testimonial + cta + footer (8 sections)
+- Social proof: header + hero + stats + testimonials + image-text + cta + footer (7 sections)
+- Product spotlight: header + hero + image-text + feature-list + testimonials + cta + footer (7 sections)
+- Welcome email: header + hero + columns + feature-list + cta + footer (6 sections)
 
 RULES:
 1. Always include: 1 header (first section), 1 hero, at least 1 CTA, 1 footer (last section)
-2. Include 5-8 middle sections — aim for 9-12 total sections. Never produce a sparse or short email. More sections = more professional and engaging.
+2. Include 4–7 body sections — aim for 6–9 total sections. Fewer, sharper sections outperform bloated emails. Cut any section that doesn't directly serve the email's one goal.
 3. FOOTER COPYRIGHT: Always use the current year ${currentYear} in footer text (e.g. "© ${currentYear} Company Name")
 4. COPY QUALITY (CRITICAL — this is what separates great emails from mediocre ones):
-   - hero heading: 5-10 words max, bold and punchy. Open with power words: "Finally", "Introducing", "Unlock", "Transform", "The #1", "Stop", "Discover"
-   - hero subheading: 1-2 sentences, name a specific, concrete benefit. No vague filler like "take your business to the next level"
-   - hero button (buttonText + buttonUrl): always add a CTA button on the hero — use the brand's website_url. Button text should be punchy ("Get started free", "Start building", "Claim your spot")
-   - eyebrow field (content/hero): use sparingly for variety — 2-4 word category or section label in small caps. E.g. "What's new", "Built for teams", "Case Study", "Why it works". Provides visual hierarchy.
-   - content intro field: use for a single powerful lead sentence (1 sentence max) that punches above the body text. Then use 'text' for 2-4 paragraphs separated by double-newlines (\n\n). Each paragraph should be 2-3 sentences. Total content block should feel like a magazine article — no filler.
-   - secondaryButtonText: use on hero or CTA to offer a softer action alongside the primary — e.g. "Watch demo" next to "Start free trial", or "See all features" next to "Get started"
-   - quote sections: the quote 'text' should be a pithy, memorable statement — either from a real-sounding customer, a thought leader, or a key insight distilled into one sentence. Make it quotable.
-   - code-block sections: provide clean, real, runnable code relevant to the email topic. No pseudocode. Comment the key parts.
-   - testimonials: include a specific, credible outcome in the quote (e.g. "We cut our email production time from 2 hours to 8 minutes") with a realistic name, title, and company
-   - stats: use impressive but realistic numbers with context labels ("10,000+ teams trust us", "$2M+ saved by customers", "4.9 / 5 average rating")
-   - feature-list: every feature needs a compelling 1-sentence benefit description — not just a label
-   - columns: each column should have an icon emoji, a punchy 2-4 word heading, and a 1-2 sentence benefit description
-   - CTA heading: create urgency or FOMO ("Limited time", "Join 10,000+ teams", "Don't miss out"). Button text: 2-4 words, start with an action verb
-   - announcement: be specific about what's new, why it matters, and when ("Launching March 21 — early access now open")
+   - hero heading: 5–8 words, outcome-focused. The first two lines are the hook — make them impossible to ignore.
+   - hero subheading: 1–2 sentences, name a concrete specific benefit. Never: "take your business to the next level", "leverage our robust platform", "seamless experience".
+   - hero button: always present, punchy action verb. Use brand website_url. E.g. "Start free", "Claim your spot", "Get instant access".
+   - eyebrow: 2–4 words, small label for context. E.g. "New Release", "Case Study", "For Founders". Use sparingly.
+   - content intro: one powerful lead sentence above the body. Then 'text': 2–3 short paragraphs (2–3 sentences each). No filler.
+   - secondaryButtonText: softer parallel action — "Watch demo" beside "Start free trial", "See pricing" beside "Get started".
+   - testimonials: specific outcome in the quote ("Cut email time from 2 hours to 8 minutes"), realistic name + title + company.
+   - stats: impressive but credible numbers with context ("10,000+ teams", "$2M+ saved", "4.9/5 avg rating").
+   - feature-list: every feature needs a 1-sentence benefit description, not just a label.
+   - CTA heading: urgency or FOMO. Button text: 2–4 words, action verb first.
+   - BANNED WORDS: "leverage", "robust", "seamless", "synergy", "game-changing", "best-in-class", "world-class", "innovative", "cutting-edge", "revolutionary", "transformative", "solution", "empower", "unlock your potential". Write like a person, not a press release.
+   - HUMAN VOICE: Use contractions. Use second person ("you", "your"). Be direct. One idea per sentence.
 5. BRAND PERSONALIZATION (CRITICAL):
    - Include logo in hero imageUrl and footer sections when logo_url is provided
    - Use primary_color for all main CTAs and primary design elements
@@ -906,7 +913,9 @@ RULES:
 3. Preserve logoUrl and authorImage values exactly as they appear in the input.
 4. Copy sectionPrompt fields exactly from the input.
 5. NO emojis anywhere. Plain text only.
-6. Return ONLY the JSON object — no markdown, no code fences, no explanation.`;
+6. Return ONLY the JSON object — no markdown, no code fences, no explanation.
+7. COPY QUALITY: Write like a human, not a press release. Use contractions. Use second person ("you", "your"). Be direct. BANNED WORDS: "leverage", "robust", "seamless", "synergy", "game-changing", "best-in-class", "world-class", "innovative", "cutting-edge", "revolutionary", "transformative", "empower". Use specific numbers, not vague claims.
+8. Keep paragraphs to 2–3 sentences max. CTAs must use action verbs ("Start free", "Claim your spot", "Get instant access") — never "Click Here" or "Learn More" alone.`;
 
   async function callModel(modelName: string): Promise<GeneratedEmail> {
     const model = genAI.getGenerativeModel({

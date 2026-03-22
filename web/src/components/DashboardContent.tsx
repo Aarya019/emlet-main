@@ -913,18 +913,19 @@ export default function DashboardContent() {
 
                 <div className="flex flex-wrap items-center gap-2 justify-center mt-6">
                   <span className="text-xs sm:text-sm text-white/60 w-full sm:w-auto text-center">Try:</span>
-                  {[
-                    'Product launch announcement',
-                    'Customer follow-up',
-                    'Holiday promotion',
-                    'Newsletter welcome'
-                  ].map((prompt, i) => (
+                  {([
+                    { label: 'AI tool launch', prompt: 'Launch email for our new AI writing tool, Wordsmith. Target: content marketers tired of blank-page anxiety. Early access is open for 72 hours. Emphasize speed — first draft in 30 seconds.' },
+                    { label: 'Trial users sale', prompt: '40% off sale ending Sunday. SaaS productivity tool. Audience: trial users who have not converted yet. Make them feel like they are about to miss out on something real.' },
+                    { label: 'Developer API', prompt: 'Announce our new public API to developers. Highlight: 50ms response times, generous free tier, 5-line quickstart. Get them to grab an API key.' },
+                    { label: 'Quick win onboard', prompt: 'Send a quick win email to new signups. Teach them one thing they can do in 5 minutes inside the app that makes them look smart to their team.' },
+                  ] as { label: string; prompt: string }[]).map(({ label, prompt }, i) => (
                     <button
-                      key={prompt}
+                      key={label}
+                      onClick={() => { setEmailInput(prompt); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                       className="rounded-full border border-white/20 bg-black/60 px-3 sm:px-4 py-1.5 text-xs sm:text-sm text-white/70 transition-all duration-300 hover:border-[#00ffff] hover:bg-black/80 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#00ffff]/40"
                       style={{ animationDelay: `${i * 100}ms` }}
                     >
-                      {prompt}
+                      {label}
                     </button>
                   ))}
                 </div>
@@ -953,12 +954,12 @@ export default function DashboardContent() {
                 <h3 className="text-base sm:text-lg font-semibold text-white mb-3">Quick Start Templates</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {([
-                    { title: 'Product Launch', desc: 'Announce new products', prompt: 'Write a product launch announcement email introducing a new product, highlighting key features and a special launch offer.', style: 'editorial' as DesignStyle },
-                    { title: 'Newsletter', desc: 'Weekly/monthly updates', prompt: "Write a monthly newsletter email with company updates, recent highlights, and what's coming next.", style: 'minimalist' as DesignStyle },
-                    { title: 'Promotion', desc: 'Sales and discounts', prompt: 'Write a promotional email announcing a limited-time sale with a compelling discount offer and a clear call-to-action.', style: 'retro' as DesignStyle },
-                    { title: 'Welcome Email', desc: 'Onboard new users', prompt: 'Write a welcome email for new subscribers, introducing the brand and what they can expect from us.', style: 'minimalist' as DesignStyle },
-                    { title: 'Thank You', desc: 'Customer appreciation', prompt: 'Write a heartfelt customer appreciation email thanking customers for their loyalty and continued support.', style: 'handwritten' as DesignStyle },
-                    { title: 'Event Invite', desc: 'Webinars and events', prompt: 'Write an event invitation email for an upcoming webinar or conference, including key details and a registration call-to-action.', style: 'editorial' as DesignStyle }
+                    { title: 'Product Launch', desc: 'New product, 72-hour early access', prompt: 'Launch email for our new AI writing tool, Wordsmith. Target: content marketers tired of blank-page anxiety. Early access is open for 72 hours. Emphasize speed — first draft in 30 seconds.', style: 'editorial' as DesignStyle },
+                    { title: 'Promotional Sale', desc: 'Convert trial users before they leave', prompt: '40% off sale ending Sunday. SaaS productivity tool. Audience: trial users who have not converted yet. Make them feel like they are about to miss out on something real.', style: 'retro' as DesignStyle },
+                    { title: 'Educational Nurture', desc: 'Teach first, sell second', prompt: 'Email teaching founders why their cold emails get ignored. Subtly lead into our B2B email tool. No hard sell — just leave them wanting to try it.', style: 'minimalist' as DesignStyle },
+                    { title: 'Welcome Onboarding', desc: 'Get new users to their first win', prompt: 'Welcome email for new users who just signed up for a free trial of our invoicing tool. They are freelancers. Goal: get them to send their first invoice today.', style: 'minimalist' as DesignStyle },
+                    { title: 'Case Study', desc: 'Real results, real numbers', prompt: 'Case study email: how Acme Corp cut their customer onboarding time from 3 weeks to 4 days using our platform. Audience: ops managers at mid-size SaaS companies. Goal: book a demo.', style: 'editorial' as DesignStyle },
+                    { title: 'Developer Launch', desc: 'New API for technical audiences', prompt: 'Announce our new public API to developers. Highlight: 50ms response times, generous free tier, 5-line quickstart. Get them to grab an API key.', style: 'brutalist' as DesignStyle },
                   ]).map((template) => (
                     <button
                       key={template.title}
