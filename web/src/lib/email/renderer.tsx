@@ -325,27 +325,27 @@ export const fontVariants: Record<string, FontVariant[]> = {
   minimalist: [
     {
       label: 'Plus Jakarta Sans',
-      fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
-      headingFontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
-      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700&display=swap',
+      fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+      headingFontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;1,400&display=swap',
     },
     {
       label: 'Inter + DM Sans',
-      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-      headingFontFamily: "'DM Sans', system-ui, -apple-system, sans-serif",
-      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=DM+Sans:wght@400;500;700&display=swap',
+      fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+      headingFontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@400;700&display=swap',
     },
     {
       label: 'Outfit',
-      fontFamily: "'Outfit', system-ui, -apple-system, sans-serif",
-      headingFontFamily: "'Outfit', system-ui, -apple-system, sans-serif",
-      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700&display=swap',
+      fontFamily: "'Outfit', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+      headingFontFamily: "'Outfit', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Outfit:wght@400;700&display=swap',
     },
     {
       label: 'Manrope + Syne',
-      fontFamily: "'Manrope', system-ui, -apple-system, sans-serif",
-      headingFontFamily: "'Syne', system-ui, -apple-system, sans-serif",
-      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700&family=Syne:wght@700;800&display=swap',
+      fontFamily: "'Manrope', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+      headingFontFamily: "'Syne', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Manrope:ital,wght@0,400;0,700;1,400&family=Syne:wght@700;800&display=swap',
     },
   ],
   editorial: [
@@ -435,20 +435,20 @@ export const fontVariants: Record<string, FontVariant[]> = {
     },
     {
       label: 'Exo 2 + Russo One',
-      fontFamily: "'Exo 2', sans-serif",
-      headingFontFamily: "'Russo One', sans-serif",
+      fontFamily: "'Exo 2', Arial, Helvetica, sans-serif",
+      headingFontFamily: "'Russo One', Arial, Helvetica, sans-serif",
       googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Russo+One&family=Exo+2:wght@400;700&display=swap',
     },
     {
       label: 'Rajdhani + Audiowide',
-      fontFamily: "'Rajdhani', sans-serif",
-      headingFontFamily: "'Audiowide', sans-serif",
+      fontFamily: "'Rajdhani', Arial, Helvetica, sans-serif",
+      headingFontFamily: "'Audiowide', Arial, Helvetica, sans-serif",
       googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Audiowide&family=Rajdhani:wght@400;700&display=swap',
     },
     {
       label: 'Oxanium',
-      fontFamily: "'Oxanium', monospace",
-      headingFontFamily: "'Oxanium', monospace",
+      fontFamily: "'Oxanium', 'Courier New', Courier, monospace",
+      headingFontFamily: "'Oxanium', 'Courier New', Courier, monospace",
       googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Oxanium:wght@400;700&display=swap',
     },
   ],
@@ -461,21 +461,21 @@ export const fontVariants: Record<string, FontVariant[]> = {
     },
     {
       label: 'Quicksand + Patrick Hand',
-      fontFamily: "'Quicksand', sans-serif",
+      fontFamily: "'Quicksand', 'Trebuchet MS', Arial, sans-serif",
       headingFontFamily: "'Patrick Hand', Georgia, serif",
       googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Quicksand:wght@400;600&display=swap',
     },
     {
       label: 'Comfortaa + Pacifico',
-      fontFamily: "'Comfortaa', sans-serif",
+      fontFamily: "'Comfortaa', 'Trebuchet MS', Arial, sans-serif",
       headingFontFamily: "'Pacifico', Georgia, serif",
       googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Pacifico&family=Comfortaa:wght@400;700&display=swap',
     },
     {
       label: 'Lato + Kalam',
-      fontFamily: "'Lato', sans-serif",
+      fontFamily: "'Lato', Arial, Helvetica, sans-serif",
       headingFontFamily: "'Kalam', Georgia, serif",
-      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Lato:wght@400;700&display=swap',
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Lato:ital,wght@0,400;0,700;1,400&display=swap',
     },
   ],
   bauhaus: [
@@ -744,6 +744,7 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
           style: {
             fontFamily: config.headingFontFamily,
             fontSize: '24px',
+            lineHeight: '1.2',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
             color: fg,
@@ -921,6 +922,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
         style: {
           fontFamily: config.headingFontFamily,
           fontSize: '24px',
+          lineHeight: '1.2',
           fontWeight: config.headingWeight,
           color: fg,
           margin: '0 0 20px 0',
@@ -1042,6 +1044,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
           style: {
             fontFamily: config.headingFontFamily,
             fontSize: '24px',
+            lineHeight: '1.2',
             fontWeight: config.headingWeight,
             color: fg,
             margin: '0 0 20px 0',
@@ -1146,6 +1149,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
           style: {
             fontFamily: config.headingFontFamily,
             fontSize: '24px',
+            lineHeight: '1.2',
             fontWeight: config.headingWeight,
             color: fg,
             margin: '0 0 20px 0',
@@ -1219,6 +1223,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
           style: {
             fontFamily: config.headingFontFamily,
             fontSize: '24px',
+            lineHeight: '1.2',
             fontWeight: config.headingWeight,
             color: fg,
             margin: '0 0 16px 0',
@@ -1294,6 +1299,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
             style: {
               fontFamily: config.headingFontFamily,
               fontSize: '22px',
+              lineHeight: '1.2',
               fontWeight: config.headingWeight,
               color: accent,
               margin: '0 0 12px 0',
@@ -1372,6 +1378,7 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
             style: {
               fontFamily: config.headingFontFamily,
               fontSize: '26px',
+              lineHeight: '1.2',
               fontWeight: config.headingWeight,
               letterSpacing: config.headingLetterSpacing,
               color: fg,
@@ -1591,6 +1598,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
           style: {
             fontFamily: config.headingFontFamily,
             fontSize: '22px',
+            lineHeight: '1.2',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
             color: fg,
@@ -1816,6 +1824,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
           style: {
             fontFamily: config.headingFontFamily,
             fontSize: '24px',
+            lineHeight: '1.2',
             fontWeight: config.headingWeight,
             letterSpacing: config.headingLetterSpacing,
             color: fg,
@@ -1954,6 +1963,7 @@ function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColo
           style: {
             fontFamily: config.headingFontFamily,
             fontSize: '18px',
+            lineHeight: '1.3',
             fontWeight: config.headingWeight,
             color: fg,
             margin: '0 0 12px 0',
@@ -2022,6 +2032,7 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
         style: {
           fontFamily: config.headingFontFamily,
           fontSize: '24px',
+          lineHeight: '1.2',
           fontWeight: config.headingWeight,
           color: fg,
           margin: '0 0 8px 0',
@@ -2248,6 +2259,10 @@ export async function generateEmailHtml(
       // All fonts are system fonts — no external loading needed, renders correctly on every client
       React.createElement('style', null,
         fontFaceCSS + '\n' +
+        // Outlook line-height global reset — prevents Word engine from adding extra spacing
+        '* { mso-line-height-rule: exactly; }\n' +
+        // iOS Safari auto-zoom reset — prevents scaling up small-text links/buttons
+        'body { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; text-size-adjust: 100%; }\n' +
         '@media only screen and (max-width:620px){' +
         '.em-wrap{width:100%!important;padding:0 16px!important;border-left:none!important;border-right:none!important;border-radius:0!important;box-sizing:border-box!important}' +
         '.em-col{display:block!important;width:100%!important;max-width:100%!important;padding-left:0!important;padding-right:0!important;box-sizing:border-box!important;margin-bottom:12px!important}' +

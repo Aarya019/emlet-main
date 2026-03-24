@@ -532,6 +532,12 @@ Available variants for ${designStyle}:
 ${variantList}
 Choose thoughtfully — consider the brand industry, campaign tone, and email content. Avoid always picking 0.
 
+EMAIL FONT RULES (these are enforced by the renderer — trust them):
+- Custom fonts are loaded via Google Fonts and fall back automatically to safe system fonts on Gmail and Outlook Windows.
+- Never reference a font not in the variant list — the renderer handles font-family and fallback stacks.
+- Do NOT output inline font-family styles — all typography is controlled by the chosen fontVariant.
+- Font sizes in the body sections should not need overriding; the renderer applies correct sizing with line-height for all clients.
+
 OUTPUT FORMAT:
 Return a JSON object with this exact structure:
 {
