@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import TocSidebar from './TocSidebar';
 
 export const metadata: Metadata = {
   title: 'The Ultimate Guide to Email Fonts | Emlet Blog',
@@ -149,7 +150,10 @@ export default function EmailFontsGuide() {
       </header>
 
       {/* Article layout */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 lg:grid lg:grid-cols-[1fr_260px] lg:gap-16">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 lg:grid lg:grid-cols-[220px_1fr] lg:gap-12 lg:items-start">
+
+        {/* Sidebar TOC — left column on desktop */}
+        <TocSidebar toc={TOC} />
 
         {/* Main content */}
         <article className="min-w-0">
@@ -808,25 +812,7 @@ export default function EmailFontsGuide() {
 
         </article>
 
-        {/* Sidebar TOC — desktop only */}
-        <aside className="hidden lg:block">
-          <div className="sticky top-24">
-            <p className="text-xs font-bold uppercase tracking-widest text-white/30 mb-4">
-              On this page
-            </p>
-            <nav className="space-y-1.5">
-              {TOC.map(({ id, label }) => (
-                <a
-                  key={id}
-                  href={`#${id}`}
-                  className="block text-sm text-white/40 transition-colors hover:text-white/80 leading-snug"
-                >
-                  {label}
-                </a>
-              ))}
-            </nav>
-          </div>
-        </aside>
+
 
       </div>
 
