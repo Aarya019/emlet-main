@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { prompt, designStyle = 'minimalist', brandProfileId } = body;
+    const { prompt, designStyle = 'minimalist', brandProfileId, userEmailType } = body;
 
     // Validate prompt
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
@@ -94,7 +94,8 @@ export async function POST(request: NextRequest) {
       const emailContent = await generateEmailContent(
         prompt.trim(), 
         brandProfile, 
-        designStyle
+        designStyle,
+        typeof userEmailType === 'string' ? userEmailType : undefined
       );
 
       // Strip any HTML tags Gemini may have injected into plain text fields
@@ -114,9 +115,10 @@ export async function POST(request: NextRequest) {
         stats: s.stats?.map(st => ({ ...st, value: stripHtml(st.value) || st.value, label: stripHtml(st.label) || st.label })),
       }));
 
-      // Normalize and validate email_type
+      // Normalize and validate email_type — prefer user-supplied value over AI's
       const validEmailTypes = ['promotional', 'newsletter', 'educational', 'transactional', 'other'];
-      let normalizedEmailType = emailContent.emailType?.toLowerCase().trim() || 'other';
+      const userSuppliedType = typeof userEmailType === 'string' && validEmailTypes.includes(userEmailType.toLowerCase()) ? userEmailType.toLowerCase() : null;
+      let normalizedEmailType = userSuppliedType ?? emailContent.emailType?.toLowerCase().trim() ?? 'other';
       
       if (!validEmailTypes.includes(normalizedEmailType)) {
         console.warn(`Invalid email_type returned: "${emailContent.emailType}", defaulting to "other"`);

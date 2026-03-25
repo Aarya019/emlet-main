@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { signOut } from '@/app/actions/auth';
 import { ESP_META, ESP_SLUGS } from '@/lib/esp';
 import type { EspSlug } from '@/lib/esp/types';
-import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle } from '@/lib/db/types';
+import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle, EmailType } from '@/lib/db/types';
 import EmailGeneratingOverlay from '@/components/EmailGeneratingOverlay';
 
 function ManageBillingButton() {
@@ -122,6 +122,10 @@ export default function DashboardContent() {
 
   // Design style dropdown
   const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
+
+  // Email type selector
+  const [emailType, setEmailType] = useState<EmailType | 'auto'>('auto');
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false);
 
   // Brand selector for generation
   const [generateBrandId, setGenerateBrandId] = useState<string | null>(null);
@@ -474,6 +478,7 @@ export default function DashboardContent() {
         body: JSON.stringify({ 
           prompt: emailInput.trim(),
           designStyle: designStyle,
+          ...(emailType !== 'auto' && { userEmailType: emailType }),
           brandProfileId: generateBrandId
         })
       });
@@ -905,6 +910,61 @@ export default function DashboardContent() {
                                   >
                                     <div className="font-medium text-sm">{style.label}</div>
                                     <div className="text-xs text-white/50 mt-0.5">{style.desc}</div>
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <span className="text-white/30">·</span>
+                        {/* Email type selector */}
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setTypeDropdownOpen(!typeDropdownOpen)}
+                            className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/20 rounded-lg pl-3 pr-2 py-1.5 text-xs font-medium text-white hover:border-white/40 hover:from-white/15 hover:to-white/10 transition-all min-w-[130px]"
+                          >
+                            <span className="flex-1 text-left">
+                              {emailType === 'auto' && <span className="text-white/50">Auto type</span>}
+                              {emailType === 'promotional' && 'Promotional'}
+                              {emailType === 'newsletter' && 'Newsletter'}
+                              {emailType === 'educational' && 'Educational'}
+                              {emailType === 'transactional' && 'Transactional'}
+                              {emailType === 'other' && 'Other'}
+                            </span>
+                            <svg className={`w-4 h-4 text-white/60 transition-transform ${typeDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+
+                          {typeDropdownOpen && (
+                            <>
+                              <div
+                                className="fixed inset-0 z-10"
+                                onClick={() => setTypeDropdownOpen(false)}
+                              />
+                              <div className="absolute left-0 top-full mt-2 w-52 max-h-[260px] bg-gradient-to-b from-black via-black to-black/95 border-2 border-white/20 rounded-lg shadow-2xl shadow-black/50 overflow-y-auto z-20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 backdrop-blur-xl">
+                                {([
+                                  { value: 'auto', label: 'Auto', desc: 'AI decides the best type for your prompt' },
+                                  { value: 'promotional', label: 'Promotional', desc: 'Sales, discounts, offers, product launches' },
+                                  { value: 'newsletter', label: 'Newsletter', desc: 'Regular updates, curated content, insights' },
+                                  { value: 'educational', label: 'Educational', desc: 'How-tos, tips, guides, thought leadership' },
+                                  { value: 'transactional', label: 'Transactional', desc: 'Receipts, confirmations, account updates' },
+                                  { value: 'other', label: 'Other', desc: 'Announcements, invites, or anything else' },
+                                ] as const).map((type) => (
+                                  <button
+                                    key={type.value}
+                                    type="button"
+                                    onClick={() => {
+                                      setEmailType(type.value);
+                                      setTypeDropdownOpen(false);
+                                    }}
+                                    className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${
+                                      emailType === type.value ? 'bg-[#00ffff]/10 text-[#00ffff]' : 'text-white'
+                                    }`}
+                                  >
+                                    <div className="font-medium text-sm">{type.label}</div>
+                                    <div className="text-xs text-white/50 mt-0.5">{type.desc}</div>
                                   </button>
                                 ))}
                               </div>

@@ -232,9 +232,13 @@ function isRetryableError(error: unknown): boolean {
 export async function generateEmailContent(
   prompt: string,
   brandProfile: BrandProfile | null,
-  designStyle: string = 'minimalist'
+  designStyle: string = 'minimalist',
+  userEmailType?: string
 ): Promise<GeneratedEmail> {
   const systemPrompt = buildSystemPrompt(brandProfile, designStyle);
+  const emailTypeInstruction = userEmailType
+    ? `- This must be a ${userEmailType} email — use the tone, structure, and copy conventions typical of ${userEmailType} emails`
+    : '';
   const userPrompt = `Generate an email for the following request:
 
 ${prompt}
@@ -242,7 +246,7 @@ ${prompt}
 Remember to:
 - Use the brand voice and identity specified
 - Include appropriate sections (hero, content blocks, CTA, footer)
-- Make it engaging and conversion-focused
+- Make it engaging and conversion-focused${emailTypeInstruction ? `\n${emailTypeInstruction}` : ''}
 - Do NOT use emojis anywhere — not in subject lines, headings, body copy, or CTAs
 - Return ONLY valid JSON matching the schema — no markdown, no code fences, no explanation`;
 
