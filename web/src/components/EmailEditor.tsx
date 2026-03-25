@@ -46,6 +46,99 @@ function SortableSectionItem({ id, children }: { id: number; children: (dragHand
   );
 }
 
+// Computed once: Google Fonts URL loading all registry fonts at wght@400 for in-editor preview
+const FONT_PREVIEW_LINK = (() => {
+  const params = Object.values(FONT_REGISTRY)
+    .filter(def => def.gfParam)
+    .map(def => `family=${def.gfParam!.split(':')[0]}:wght@400`);
+  return `https://fonts.googleapis.com/css2?${params.join('&')}&display=swap`;
+})();
+
+function FontPicker({
+  value,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const id = 'emlet-font-preview-link';
+    if (!document.getElementById(id)) {
+      const link = document.createElement('link');
+      link.id = id;
+      link.rel = 'stylesheet';
+      link.href = FONT_PREVIEW_LINK;
+      document.head.appendChild(link);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  const fontNames = Object.keys(FONT_REGISTRY);
+  const def = value ? FONT_REGISTRY[value] : null;
+  const displayFamily = def ? `${def.css}, ${def.fallback}` : 'inherit';
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white hover:border-white/20 transition-colors focus:outline-none"
+      >
+        <span style={{ fontFamily: displayFamily, fontSize: '13px' }}>
+          {value || placeholder}
+        </span>
+        <svg className={`h-3 w-3 flex-shrink-0 text-white/40 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#111] border border-white/15 rounded-lg shadow-2xl max-h-60 overflow-y-auto">
+          <button
+            type="button"
+            onClick={() => { onChange(''); setOpen(false); }}
+            className="w-full text-left px-3 py-2 text-[11px] text-white/40 hover:bg-white/5 transition-colors border-b border-white/8 italic"
+          >
+            {placeholder}
+          </button>
+          {fontNames.map(name => {
+            const d = FONT_REGISTRY[name];
+            const ff = `${d.css}, ${d.fallback}`;
+            return (
+              <button
+                key={name}
+                type="button"
+                onClick={() => { onChange(name); setOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors flex items-baseline justify-between gap-2 ${
+                  value === name ? 'bg-white/10 text-white' : 'text-white/80'
+                }`}
+                style={{ fontFamily: ff }}
+              >
+                <span>{name}</span>
+                <span className="text-[10px] text-white/25 font-sans flex-shrink-0" style={{ fontFamily: 'inherit' }}>
+                  → {d.fallback}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function EmailEditor({ emailId }: EmailEditorProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -921,7 +1014,6 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
                   {/* Font Picker */}
                   {(() => {
-                    const fontNames = Object.keys(FONT_REGISTRY);
                     const currentHeading = editedEmail.fontPairing?.heading ?? '';
                     const currentBody    = editedEmail.fontPairing?.body    ?? '';
                     const setPairing = (heading: string, body: string) => {
@@ -940,29 +1032,19 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                         <label className="block text-xs font-medium text-white/40 uppercase tracking-wider">Fonts</label>
                         <div>
                           <span className="block text-[11px] text-white/40 mb-1">Heading</span>
-                          <select
+                          <FontPicker
                             value={currentHeading}
-                            onChange={e => setPairing(e.target.value, currentBody || e.target.value)}
-                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
-                          >
-                            <option value="">— {defaultHeadingName} (default) —</option>
-                            {fontNames.map(name => (
-                              <option key={name} value={name}>{name}</option>
-                            ))}
-                          </select>
+                            onChange={v => setPairing(v, currentBody || v)}
+                            placeholder={`— ${defaultHeadingName} (default) —`}
+                          />
                         </div>
                         <div>
                           <span className="block text-[11px] text-white/40 mb-1">Body</span>
-                          <select
+                          <FontPicker
                             value={currentBody}
-                            onChange={e => setPairing(currentHeading || e.target.value, e.target.value)}
-                            className="w-full bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white focus:outline-none focus:border-white/30"
-                          >
-                            <option value="">— {defaultBodyName} (default) —</option>
-                            {fontNames.map(name => (
-                              <option key={name} value={name}>{name}</option>
-                            ))}
-                          </select>
+                            onChange={v => setPairing(currentHeading || v, v)}
+                            placeholder={`— ${defaultBodyName} (default) —`}
+                          />
                         </div>
                         {(currentHeading || currentBody) && (
                           <button
