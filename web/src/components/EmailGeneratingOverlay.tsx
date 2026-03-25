@@ -593,8 +593,8 @@ export default function EmailGeneratingOverlay() {
         <div className="gen-orbit-dot gen-dot-c" />
         <div className="gen-cube-scene">
           <div className="gen-cube">
-            <div className="gen-face gen-face-front">🐈</div>
-            <div className="gen-face gen-face-back">🎨</div>
+            <div className="gen-face gen-face-front">✉️</div>
+            <div className="gen-face gen-face-back">📧</div>
             <div className="gen-face gen-face-right">⚡</div>
             <div className="gen-face gen-face-left">✨</div>
             <div className="gen-face gen-face-top">🧠</div>
