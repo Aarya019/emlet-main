@@ -1162,7 +1162,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
         React.createElement(Column, {
           key: i,
           className: 'em-col',
-          style: { verticalAlign: 'top', padding: '6px' }
+          style: { verticalAlign: 'top', padding: '6px', height: '100%' }
         },
           React.createElement('div', {
             style: {
@@ -1170,6 +1170,8 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
               textAlign: 'center' as const,
               borderTop: `3px solid ${btn}`,
               padding: '20px 12px',
+              height: '100%',
+              boxSizing: 'border-box' as const,
             }
           },
             (stat.icon || stat.iconName)
@@ -2213,12 +2215,6 @@ export async function generateEmailHtml(
     if (sec.type === 'header') {
       if (logoUrl && !sec.logoUrl) sec.logoUrl = logoUrl;
       if (!sec.logoAlt) sec.logoAlt = brandName;
-    }
-
-    // Hero: use brand logo as the image only when AI left imageUrl undefined (not when user cleared it)
-    if (sec.type === 'hero' && sec.imageUrl === undefined && logoUrl) {
-      sec.imageUrl = logoUrl;
-      sec.imageAlt = brandName;
     }
 
     // Footer: inject brand logo only if not already set

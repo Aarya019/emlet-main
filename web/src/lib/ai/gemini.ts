@@ -299,7 +299,8 @@ ${brandProfile.website_url ? `- Website URL: ${brandProfile.website_url}` : ''}
 - Brand Description: ${brandProfile.brand_description || 'Not provided'}
 
 BRAND PERSONALIZATION INSTRUCTIONS:
-- Use the brand logo URL in hero sections and footer sections
+- Use the brand logo URL in the header section and footer section only
+- Do NOT place the brand logo as a hero image — the hero should use a contextual background image via backgroundImageKeyword
 - Use primary color for main CTAs, headings, and key elements
 ${brandProfile.secondary_color ? '- Use secondary color for accents, borders, and secondary CTAs' : ''}
 ${brandProfile.background_color ? `- Use background_color (${brandProfile.background_color}) for the email body background and light section backgrounds — keeps the email visually on-brand` : ''}
