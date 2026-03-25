@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Terms of Service | Emlet',
   description: 'Terms of Service for Emlet — AI Email Generator.',
+  alternates: { canonical: 'https://emlet.app/terms' },
 };
 
 const LAST_UPDATED = 'March 17, 2026';

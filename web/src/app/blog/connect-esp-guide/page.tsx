@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: 'How to Connect Your Email Service Provider to Emlet | Emlet Blog',
   description:
     'Step-by-step guide to connecting Mailchimp, Klaviyo, Brevo, and Mailerlite to Emlet — so you can push AI-generated emails directly into your ESP with one click.',
+  alternates: { canonical: 'https://emlet.app/blog/connect-esp-guide' },
   openGraph: {
     title: 'How to Connect Your ESP to Emlet',
     description:

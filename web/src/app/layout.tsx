@@ -17,9 +17,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://emlet.app'),
   title: "Emlet — Generate High Converting Marketing Emails in Seconds",
   description: "Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send. No design skills needed.",
   keywords: ["AI email generator", "high converting emails", "email marketing", "marketing email generator", "email template builder", "HTML email", "email campaigns"],
+  alternates: {
+    canonical: 'https://emlet.app',
+  },
   openGraph: {
     title: "Emlet — Generate High Converting Marketing Emails in Seconds",
     description: "Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send.",

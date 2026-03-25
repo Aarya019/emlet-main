@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   title: 'The Ultimate Guide to Email Fonts | Emlet Blog',
   description:
     'Everything you need to know about choosing, embedding, and fallback-stacking fonts in HTML email — client support matrix, recommended stacks, and sizing best practices.',
+  alternates: { canonical: 'https://emlet.app/blog/email-fonts-guide' },
   openGraph: {
     title: 'The Ultimate Guide to Email Fonts',
     description:

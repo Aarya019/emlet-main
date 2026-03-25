@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Blog | Emlet',
   description: 'Email design and marketing insights from the Emlet team — practical guides on fonts, layouts, deliverability, and more.',
+  alternates: { canonical: 'https://emlet.app/blog' },
 };
 
 const POSTS = [

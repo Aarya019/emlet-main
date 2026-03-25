@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Privacy Policy | Emlet',
   description: 'Privacy Policy for Emlet — AI Email Generator.',
+  alternates: { canonical: 'https://emlet.app/privacy' },
 };
 
 const LAST_UPDATED = 'March 21, 2026';
