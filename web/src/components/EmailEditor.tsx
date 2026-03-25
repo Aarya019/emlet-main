@@ -150,6 +150,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [aiHistory, setAiHistory] = useState<Array<{ role: 'user' | 'ai'; content: string }>>([]);
   const aiInputRef = useRef<HTMLInputElement | null>(null);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
+  const [useFallbackFonts, setUseFallbackFonts] = useState(false);
 
   // Editor state
   const [editedEmail, setEditedEmail] = useState<GeneratedEmail | null>(null);
@@ -193,6 +194,30 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const previewAbortRef = useRef<AbortController | null>(null);
   const sectionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  // Returns html with Google Fonts stripped and inline fallback font-family overrides injected
+  const getFallbackSrcDoc = useCallback((html: string) => {
+    if (!html) return html;
+    // Strip Google Fonts link tags and @import rules
+    let out = html
+      .replace(/<link[^>]+fonts\.googleapis\.com[^>]*>/gi, '')
+      .replace(/<link[^>]+fonts\.gstatic\.com[^>]*>/gi, '')
+      .replace(/@import\s+url\([^)]*fonts\.googleapis\.com[^)]*\)[^;]*;/gi, '')
+      .replace(/@font-face\s*\{[^}]*\}/gi, '');
+    // Determine fallback stacks from active pairing
+    const styleKey = (email?.design_style || 'minimalist') as string;
+    const sv = fontVariants[styleKey] ?? fontVariants.minimalist;
+    const av = sv[(editedEmail?.fontVariant ?? 0)] ?? sv[0];
+    const extractFontName = (f: string) => /'([^']+)'/.exec(f)?.[1] ?? f.split(',')[0].trim();
+    const hName = editedEmail?.fontPairing?.heading || extractFontName(av.headingFontFamily);
+    const bName = editedEmail?.fontPairing?.body    || extractFontName(av.fontFamily);
+    const hFallback = FONT_REGISTRY[hName]?.fallback ?? 'Georgia, serif';
+    const bFallback = FONT_REGISTRY[bName]?.fallback ?? 'Arial, sans-serif';
+    const overrideStyle = `<style id="emlet-fallback-override">body,p,td,div,span,li,a{font-family:${bFallback}!important}h1,h2,h3,h4,h5,h6{font-family:${hFallback}!important}</style>`;
+    out = out.replace(/<\/head>/i, `${overrideStyle}</head>`);
+    if (!out.includes('emlet-fallback-override')) out = overrideStyle + out;
+    return out;
+  }, [email?.design_style, editedEmail?.fontPairing, editedEmail?.fontVariant]);
 
   const BLOCK_TYPES: Array<{ type: EmailSection['type']; label: string; description: string; icon: string }> = [
     { type: 'hero',          label: 'Hero',          description: 'Large banner with heading & image',   icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
@@ -1046,6 +1071,50 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                             placeholder={`— ${defaultBodyName} (default) —`}
                           />
                         </div>
+
+                        {/* Font preview — web font vs fallback */}
+                        {(() => {
+                          const hName = currentHeading || defaultHeadingName;
+                          const bName = currentBody || defaultBodyName;
+                          const hDef = FONT_REGISTRY[hName];
+                          const bDef = FONT_REGISTRY[bName];
+                          const hWeb = hDef ? `${hDef.css}, ${hDef.fallback}` : hName;
+                          const bWeb = bDef ? `${bDef.css}, ${bDef.fallback}` : bName;
+                          const hFallback = hDef?.fallback ?? 'Georgia, serif';
+                          const bFallback = bDef?.fallback ?? 'Arial, sans-serif';
+                          return (
+                            <div className="rounded-lg border border-white/8 overflow-hidden text-[11px]">
+                              {/* Column headers */}
+                              <div className="grid grid-cols-2 divide-x divide-white/8 border-b border-white/8 bg-white/[0.03]">
+                                <span className="px-3 py-1.5 text-white/30 tracking-wider uppercase">Web font</span>
+                                <span className="px-3 py-1.5 text-white/30 tracking-wider uppercase">Fallback</span>
+                              </div>
+                              {/* Heading row */}
+                              <div className="grid grid-cols-2 divide-x divide-white/8 border-b border-white/8">
+                                <div className="px-3 py-3 bg-black/20">
+                                  <p className="text-[10px] text-white/20 mb-1">Heading</p>
+                                  <p className="text-white/80 text-base leading-tight" style={{ fontFamily: hWeb }}>Aa Bb Cc 123</p>
+                                </div>
+                                <div className="px-3 py-3">
+                                  <p className="text-[10px] text-white/20 mb-1">Heading</p>
+                                  <p className="text-white/50 text-base leading-tight" style={{ fontFamily: hFallback }}>{hFallback.split(',')[0].replace(/['"]/g, '')}</p>
+                                </div>
+                              </div>
+                              {/* Body row */}
+                              <div className="grid grid-cols-2 divide-x divide-white/8">
+                                <div className="px-3 py-3 bg-black/20">
+                                  <p className="text-[10px] text-white/20 mb-1">Body</p>
+                                  <p className="text-white/80 text-sm leading-snug" style={{ fontFamily: bWeb }}>The quick brown fox</p>
+                                </div>
+                                <div className="px-3 py-3">
+                                  <p className="text-[10px] text-white/20 mb-1">Body</p>
+                                  <p className="text-white/50 text-sm leading-snug" style={{ fontFamily: bFallback }}>{bFallback.split(',')[0].replace(/['"]/g, '')}</p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
                         {(currentHeading || currentBody) && (
                           <button
                             onClick={() => {
@@ -2383,7 +2452,26 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 </div>
 
                 {/* View Mode Toggle */}
-                <div className="flex items-center gap-2 p-1 rounded-lg bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2">
+                  {/* Fallback font toggle */}
+                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+                    <span className="text-[11px] text-white/40 select-none">Fallback fonts</span>
+                    <button
+                      role="switch"
+                      aria-checked={useFallbackFonts}
+                      onClick={() => setUseFallbackFonts(f => !f)}
+                      title={useFallbackFonts ? 'Switch to web fonts' : 'Preview with fallback fonts only'}
+                      className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                        useFallbackFonts ? 'bg-amber-500' : 'bg-white/20'
+                      }`}
+                    >
+                      <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform duration-200 ${
+                        useFallbackFonts ? 'translate-x-3' : 'translate-x-0'
+                      }`} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2 p-1 rounded-lg bg-white/5 border border-white/10">
                   <button
                     onClick={() => setPreviewMode('desktop')}
                     className={`px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 ${
@@ -2410,6 +2498,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     </svg>
                     Mobile
                   </button>
+                </div>
                 </div>
               </div>
 
@@ -2442,7 +2531,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       <iframe
                         ref={iframeRef}
                         key={previewKey}
-                        srcDoc={livePreviewHtml ?? email.html_code}
+                        srcDoc={useFallbackFonts ? getFallbackSrcDoc(livePreviewHtml ?? email.html_code) : (livePreviewHtml ?? email.html_code)}
                         title="Email Preview"
                         className="w-full border-0 block"
                         style={{ height: '700px' }}
@@ -2508,7 +2597,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                             <iframe
                               ref={iframeRef}
                               key={previewKey}
-                              srcDoc={livePreviewHtml ?? email.html_code}
+                              srcDoc={useFallbackFonts ? getFallbackSrcDoc(livePreviewHtml ?? email.html_code) : (livePreviewHtml ?? email.html_code)}
                               title="Email Preview"
                               className="w-full border-0 block"
                               style={{ height: '764px' }}
