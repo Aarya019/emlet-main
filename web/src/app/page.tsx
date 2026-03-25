@@ -478,9 +478,9 @@ export default function Home() {
             Everything you need to know before you start generating.
           </p>
         </div>
-        <div className="divide-y divide-white/8">
+        <div className="flex flex-col gap-3">
           {FAQS.map((faq, i) => (
-            <div key={i}>
+            <div key={i} className={`rounded-2xl border px-6 transition-colors duration-200 ${openFaq === i ? 'border-white/15 bg-white/[0.05]' : 'border-white/8 bg-white/[0.03]'}`}>
               <button
                 onClick={() => setOpenFaq(openFaq === i ? null : i)}
                 className="flex w-full items-center justify-between py-5 text-left gap-6 group"
