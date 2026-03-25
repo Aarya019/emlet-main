@@ -8,6 +8,15 @@ export const metadata: Metadata = {
 
 const POSTS = [
   {
+    slug: 'connect-esp-guide',
+    category: 'Integrations',
+    title: 'How to Connect Your ESP to Emlet',
+    description:
+      'Step-by-step guide to connecting Mailchimp, Klaviyo, Brevo, and Mailerlite — so you can push AI-generated emails directly into your ESP as a template or campaign draft with one click.',
+    date: 'March 25, 2026',
+    readTime: '8 min read',
+  },
+  {
     slug: 'email-fonts-guide',
     category: 'Design',
     title: 'The Ultimate Guide to Email Fonts',

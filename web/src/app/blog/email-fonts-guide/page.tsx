@@ -43,7 +43,7 @@ function Callout({ type = 'tip', children }: { type?: 'tip' | 'warning' | 'info'
     warning: 'bg-yellow-400/5 border-yellow-400/30 text-yellow-400/80',
     info: 'bg-white/5 border-white/15 text-white/60',
   };
-  const labels = { tip: '💡 Tip', warning: '⚠️ Watch out', info: 'ℹ️ Note' };
+  const labels = { tip: 'Tip', warning: 'Watch out', info: 'Note' };
   return (
     <div className={`rounded-xl border px-5 py-4 my-6 text-sm leading-relaxed ${styles[type]}`}>
       <span className="font-bold block mb-1">{labels[type]}</span>
@@ -168,7 +168,7 @@ export default function EmailFontsGuide() {
           {/* Title block */}
           <div className="mb-10">
             <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-4">
-              Design · 12 min read
+              Design, 12 min read
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.05] mb-6">
               The Ultimate Guide to Email Fonts
@@ -178,9 +178,7 @@ export default function EmailFontsGuide() {
               from web-safe classics to Google Fonts, with a full client support matrix.
             </p>
             <div className="mt-6 flex items-center gap-4 text-sm text-white/30">
-              <span>March 24, 2026</span>
-              <span>·</span>
-              <span>By the Emlet Team</span>
+              <span>March 24, 2026, by the Emlet Team</span>
             </div>
           </div>
 
