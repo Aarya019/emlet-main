@@ -6,6 +6,8 @@ import type { EmailGeneration } from '@/lib/db/types';
 import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
 import { FONT_REGISTRY, fontVariants } from '@/lib/email/renderer';
 import ImageUploadInput from '@/components/ImageUploadInput';
+import { ESP_META, ESP_SLUGS } from '@/lib/esp';
+import type { EspSlug } from '@/lib/esp/types';
 import {
   DndContext,
   closestCenter,
@@ -68,6 +70,20 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [sendToEmail, setSendToEmail] = useState('');
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Publish to ESP state
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [espConnections, setEspConnections] = useState<Record<EspSlug, { account_name: string; extra_metadata?: Record<string, string> } | null>>({
+    mailchimp: null, klaviyo: null, brevo: null, mailerlite: null,
+  });
+  const [publishEsp, setPublishEsp] = useState<EspSlug | null>(null);
+  const [publishType, setPublishType] = useState<'template' | 'campaign_draft'>('template');
+  const [publishLists, setPublishLists] = useState<{ id: string; name: string }[]>([]);
+  const [publishListId, setPublishListId] = useState('');
+  const [publishFromName, setPublishFromName] = useState('');
+  const [publishFromEmail, setPublishFromEmail] = useState('');
+  const [publishing, setPublishing] = useState(false);
+  const [publishResult, setPublishResult] = useState<{ success: boolean; message: string; url?: string } | null>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [defaultColors, setDefaultColors] = useState<{ bodyBg: string; bodyColor: string; primaryColor: string; secondaryColor: string } | null>(null);
   const [regeneratingSection, setRegeneratingSection] = useState<number | null>(null);
@@ -130,6 +146,22 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
   useEffect(() => {
     loadEmail();
+    // Load ESP connections for publish modal
+    fetch('/api/esp/connections')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        const map: Record<EspSlug, { account_name: string; extra_metadata?: Record<string, string> } | null> = {
+          mailchimp: null, klaviyo: null, brevo: null, mailerlite: null,
+        };
+        for (const conn of (data.connections ?? [])) {
+          if (ESP_SLUGS.includes(conn.esp_slug)) {
+            map[conn.esp_slug as EspSlug] = { account_name: conn.account_name, extra_metadata: conn.extra_metadata };
+          }
+        }
+        setEspConnections(map);
+      })
+      .catch(() => {});
   }, [emailId]);
 
   // Sync editedEmail when email loads (only on first load), seeding section colors from brand defaults
@@ -648,6 +680,23 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
                 Send Test
+              </button>
+              <button
+                onClick={() => {
+                  setPublishResult(null);
+                  setPublishEsp(null);
+                  setPublishType('template');
+                  setPublishLists([]);
+                  setPublishListId('');
+                  setShowPublishModal(true);
+                }}
+                disabled={!email.html_code}
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-semibold transition-all text-sm flex items-center gap-2 disabled:opacity-40 hover:shadow-lg hover:shadow-[#00ffff]/20"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Publish
               </button>
               <button
                 onClick={() => {
@@ -1862,6 +1911,206 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                         )}
                       </button>
                     </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Publish to ESP Modal */}
+            {showPublishModal && (
+              <>
+                <div
+                  className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10 animate-in fade-in duration-200"
+                  onClick={() => { setShowPublishModal(false); setPublishResult(null); setPublishEsp(null); }}
+                />
+                <div className="absolute inset-0 z-20 flex items-start justify-center p-6 pt-16 animate-in fade-in zoom-in-95 duration-200 overflow-y-auto">
+                  <div className="w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0">
+                          <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                          </svg>
+                        </div>
+                        Publish to ESP
+                      </h3>
+                      <button
+                        onClick={() => { setShowPublishModal(false); setPublishResult(null); setPublishEsp(null); }}
+                        className="text-white/40 hover:text-white transition-colors"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                      </button>
+                    </div>
+
+                    {/* Result banner */}
+                    {publishResult && (
+                      <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-between gap-3 ${publishResult.success ? 'bg-[#00ff80]/10 border border-[#00ff80]/30 text-[#00ff80]' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
+                        <span>{publishResult.message}</span>
+                        {publishResult.url && (
+                          <a href={publishResult.url} target="_blank" rel="noopener noreferrer" className="underline whitespace-nowrap text-xs">Open in ESP →</a>
+                        )}
+                      </div>
+                    )}
+
+                    {/* ESP picker */}
+                    {!publishEsp ? (
+                      <div className="space-y-3">
+                        <p className="text-sm text-white/50 mb-3">Choose a connected ESP to push this email:</p>
+                        {ESP_SLUGS.map(slug => {
+                          const meta = ESP_META[slug];
+                          const conn = espConnections[slug];
+                          return (
+                            <button
+                              key={slug}
+                              disabled={!conn}
+                              onClick={() => { setPublishEsp(slug); if (slug === 'brevo') { const senderEmail = espConnections[slug]?.extra_metadata?.sender_email; if (senderEmail) setPublishFromEmail(senderEmail); } }}
+                              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${conn ? 'border-white/15 hover:border-[#00ffff]/40 hover:bg-white/5 cursor-pointer' : 'border-white/5 opacity-40 cursor-not-allowed'}`}
+                            >
+                              <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 text-xs font-bold text-white/60">
+                                {meta.name.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-white">{meta.name}</p>
+                                <p className="text-xs text-white/40 truncate">{conn ? conn.account_name : 'Not connected — go to Settings → Integrations'}</p>
+                              </div>
+                              {conn && (
+                                <svg className="w-4 h-4 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {/* Back */}
+                        <button onClick={() => { setPublishEsp(null); setPublishResult(null); setPublishLists([]); setPublishListId(''); }} className="flex items-center gap-1 text-xs text-white/40 hover:text-white transition-colors">
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                          Back
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs font-bold text-white/60">
+                            {ESP_META[publishEsp].name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <span className="text-sm font-semibold text-white">Push to {ESP_META[publishEsp].name}</span>
+                        </div>
+
+                        {/* Push type */}
+                        <div>
+                          <label className="block text-xs font-medium text-white/50 mb-2">What to create</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {(['template', 'campaign_draft'] as const).map(type => (
+                              <button
+                                key={type}
+                                onClick={async () => {
+                                  setPublishType(type);
+                                  if (type === 'campaign_draft' && publishLists.length === 0) {
+                                    try {
+                                      const res = await fetch(`/api/esp/lists/${publishEsp}`);
+                                      if (res.ok) {
+                                        const data = await res.json();
+                                        setPublishLists(data.lists ?? []);
+                                        if (data.lists?.length > 0) setPublishListId(data.lists[0].id);
+                                      }
+                                    } catch { /* non-fatal */ }
+                                  }
+                                }}
+                                className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${publishType === type ? 'border-[#00ffff] bg-[#00ffff]/10 text-[#00ffff]' : 'border-white/10 text-white/60 hover:border-white/20 hover:text-white'}`}
+                              >
+                                {type === 'template' ? 'Template' : 'Campaign Draft'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Sender fields — always shown (Brevo requires verified sender even for templates) */}
+                        {(publishType === 'campaign_draft' || publishEsp === 'brevo') && (
+                          <>
+                            {publishLists.length > 0 && (
+                              <div>
+                                <label className="block text-xs font-medium text-white/50 mb-1.5">Audience / List</label>
+                                <select
+                                  value={publishListId}
+                                  onChange={e => setPublishListId(e.target.value)}
+                                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                                >
+                                  <option value="">No list (unsegmented)</option>
+                                  {publishLists.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                </select>
+                              </div>
+                            )}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs font-medium text-white/50 mb-1.5">From name</label>
+                                <input
+                                  type="text"
+                                  value={publishFromName}
+                                  onChange={e => setPublishFromName(e.target.value)}
+                                  placeholder="Your Brand"
+                                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-white/50 mb-1.5">From email</label>
+                                <input
+                                  type="email"
+                                  value={publishFromEmail}
+                                  onChange={e => setPublishFromEmail(e.target.value)}
+                                  placeholder="hello@brand.com"
+                                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                                />
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Push button */}
+                        <button
+                          onClick={async () => {
+                            if (!email || !publishEsp) return;
+                            setPublishing(true);
+                            setPublishResult(null);
+                            try {
+                              const res = await fetch('/api/esp/push', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  emailGenerationId: email.id,
+                                  espSlug: publishEsp,
+                                  pushType: publishType,
+                                  listId: publishListId || undefined,
+                                  fromName: publishFromName || undefined,
+                                  fromEmail: publishFromEmail || undefined,
+                                }),
+                              });
+                              const data = await res.json();
+                              if (!res.ok) throw new Error(data.error ?? 'Push failed');
+                              setPublishResult({
+                                success: true,
+                                message: `Pushed to ${ESP_META[publishEsp].name} as ${publishType === 'template' ? 'a template' : 'a campaign draft'}!`,
+                                url: data.result?.url,
+                              });
+                            } catch (err: any) {
+                              setPublishResult({ success: false, message: err.message });
+                            } finally {
+                              setPublishing(false);
+                            }
+                          }}
+                          disabled={publishing}
+                          className="w-full px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {publishing ? (
+                            <>
+                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
+                              Pushing…
+                            </>
+                          ) : (
+                            `Push to ${ESP_META[publishEsp].name}`
+                          )}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </>

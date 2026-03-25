@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { signOut } from '@/app/actions/auth';
+import { ESP_META, ESP_SLUGS } from '@/lib/esp';
+import type { EspSlug } from '@/lib/esp/types';
 import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle } from '@/lib/db/types';
 import EmailGeneratingOverlay from '@/components/EmailGeneratingOverlay';
 
@@ -104,6 +106,20 @@ export default function DashboardContent() {
   const [emailToDelete, setEmailToDelete] = useState<EmailGeneration | null>(null);
   const [deletingEmailId, setDeletingEmailId] = useState<string | null>(null);
 
+  // ESP connections state
+  const [espConnections, setEspConnections] = useState<Record<EspSlug, { account_name: string; extra_metadata?: Record<string, string> } | null>>({
+    mailchimp: null, klaviyo: null, brevo: null, mailerlite: null,
+  });
+  const [espConnecting, setEspConnecting] = useState<EspSlug | null>(null);
+  const [espApiKey, setEspApiKey] = useState<Record<EspSlug, string>>({
+    mailchimp: '', klaviyo: '', brevo: '', mailerlite: '',
+  });
+  const [espExtraFields, setEspExtraFields] = useState<Record<EspSlug, Record<string, string>>>({
+    mailchimp: {}, klaviyo: {}, brevo: {}, mailerlite: {},
+  });
+  const [espShowKeyInput, setEspShowKeyInput] = useState<EspSlug | null>(null);
+  const [espMessage, setEspMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
   // Design style dropdown
   const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
 
@@ -111,6 +127,25 @@ export default function DashboardContent() {
   const [generateBrandId, setGenerateBrandId] = useState<string | null>(null);
   const [brandIdUserSet, setBrandIdUserSet] = useState(false);
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
+
+  const loadEspConnections = useCallback(async () => {
+    try {
+      const res = await fetch('/api/esp/connections');
+      if (!res.ok) return;
+      const data = await res.json();
+      const map: Record<EspSlug, { account_name: string; extra_metadata?: Record<string, string> } | null> = {
+        mailchimp: null, klaviyo: null, brevo: null, mailerlite: null,
+      };
+      for (const conn of (data.connections ?? [])) {
+        if (ESP_SLUGS.includes(conn.esp_slug)) {
+          map[conn.esp_slug as EspSlug] = { account_name: conn.account_name, extra_metadata: conn.extra_metadata };
+        }
+      }
+      setEspConnections(map);
+    } catch {
+      // non-fatal
+    }
+  }, []);
 
   useEffect(() => {
     // Retrieve and clear the pending prompt from localStorage
@@ -121,12 +156,30 @@ export default function DashboardContent() {
       setEmailInput(prompt); // Pre-fill the textarea
       localStorage.removeItem('pendingEmailPrompt');
     }
-    
+
+    // Handle OAuth callback redirects
+    const urlParams = new URLSearchParams(window.location.search);
+    const espConnected = urlParams.get('esp_connected');
+    const espError = urlParams.get('esp_error');
+    const tabParam = urlParams.get('tab');
+    if (espConnected || espError || tabParam === 'user') {
+      setActiveTab('user');
+      if (espConnected) {
+        setEspMessage({ type: 'success', text: `${ESP_META[espConnected as EspSlug]?.name ?? espConnected} connected successfully!` });
+      } else if (espError) {
+        setEspMessage({ type: 'error', text: `Connection failed: ${espError.replace(/_/g, ' ')}` });
+      }
+      // Clean URL without reload
+      const clean = window.location.pathname;
+      window.history.replaceState({}, '', clean);
+    }
+
     // Load brand profile, user stats and email history
     loadBrandProfile();
     loadUserStats();
     loadEmailHistory();
-  }, []);
+    loadEspConnections();
+  }, [loadEspConnections]);
 
   const loadUserStats = async () => {
     try {
@@ -1765,6 +1818,165 @@ export default function DashboardContent() {
                   {(planType === 'pro' || planType === 'enterprise') && (
                     <ManageBillingButton />
                   )}
+                </div>
+              </div>
+
+              {/* ── ESP Integrations ─────────────────────────────────── */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-4">
+                <div>
+                  <h3 className="text-base font-semibold text-white">ESP Integrations</h3>
+                  <p className="text-xs text-white/40 mt-0.5">Connect your email platform to push emails directly from Emlet</p>
+                </div>
+
+                {/* ESP message banner */}
+                {espMessage && (
+                  <div className={`px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-between gap-3 ${espMessage.type === 'success' ? 'bg-[#00ff80]/10 border border-[#00ff80]/30 text-[#00ff80]' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
+                    <span>{espMessage.text}</span>
+                    <button onClick={() => setEspMessage(null)} className="opacity-60 hover:opacity-100 flex-shrink-0">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {ESP_SLUGS.map((slug) => {
+                    const meta = ESP_META[slug];
+                    const conn = espConnections[slug];
+                    const isConnected = !!conn;
+                    const isConnecting = espConnecting === slug;
+                    const showInput = espShowKeyInput === slug;
+
+                    return (
+                      <div key={slug} className="rounded-xl border border-white/10 bg-white/[0.02] p-4 flex flex-col gap-3">
+                        {/* Header row */}
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 text-xs font-bold text-white/70">
+                            {meta.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-white">{meta.name}</p>
+                            {isConnected ? (
+                              <p className="text-xs text-[#00ff80] truncate">{conn.account_name}</p>
+                            ) : (
+                              <p className="text-xs text-white/30">{meta.authType === 'oauth' ? 'Connect via OAuth' : 'Connect with API key'}</p>
+                            )}
+                          </div>
+                          {/* Status badge */}
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${isConnected ? 'bg-[#00ff80]/15 text-[#00ff80]' : 'bg-white/10 text-white/30'}`}>
+                            {isConnected ? 'Connected' : 'Not connected'}
+                          </span>
+                        </div>
+
+                        {/* API key input (shown when user clicks Connect on an apikey ESP) */}
+                        {!isConnected && showInput && meta.authType === 'apikey' && (
+                          <div className="flex flex-col gap-2">
+                            <input
+                              type="password"
+                              value={espApiKey[slug]}
+                              onChange={(e) => setEspApiKey(prev => ({ ...prev, [slug]: e.target.value }))}
+                              placeholder={meta.apiKeyHint ?? 'Paste API key…'}
+                              className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff] text-xs"
+                            />
+                            {(meta.extraFields ?? []).map(field => (
+                              <input
+                                key={field.key}
+                                type="text"
+                                value={espExtraFields[slug]?.[field.key] ?? ''}
+                                onChange={(e) => setEspExtraFields(prev => ({
+                                  ...prev,
+                                  [slug]: { ...prev[slug], [field.key]: e.target.value },
+                                }))}
+                                placeholder={field.placeholder}
+                                className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff] text-xs"
+                              />
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Action buttons */}
+                        <div className="flex gap-2">
+                          {isConnected ? (
+                            <button
+                              onClick={async () => {
+                                setEspConnecting(slug);
+                                setEspMessage(null);
+                                try {
+                                  const res = await fetch(`/api/esp/connections/${slug}`, { method: 'DELETE' });
+                                  if (!res.ok) throw new Error('Failed to disconnect');
+                                  await loadEspConnections();
+                                  setEspMessage({ type: 'success', text: `${meta.name} disconnected.` });
+                                } catch (err: any) {
+                                  setEspMessage({ type: 'error', text: err.message });
+                                } finally {
+                                  setEspConnecting(null);
+                                }
+                              }}
+                              disabled={isConnecting}
+                              className="flex-1 px-3 py-1.5 rounded-lg border border-red-500/30 text-red-400 text-xs font-medium hover:bg-red-500/10 transition-all disabled:opacity-50"
+                            >
+                              {isConnecting ? 'Disconnecting…' : 'Disconnect'}
+                            </button>
+                          ) : meta.authType === 'oauth' ? (
+                            <a
+                              href={`/api/esp/oauth/${slug}`}
+                              className="flex-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-xs font-bold text-center hover:shadow-lg hover:shadow-[#00ffff]/20 transition-all"
+                            >
+                              Connect with {meta.name}
+                            </a>
+                          ) : showInput ? (
+                            <>  
+                              <button
+                                onClick={async () => {
+                                  if (!espApiKey[slug].trim()) return;
+                                  setEspConnecting(slug);
+                                  setEspMessage(null);
+                                  try {
+                                    const res = await fetch('/api/esp/connections', {
+                                      method: 'POST',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({
+                                        espSlug: slug,
+                                        apiKey: espApiKey[slug].trim(),
+                                        extraMetadata: espExtraFields[slug] ?? {},
+                                      }),
+                                    });
+                                    const data = await res.json();
+                                    if (!res.ok) throw new Error(data.error ?? 'Connection failed');
+                                    setEspMessage({ type: 'success', text: `${meta.name} connected!` });
+                                    setEspShowKeyInput(null);
+                                    setEspApiKey(prev => ({ ...prev, [slug]: '' }));
+                                    setEspExtraFields(prev => ({ ...prev, [slug]: {} }));
+                                    await loadEspConnections();
+                                  } catch (err: any) {
+                                    setEspMessage({ type: 'error', text: err.message });
+                                  } finally {
+                                    setEspConnecting(null);
+                                  }
+                                }}
+                                disabled={isConnecting || !espApiKey[slug].trim()}
+                                className="flex-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-xs font-bold hover:shadow-lg hover:shadow-[#00ffff]/20 transition-all disabled:opacity-50"
+                              >
+                                {isConnecting ? 'Connecting…' : 'Save'}
+                              </button>
+                              <button
+                                onClick={() => { setEspShowKeyInput(null); setEspApiKey(prev => ({ ...prev, [slug]: '' })); setEspExtraFields(prev => ({ ...prev, [slug]: {} })); }}
+                                className="px-3 py-1.5 rounded-lg border border-white/10 text-white/40 text-xs hover:text-white transition-all"
+                              >
+                                Cancel
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => setEspShowKeyInput(slug)}
+                              className="flex-1 px-3 py-1.5 rounded-lg border border-white/20 text-white/70 text-xs font-medium hover:bg-white/5 hover:text-white transition-all"
+                            >
+                              Connect
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
