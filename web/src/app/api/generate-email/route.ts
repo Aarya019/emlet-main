@@ -167,6 +167,13 @@ export async function POST(request: NextRequest) {
             preferPanoramic: true,
           });
         }
+        if (section.videoThumbnailKeyword) {
+          bgKeywordsToFetch.push({
+            keyword: section.videoThumbnailKeyword,
+            orientation: 'landscape',
+            preferPanoramic: true,
+          });
+        }
       }
 
       // ── Fetch both sets in parallel ──────────────────────────────────────
@@ -204,6 +211,12 @@ export async function POST(request: NextRequest) {
         if (updated.backgroundImageKeyword) {
           const resolved = bgPexelsMap[updated.backgroundImageKeyword];
           if (resolved) updated.backgroundImageUrl = resolved;
+        }
+
+        // Inject video thumbnail URL
+        if (updated.videoThumbnailKeyword) {
+          const resolved = bgPexelsMap[updated.videoThumbnailKeyword];
+          if (resolved) updated.videoThumbnailUrl = resolved;
         }
 
         return updated;

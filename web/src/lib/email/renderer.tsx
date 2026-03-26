@@ -561,6 +561,142 @@ function cardTextColor(bgHex: string | undefined): string {
 // Section renderers
 // ─────────────────────────────────────────────
 function renderHero(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
+  // ── Split hero layouts (split-left / split-right) ────────────────────────
+  const heroLayout = section.heroLayout || 'default';
+  if (heroLayout === 'split-left' || heroLayout === 'split-right') {
+    const fg   = section.textColor || config.bodyColor;
+    const btn  = section.buttonColor || primaryColor;
+    const imgOnLeft = heroLayout === 'split-left';
+    const bg = section.backgroundGradient
+      ? { background: section.backgroundGradient }
+      : section.backgroundColor
+      ? { backgroundColor: section.backgroundColor }
+      : { background: `linear-gradient(150deg, ${primaryColor}22 0%, ${primaryColor}08 100%)` };
+
+    const imageCol = React.createElement(Column, {
+      className: 'em-col',
+      style: {
+        width: '45%',
+        verticalAlign: 'middle' as const,
+        paddingRight: imgOnLeft ? '20px' : '0',
+        paddingLeft: imgOnLeft ? '0' : '20px',
+      },
+    },
+      section.imageUrl
+        ? React.createElement(Img, {
+            src: section.imageUrl,
+            alt: section.imageAlt || '',
+            width: '460',
+            style: { width: '100%', borderRadius: config.borderRadius, display: 'block' },
+          })
+        : null
+    );
+
+    const textCol = React.createElement(Column, {
+      className: 'em-col',
+      style: { width: '55%', verticalAlign: 'middle' as const, padding: '48px 32px' },
+    },
+      section.eyebrow
+        ? React.createElement(Text, {
+            ...pv(preview, si, 'eyebrow'),
+            style: {
+              fontFamily: config.fontFamily,
+              fontSize: '11px',
+              fontWeight: '700',
+              textTransform: 'uppercase' as const,
+              letterSpacing: '0.14em',
+              color: btn,
+              margin: '0 0 10px 0',
+            },
+          }, section.eyebrow)
+        : null,
+      section.heading
+        ? React.createElement(Heading, {
+            ...pv(preview, si, 'heading'),
+            as: 'h1',
+            style: {
+              fontFamily: config.headingFontFamily,
+              fontSize: '34px',
+              fontWeight: config.headingWeight,
+              letterSpacing: config.headingLetterSpacing,
+              color: fg,
+              margin: '0 0 14px 0',
+              lineHeight: '1.2',
+            },
+          }, section.heading)
+        : null,
+      section.intro
+        ? React.createElement(Text, {
+            ...pv(preview, si, 'intro'),
+            style: {
+              fontFamily: config.fontFamily,
+              fontSize: '17px',
+              fontWeight: '600',
+              color: fg,
+              lineHeight: '1.6',
+              margin: '0 0 12px 0',
+            },
+          }, section.intro)
+        : null,
+      section.subheading
+        ? React.createElement(Text, {
+            ...pv(preview, si, 'subheading'),
+            style: {
+              fontFamily: config.fontFamily,
+              fontSize: '15px',
+              color: fg + '99',
+              margin: '0 0 24px 0',
+              lineHeight: '1.65',
+            },
+          }, section.subheading)
+        : null,
+      section.buttonText
+        ? React.createElement(Button, {
+            href: section.buttonUrl || '#',
+            className: 'em-btn',
+            style: {
+              display: 'inline-block',
+              padding: config.buttonPadding,
+              backgroundColor: btn,
+              color: '#ffffff',
+              fontFamily: config.fontFamily,
+              fontWeight: '700',
+              fontSize: '15px',
+              borderRadius: config.buttonBorderRadius,
+              textDecoration: 'none',
+              boxShadow: `0 4px 20px ${btn}55`,
+            },
+          }, section.buttonText)
+        : null,
+      section.secondaryButtonText
+        ? React.createElement(Text, { style: { margin: '14px 0 0 0' } },
+            React.createElement(Link, {
+              href: section.secondaryButtonUrl || '#',
+              style: {
+                fontFamily: config.fontFamily,
+                fontSize: '13px',
+                color: btn,
+                textDecoration: 'underline',
+                fontWeight: '600',
+              },
+            }, section.secondaryButtonText)
+          )
+        : null
+    );
+
+    return React.createElement(Section, {
+      style: { ...bg, borderRadius: config.sectionBorderRadius },
+    },
+      React.createElement('div', { className: 'em-section', style: { padding: '48px 24px' } },
+        React.createElement(Row, null,
+          imgOnLeft ? imageCol : textCol,
+          imgOnLeft ? textCol : imageCol
+        )
+      )
+    );
+  }
+
+  // ── Default (full-width) hero ─────────────────────────────────────────────
   const hasBgImage = !!section.backgroundImageUrl;
   // When a background image is present, always force white text for readability
   const fg  = section.textColor || (hasBgImage ? '#ffffff' : config.bodyColor);
@@ -2143,6 +2279,80 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
 }
 
 // ─────────────────────────────────────────────
+// Video section
+// ─────────────────────────────────────────────
+
+function renderVideo(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
+  const fg  = section.textColor  || config.bodyColor;
+  const btn = section.buttonColor || primaryColor;
+  const thumbUrl = section.videoThumbnailUrl || section.imageUrl;
+  const bg = section.backgroundGradient
+    ? { background: section.backgroundGradient }
+    : section.backgroundColor
+    ? { backgroundColor: section.backgroundColor }
+    : {};
+
+  return React.createElement(Section, {
+    className: 'em-section',
+    style: { padding: config.sectionPadding, ...bg, ...(section.backgroundColor ? { borderRadius: config.sectionBorderRadius } : {}) },
+  },
+    section.heading
+      ? React.createElement(Heading, {
+          ...pv(preview, si, 'heading'),
+          as: 'h2',
+          style: {
+            fontFamily: config.headingFontFamily,
+            fontSize: '24px',
+            lineHeight: '1.2',
+            fontWeight: config.headingWeight,
+            letterSpacing: config.headingLetterSpacing,
+            color: fg,
+            margin: '0 0 8px 0',
+            textAlign: 'center' as const,
+          },
+        }, section.heading)
+      : null,
+    section.subheading
+      ? React.createElement(Text, {
+          ...pv(preview, si, 'subheading'),
+          style: {
+            fontFamily: config.fontFamily,
+            fontSize: '15px',
+            color: fg + '99',
+            margin: '0 0 20px 0',
+            textAlign: 'center' as const,
+            lineHeight: '1.6',
+          },
+        }, section.subheading)
+      : null,
+    thumbUrl
+      ? React.createElement(Link, { href: section.videoUrl || '#', style: { display: 'block' } },
+          React.createElement(Img, {
+            src: thumbUrl,
+            alt: section.videoTitle || 'Watch video',
+            width: '560',
+            style: { width: '100%', borderRadius: config.borderRadius, display: 'block', margin: '0 auto' },
+          })
+        )
+      : null,
+    React.createElement(Text, {
+      style: {
+        fontFamily: config.fontFamily,
+        fontSize: '14px',
+        fontWeight: '700',
+        margin: '14px 0 0 0',
+        textAlign: 'center' as const,
+      },
+    },
+      React.createElement(Link, {
+        href: section.videoUrl || '#',
+        style: { color: btn, textDecoration: 'none', fontWeight: '700' },
+      }, '\u25B6\uFE0E  ' + (section.videoTitle || 'Watch video'))
+    )
+  );
+}
+
+// ─────────────────────────────────────────────
 // Main renderer
 // ─────────────────────────────────────────────
 
@@ -2158,6 +2368,7 @@ function renderSection(
     case 'header':        return renderHeader(section, config, primaryColor, secondaryColor, si, preview);
     case 'hero':          return renderHero(section, config, primaryColor, si, preview);
     case 'content':       return renderContent(section, config, primaryColor, si, preview);
+    case 'video':         return renderVideo(section, config, primaryColor, si, preview);
     case 'testimonial':   return renderTestimonial(section, config, primaryColor, secondaryColor, si, preview);
     case 'testimonials':  return renderTestimonials(section, config, primaryColor, si, preview);
     case 'feature-list':  return renderFeatureList(section, config, primaryColor);

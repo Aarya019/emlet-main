@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { emailGenerationId, instruction } = body;
+    const { emailGenerationId, instruction, currentContent } = body;
 
     if (!emailGenerationId || typeof emailGenerationId !== 'string') {
       return NextResponse.json({ error: 'emailGenerationId is required' }, { status: 400 });
@@ -33,7 +33,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email not found' }, { status: 404 });
     }
 
-    const emailContent = generation.content_json as GeneratedEmail;
+    // Prefer the live editor state (currentContent) over the DB snapshot so AI
+    // always sees the latest unsaved edits the user has made in the editor.
+    const dbContent = generation.content_json as GeneratedEmail;
+    const emailContent: GeneratedEmail =
+      currentContent?.sections?.length ? currentContent as GeneratedEmail : dbContent;
     if (!emailContent?.sections?.length) {
       return NextResponse.json({ error: 'Email has no sections' }, { status: 400 });
     }
@@ -62,6 +66,8 @@ export async function POST(request: NextRequest) {
         imageCache.set(`img:${section.imageKeyword}`, section.imageUrl);
       if (section.backgroundImageKeyword && section.backgroundImageUrl)
         imageCache.set(`bg:${section.backgroundImageKeyword}`, section.backgroundImageUrl);
+      if (section.videoThumbnailKeyword && section.videoThumbnailUrl)
+        imageCache.set(`vt:${section.videoThumbnailKeyword}`, section.videoThumbnailUrl);
       if (section.images) {
         for (const img of section.images) {
           if (img.keyword && img.url)
@@ -86,6 +92,8 @@ export async function POST(request: NextRequest) {
         queueFetch(enrichKw(section.imageKeyword), { orientation: 'landscape', color: styleImg.color });
       if (section.backgroundImageKeyword && !imageCache.has(`bg:${section.backgroundImageKeyword}`))
         queueFetch(section.backgroundImageKeyword, { orientation: 'landscape', preferPanoramic: true });
+      if (section.videoThumbnailKeyword && !imageCache.has(`vt:${section.videoThumbnailKeyword}`))
+        queueFetch(section.videoThumbnailKeyword, { orientation: 'landscape', preferPanoramic: true });
       if (section.images) {
         for (const img of section.images) {
           if (img.keyword && !imageCache.has(`img:${img.keyword}`))
@@ -112,6 +120,10 @@ export async function POST(request: NextRequest) {
       if (s.backgroundImageKeyword) {
         const url = imageCache.get(`bg:${s.backgroundImageKeyword}`) ?? fetchedMap[s.backgroundImageKeyword];
         if (url) s.backgroundImageUrl = url;
+      }
+      if (s.videoThumbnailKeyword) {
+        const url = imageCache.get(`vt:${s.videoThumbnailKeyword}`) ?? fetchedMap[s.videoThumbnailKeyword];
+        if (url) s.videoThumbnailUrl = url;
       }
       if (s.images) {
         s.images = s.images.map(img => {

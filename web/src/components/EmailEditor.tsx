@@ -238,6 +238,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     { type: 'divider',       label: 'Divider',       description: 'Horizontal rule spacer',             icon: 'M5 12h14' },
     { type: 'quote',         label: 'Quote',         description: 'Large pull-quote with attribution',   icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
     { type: 'code-block',    label: 'Code Block',    description: 'Syntax-highlighted code snippet',    icon: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4' },
+    { type: 'video',         label: 'Video',         description: 'Linked thumbnail with play button',  icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
   ];
 
   const DEFAULT_SECTION: Record<EmailSection['type'], Partial<EmailSection>> = {
@@ -260,6 +261,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     divider:       {},
     quote:         { text: 'A memorable insight or statement that stands on its own.', author: 'Author Name', authorTitle: 'Title, Company' },
     'code-block':  { heading: 'Code Example', text: 'console.log("Hello, world!");', language: 'javascript', subheading: 'Caption or explanation of the code.' },
+    video:         { heading: 'Watch the Overview', videoTitle: 'Watch the 2-minute demo', videoUrl: 'https://youtu.be/' },
   };
 
   useEffect(() => {
@@ -577,7 +579,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       const res = await fetch('/api/edit-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailGenerationId: emailId, instruction }),
+        body: JSON.stringify({ emailGenerationId: emailId, instruction, currentContent: editedEmail }),
       });
       const data = await res.json();
 
@@ -686,7 +688,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     testimonials: '#ec4899', stats: '#f97316', gallery: '#14b8a6',
     'pricing-table': '#8b5cf6', coupon: '#ef4444', columns: '#06b6d4',
     'social-links': '#84cc16', header: '#94a3b8', footer: '#64748b',
-    divider: '#475569', quote: '#d946ef', 'code-block': '#22d3ee',
+    divider: '#475569', quote: '#d946ef', 'code-block': '#22d3ee', video: '#f43f5e',
   };
 
   if (loading) {

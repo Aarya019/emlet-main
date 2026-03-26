@@ -7,7 +7,9 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 // Email content structure
 export interface EmailSection {
-  type: 'hero' | 'content' | 'cta' | 'footer' | 'testimonial' | 'testimonials' | 'feature-list' | 'pricing-table' | 'gallery' | 'stats' | 'announcement' | 'header' | 'image-text' | 'coupon' | 'social-links' | 'columns' | 'divider' | 'quote' | 'code-block';
+  type: 'hero' | 'content' | 'cta' | 'footer' | 'testimonial' | 'testimonials' | 'feature-list' | 'pricing-table' | 'gallery' | 'stats' | 'announcement' | 'header' | 'image-text' | 'coupon' | 'social-links' | 'columns' | 'divider' | 'quote' | 'code-block' | 'video';
+  /** Hero layout variant. 'default' = full-width cinematic background (standard). 'split-left' = image left / content right. 'split-right' = content left / image right. Only applies to hero sections. */
+  heroLayout?: 'default' | 'split-left' | 'split-right';
   heading?: string;
   subheading?: string;
   /** Large lead paragraph rendered at a bigger, bolder size above the body text. Use for strong opening statements or key summaries. */
@@ -139,6 +141,18 @@ export interface EmailSection {
   backgroundImageUrl?: string;
   /** Optional CSS color/rgba overlay rendered on top of the background image (e.g. "rgba(0,0,0,0.55)"). When omitted, a default cinematic dark gradient is applied automatically. */
   backgroundImageOverlay?: string;
+  // For video sections
+  /** Public video link (e.g. YouTube/Vimeo watch URL). The renderer displays a linked thumbnail with a play-button label. */
+  videoUrl?: string;
+  /**
+   * 5–8 word cinematic Pexels scene description for the video thumbnail (e.g. "developer coding dark monitor glow").
+   * The server resolves this to a real image URL — do NOT output videoThumbnailUrl yourself.
+   */
+  videoThumbnailKeyword?: string;
+  /** Resolved Pexels URL for the video thumbnail — populated by the server, not by the AI. */
+  videoThumbnailUrl?: string;
+  /** Short label displayed below the play button (e.g. "Watch the 2-minute overview"). */
+  videoTitle?: string;
 }
 
 export interface EmailStyleOverrides {
@@ -229,6 +243,46 @@ function isRetryableError(error: unknown): boolean {
   return false;
 }
 
+/**
+ * Returns a short random creative directive injected into every generation request
+ * to prevent structurally identical emails. Varies: narrative angle, hero layout,
+ * structural blueprint choice, and visual/section mixin.
+ */
+function buildVariationDirective(): string {
+  const angles = [
+    'Lead with the customer outcome — open with what the reader will achieve, not what the product does.',
+    'Lead with urgency or scarcity — open with a time-sensitive or limited-availability narrative.',
+    'Lead with social proof — open the hero with a striking data point, stat, or customer result.',
+    'Lead with a bold, provocative question or contrarian statement in the hero heading.',
+    'Lead with story — open with a relatable one-sentence problem or origin story in the hero intro.',
+  ];
+  const layouts = [
+    'Use heroLayout "split-right" on the hero (image on right, content on left). Use at least one image-text section with imagePosition "left".',
+    'Use heroLayout "split-left" on the hero (image on left, content on right). Alternate image-text imagePosition between sections.',
+    'Use the default hero layout (full-width background image). Avoid image-text sections — use columns or gallery for visual variety instead.',
+    'Use the default hero with a dark dramatic gradient. Include a video section mid-email to break up the content rhythm.',
+    'Use heroLayout "split-right". Insert a quote section after the first content block for editorial weight.',
+  ];
+  const mixins = [
+    'Include a gallery section with 3–4 lifestyle Pexels images if contextually relevant.',
+    'Include a code-block section if the product is developer-facing; otherwise include a bold stats section.',
+    'Include a pricing-table section if relevant; otherwise use a boldly styled announcement section instead.',
+    'Insert a social-links section just before the footer.',
+    'Include a video section to showcase the product or process in action.',
+    'Use a columns section with 3 columns and Phosphor iconNames for feature highlights.',
+    'Use a quote section to elevate the most powerful proof point in the email.',
+  ];
+  const pick = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+  return [
+    'VARIATION DIRECTIVE (apply only to this generation — do not reuse boilerplate templates):',
+    `- Narrative angle: ${pick(angles)}`,
+    `- Layout: ${pick(layouts)}`,
+    `- Structural mixin: ${pick(mixins)}`,
+    '- Use at least one section type beyond the standard hero\u2192content\u2192cta pattern.',
+    '- Every section must feel intentional — cut any section that does not directly serve the email goal.',
+  ].join('\n');
+}
+
 export async function generateEmailContent(
   prompt: string,
   brandProfile: BrandProfile | null,
@@ -239,13 +293,16 @@ export async function generateEmailContent(
   const emailTypeInstruction = userEmailType
     ? `- This must be a ${userEmailType} email — use the tone, structure, and copy conventions typical of ${userEmailType} emails`
     : '';
+  const variationDirective = buildVariationDirective();
   const userPrompt = `Generate an email for the following request:
 
 ${prompt}
 
+${variationDirective}
+
 Remember to:
 - Use the brand voice and identity specified
-- Include appropriate sections (hero, content blocks, CTA, footer)
+- Use ALL section types well — be creative, vary the structure, and make every section earn its place
 - Make it engaging and conversion-focused${emailTypeInstruction ? `\n${emailTypeInstruction}` : ''}
 - Do NOT use emojis anywhere — not in subject lines, headings, body copy, or CTAs
 - Return ONLY valid JSON matching the schema — no markdown, no code fences, no explanation`;
@@ -734,34 +791,40 @@ Return a JSON object with this exact structure:
 
 SECTION TYPES:
 - header: Brand logo bar with optional tagline — ALWAYS the very first section. Optionally supply 'columns' as an array of nav links [{heading:'About', buttonUrl:'/about'}, ...] to add a centered nav row below the logo.
-- hero: Main banner. MUST include: eyebrow + heading + intro + subheading + buttonText + buttonUrl. MUST set backgroundGradient (e.g. "linear-gradient(135deg, #0d1117 0%, #1a1a2e 100%)") and textColor: "#ffffff". Add secondaryButtonText+secondaryButtonUrl for a ghost/text secondary action. Always include imageKeyword for a contextual image.
+- hero: Main banner. MUST include: eyebrow + heading + intro + subheading + buttonText + buttonUrl. Set backgroundGradient or backgroundImageKeyword and textColor: "#ffffff". Add secondaryButtonText+secondaryButtonUrl for a ghost/text secondary action. Always include imageKeyword. Control layout with heroLayout: "default" (full-width cinematic, standard), "split-left" (image left, content right), or "split-right" (content left, image right). Split layouts suit editorial or intimate brand voices.
 - content: Text content block. Add 'eyebrow' (e.g. "Behind The Scenes") for a small coloured label above the heading.
+- video: Embedded video thumbnail with play-button label. Set videoUrl (YouTube/Vimeo URL), videoThumbnailKeyword (5–8 word cinematic Pexels scene description), and videoTitle (short label). Optionally add heading + subheading above. Great for product demos, walkthroughs, or behind-the-scenes moments.
 - testimonial: Single customer quote with author info. Include 'authorImage' URL to render a side-by-side avatar layout instead of centered card.
 - testimonials: Grid of 2–4 customer quote cards (2 per row). Each item has 'quote' (required), 'author' (required), 'authorTitle', optional 'rating' (1–5 stars, default 5), and optional 'authorImage' URL. Use this instead of a single testimonial when you have multiple quotes to showcase. Add an optional 'subheading' below the main heading.
-- feature-list: List of product/service features with icons and descriptions. Set 'numbered: true' for step-by-step numbered badges. Set 'layout: "grid"' for a 2-column centered card grid.
-- pricing-table: Pricing tiers with features, highlight one as recommended
-- gallery: Grid of images with optional captions
-- stats: Key metrics and numbers (e.g., customers, growth, ratings)
-- announcement: Time-sensitive updates or news callout box
-- image-text: Split layout — image on one side, heading+text+button on the other (imagePosition: "left" or "right")
-- coupon: Promo code highlight box with dashed border, code, description, expiry
-- columns: 2–4 equal-width blocks each with icon/heading/text/optional button
-- social-links: Row of social media icons/links (use emoji as icon)
-- divider: Decorative separator with optional centered label text
-- quote: Pull-quote block — a memorable single sentence or excerpt set in large italic type with a coloured left border. Use 'text' for the quote text (no explicit quotation marks needed), and optionally 'author' + 'authorTitle' for attribution.
-- code-block: Syntax-highlighted code snippet. Use 'text' for the raw code, 'language' for the language (e.g. 'javascript', 'typescript', 'python', 'bash', 'json', 'html', 'sql'), 'heading' for an optional label above the block, and 'subheading' for an optional caption/explanation below.
+- feature-list: List of product/service features with icons and descriptions. Set 'numbered: true' for step-by-step numbered badges. Set 'layout: "grid"' for a 2-column centered card grid. Use 'iconName' (Phosphor icon name, e.g. "rocket", "check-circle", "lightning") on each feature.
+- pricing-table: Pricing tiers with features list, highlight one plan as recommended. Best for SaaS or product upgrade emails.
+- gallery: Grid of images with optional captions. Provide 'keyword' on each image for Pexels resolution.
+- stats: Key metrics and numbers (e.g., customers, growth, ratings). Use 'iconName' (Phosphor icon name) on each stat. Best near the top to establish credibility.
+- announcement: Time-sensitive updates or news callout box. Use for launches, events, or deadline reminders.
+- image-text: Split layout — image on one side, heading+text+button on the other. Set imagePosition: "left" or "right". Always include imageKeyword. Alternate left/right when using multiple image-text sections.
+- coupon: Promo code highlight box with dashed border. Use 'code', 'text' (description), 'expiryText', and 'heading'.
+- columns: 2–4 equal-width blocks each with icon/heading/text/optional button. Use 'iconName' (Phosphor icon name) on each column. Ideal for feature comparisons, step-by-step flows, or benefit summaries.
+- social-links: Row of social media icons/links. Use 'platform', 'url', and 'icon' (emoji) on each entry.
+- divider: Decorative separator with optional centered label text. Use sparingly to create pacing between sections.
+- quote: Pull-quote block — a memorable single sentence set in large italic type with a coloured left border. Use 'text' (no explicit quotation marks), and optionally 'author' + 'authorTitle'.
+- code-block: Syntax-highlighted code snippet. Use 'text' for the raw code, 'language' (e.g. 'javascript', 'typescript', 'python', 'bash', 'json', 'html', 'sql'), 'heading' for an optional label, and 'subheading' for a caption below.
 - cta: Call-to-action with heading + button. MUST set backgroundColor (brand primary or dark color) and textColor: "#ffffff". Add secondaryButtonText+secondaryButtonUrl for a secondary link below the main button.
-- footer: Footer with company details, address, and unsubscribe notice
+- footer: Footer with company details, address, and unsubscribe notice.
 
-SECTION USAGE GUIDELINES (starting templates — trim ruthlessly, every section must earn its place):
-- Product launch: header + hero + feature-list + image-text + stats + testimonials + cta + footer (8 sections)
-- Newsletter: header + hero + content + image-text + columns + cta + footer (7 sections)
-- Promotional/Sale: header + hero + coupon + stats + testimonials + cta + footer (7 sections)
-- Educational: header + hero + content + quote + feature-list + image-text + cta + footer (8 sections)
-- Software/Dev: header + hero + code-block + feature-list + stats + testimonial + cta + footer (8 sections)
-- Social proof: header + hero + stats + testimonials + image-text + cta + footer (7 sections)
-- Product spotlight: header + hero + image-text + feature-list + testimonials + cta + footer (7 sections)
-- Welcome email: header + hero + columns + feature-list + cta + footer (6 sections)
+SECTION USAGE GUIDELINES — pick the closest blueprint and adapt ruthlessly. Every section must earn its place; cut anything that doesn't directly serve the email goal.
+Blueprint A — Product launch (8): header + hero + feature-list + image-text + stats + testimonials + cta + footer
+Blueprint B — Newsletter (7): header + hero + content + image-text + columns + cta + footer
+Blueprint C — Promotional/Sale (7): header + hero + coupon + stats + testimonials + cta + footer
+Blueprint D — Educational/How-to (8): header + hero + content + quote + feature-list + image-text + cta + footer
+Blueprint E — Developer/SaaS (8): header + hero + code-block + feature-list + stats + testimonial + cta + footer
+Blueprint F — Social proof-led (7): header + hero + stats + testimonials + image-text + cta + footer
+Blueprint G — Product spotlight (7): header + hero + image-text + feature-list + testimonials + cta + footer
+Blueprint H — Welcome / Onboarding (6): header + hero + columns + feature-list + cta + footer
+Blueprint I — Event / Announcement (7): header + hero + announcement + image-text + columns + cta + footer
+Blueprint J — Video-led (7): header + hero[split-right] + content + video + testimonial + cta + footer
+Blueprint K — Story-driven (8): header + hero[split-left] + quote + content + image-text + testimonials + cta + footer
+Blueprint L — Pricing / Upgrade (7): header + hero + pricing-table + feature-list + testimonials + cta + footer
+VARY the blueprint: swap 1–2 sections, reorder for pacing, add a divider or social-links where it fits.
 
 RULES:
 1. Always include: 1 header (first section), 1 hero, at least 1 CTA, 1 footer (last section)
@@ -849,6 +912,7 @@ export async function regenerateSingleSection(
     divider:        'text',
     quote:          'text, author, authorTitle',
     'code-block':   'heading, subheading',
+    video:          'heading, subheading, videoTitle',
   };
 
   const fieldsToReturn = typeFieldGuide[section.type] || 'heading, text';
