@@ -929,7 +929,7 @@ export default function DashboardContent() {
             )}
             {upgradeStatus === 'pending' && (
               <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-sm text-yellow-400">
-                <span>Payment received — your plan can take a minute to finish updating. If it doesn&apos;t update shortly, refresh the page or contact support.</span>
+                <span>Plan upgraded! Your plan can take a minute to finish updating. If it doesn&apos;t update shortly, refresh the page or contact support.</span>
                 <button onClick={() => setUpgradeStatus('idle')} className="text-yellow-400/70 hover:text-yellow-400 flex-shrink-0">
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -1190,18 +1190,30 @@ export default function DashboardContent() {
                 <div className="flex flex-wrap items-center gap-2 justify-center mt-6">
                   <span className="text-xs sm:text-sm text-white/60 w-full sm:w-auto text-center">Try:</span>
                   {[
-                    'Product launch announcement',
-                    'Customer follow-up',
-                    'Holiday promotion',
-                    'Newsletter welcome'
-                  ].map((prompt, i) => (
+                    {
+                      label: 'Product launch announcement',
+                      prompt: 'Announce the launch of our new productivity app to existing customers. Highlight three features: AI-powered task sorting, cross-device sync, and a distraction-free focus mode. Offer 20% off the first year for anyone who upgrades this week. End with a clear "Upgrade Now" call to action.',
+                    },
+                    {
+                      label: 'Customer follow-up',
+                      prompt: "Write a friendly follow-up email to customers who purchased in the last 30 days but haven't used the product yet. Remind them of the key benefit, share one quick tip to get started, and offer to help if they're stuck. Keep the tone warm and low-pressure, not salesy.",
+                    },
+                    {
+                      label: 'Holiday promotion',
+                      prompt: 'Create a Black Friday email announcing 30% off site-wide for 48 hours only. Build urgency around the limited time window, highlight our three best-selling products, and include a bold call-to-action button. Keep the tone exciting and festive.',
+                    },
+                    {
+                      label: 'Newsletter welcome',
+                      prompt: 'Write a warm welcome email for new newsletter subscribers. Thank them for signing up, briefly explain what they can expect (weekly tips, product updates, exclusive offers), and include links to our three most popular blog posts. End with an invitation to reply with questions.',
+                    },
+                  ].map((item, i) => (
                     <button
-                      key={prompt}
-                      onClick={() => setEmailInput(prompt)}
+                      key={item.label}
+                      onClick={() => setEmailInput(item.prompt)}
                       className="rounded-full border border-white/20 bg-black/60 px-3 sm:px-4 py-1.5 text-xs sm:text-sm text-white/70 transition-all duration-300 hover:border-[#00ffff] hover:bg-black/80 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#00ffff]/40"
                       style={{ animationDelay: `${i * 100}ms` }}
                     >
-                      {prompt}
+                      {item.label}
                     </button>
                   ))}
                 </div>
