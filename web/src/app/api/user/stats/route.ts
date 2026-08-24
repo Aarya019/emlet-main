@@ -20,6 +20,7 @@ export async function GET() {
       plan_type: 'free',
       total_emails: 0,
       emails_this_month: 0,
+      cancel_at: null,
     }),
     email: user.email ?? '',
     member_since: user.created_at ?? '',

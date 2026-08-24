@@ -4,35 +4,26 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Privacy Policy | Emlet',
   description: 'Privacy Policy for Emlet — AI Email Generator.',
-  alternates: { canonical: 'https://emlet.app/privacy' },
 };
 
-const LAST_UPDATED = 'March 21, 2026';
+const LAST_UPDATED = 'August 9, 2026';
 const CONTACT_EMAIL = 'support@emlet.app';
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5">
-        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-3 md:px-6 md:py-4">
-          <Link href="/" className="flex items-center">
-            <img src="/logo.png" alt="Emlet" className="h-7 w-auto md:h-8" />
-          </Link>
-          <nav className="hidden items-center justify-center gap-8 text-sm text-white/70 md:flex">
-            <Link href="/pricing" className="transition-colors hover:text-white">Pricing</Link>
-            <Link href="/#features" className="transition-colors hover:text-white">Features</Link>
-          </nav>
-          <div className="flex items-center justify-end gap-3">
-            <Link href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
-              Sign in
-            </Link>
-            <Link href="/sign-up" className="hidden sm:block rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
-              Get started free
-            </Link>
-          </div>
+      <div className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
+        <Link href="/" className="text-lg font-black tracking-tight">
+          <span className="bg-gradient-to-r from-[#00ffff] to-[#00ff00] bg-clip-text text-transparent">
+            emlet
+          </span>
+        </Link>
+        <div className="flex items-center gap-4 text-sm text-white/60">
+          <Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link>
+          <Link href="/sign-in" className="hover:text-white transition-colors">Sign in</Link>
         </div>
-      </header>
+      </div>
 
       {/* Content */}
       <div className="max-w-3xl mx-auto px-6 py-16">
@@ -118,8 +109,10 @@ export default function PrivacyPage() {
                 'Supabase — our database and authentication provider, stores your account and content data',
                 'Google (via OAuth) — authenticates your identity; we receive only your name and email',
                 'Paddle — our payment processor; handles billing and subscription management',
-                'Google Gemini / AI providers — receives your prompts to generate email content',
-                'Pexels — used to fetch stock images for generated emails',
+                'Anthropic (Claude) — receives your prompts to generate email content',
+                'Pexels and Pixabay — used to fetch stock images for generated emails',
+                'Resend — sends transactional emails on our behalf, including test sends you request',
+                'Cloudflare Turnstile — verifies you are not a bot during sign-in and sign-up',
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2">
                   <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
@@ -144,9 +137,9 @@ export default function PrivacyPage() {
           <Section title="5. Cookies">
             <p>
               We use essential cookies to keep you signed in and maintain your session. We may also use
-              analytics cookies (e.g. Google Analytics) to understand how the Service is used. You can
-              disable cookies in your browser settings, but some features of the Service may not work
-              correctly without them.
+              analytics tools (Google Analytics and Vercel Analytics) to understand how the Service is
+              used. You can disable cookies in your browser settings, but some features of the Service
+              may not work correctly without them.
             </p>
           </Section>
 
@@ -201,7 +194,8 @@ export default function PrivacyPage() {
 
           <Section title="10. Contact">
             <p>
-              If you have any questions or concerns about this Privacy Policy, please contact us at{' '}
+              Emlet is operated from Hyderabad, Telangana, India. If you have any questions or concerns
+              about this Privacy Policy, please contact us at{' '}
               <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">
                 {CONTACT_EMAIL}
               </a>.
@@ -217,7 +211,7 @@ export default function PrivacyPage() {
           <span>© {new Date().getFullYear()} Emlet. All rights reserved.</span>
           <div className="flex items-center gap-6">
             <Link href="/terms" className="hover:text-white/60 transition-colors">Terms of Service</Link>
-            <Link href="/pricing" className="hover:text-white/60 transition-colors">Pricing</Link>
+            <Link href="/#pricing" className="hover:text-white/60 transition-colors">Pricing</Link>
           </div>
         </div>
       </footer>

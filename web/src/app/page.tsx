@@ -2,19 +2,24 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { getPaddle } from '@/lib/paddle/client';
+import StarField from '@/components/StarField';
+import type { User } from '@supabase/supabase-js';
+import type { PlanType } from '@/lib/db/types';
 
 // ── Replace these with your actual YouTube video IDs ──────────────────────────
 const STEPS = [
   {
     number: '01',
     title: 'Describe your email',
-    description: 'Type what you want in plain English — a product launch, Black Friday promo, welcome email, or newsletter. No templates to fill in, no design decisions upfront.',
+    description: 'Type what you want in plain English: a product launch, Black Friday promo, welcome email, or newsletter. No templates to fill in, no design decisions upfront.',
     videoId: 'PLACEHOLDER_VIDEO_ID_1',
   },
   {
     number: '02',
     title: 'AI generates a stunning design',
-    description: 'Emlet writes the copy and builds a fully designed, brand-matched email in seconds. Beautiful layouts, compelling headlines — production-ready out of the box.',
+    description: 'Emlet writes the copy and builds a fully designed, brand-matched email in seconds. Beautiful layouts, compelling headlines, production-ready out of the box.',
     videoId: 'PLACEHOLDER_VIDEO_ID_2',
   },
   {
@@ -26,65 +31,52 @@ const STEPS = [
 ];
 
 const FEATURES = [
-  { title: 'Converts, not just looks good', desc: 'AI-written copy engineered to drive clicks, opens, and revenue — not just pretty words.' },
-  { title: '10+ design styles', desc: 'Minimalist, editorial, retro, brutalist, cyberpunk and more — all optimised for inboxes.' },
-  { title: 'Block-based editor', desc: 'Hero, CTA, testimonial, stats — every block fully editable without touching code.' },
-  { title: 'React Email powered', desc: 'Production HTML that renders perfectly in Gmail, Outlook, and Apple Mail.' },
+  { title: 'Converts, not just looks good', desc: 'AI-written copy engineered to drive clicks, opens, and revenue. Not just pretty words.' },
+  { title: '10+ design styles', desc: 'Minimalist, editorial, retro, brutalist, cyberpunk and more, all optimised for inboxes.' },
+  { title: 'Block-based editor', desc: 'Hero, CTA, testimonial, stats: every block fully editable without touching code.' },
+  { title: 'Inbox-perfect rendering', desc: 'Production HTML that renders perfectly in Gmail, Outlook, and Apple Mail.' },
   { title: 'Export anywhere', desc: 'One-click HTML & TSX export for Mailchimp, SendGrid, Resend, or any ESP.' },
-  { title: 'Brand profiles', desc: 'Save your colors, voice & logo — every email stays on-brand, every time.' },
+  { title: 'Brand profiles', desc: 'Save your colors, voice & logo. Every email stays on-brand, every time.' },
 ];
 
 const FAQS = [
-  { q: 'How does Emlet generate emails?', a: "You describe your campaign in plain English. Emlet's AI (powered by Gemini) writes the copy, selects a layout, applies your brand colors, and outputs production-ready HTML and TSX — all in seconds." },
+  { q: 'How does Emlet generate emails?', a: "You describe your campaign in plain English. Emlet's AI writes the copy, selects a layout, applies your brand colors, and outputs production-ready HTML and TSX, all in seconds." },
   { q: 'What email platforms does Emlet work with?', a: 'Any platform that accepts HTML. Export your email and drop it straight into Mailchimp, SendGrid, Resend, ConvertKit, HubSpot, or any other ESP.' },
-  { q: 'Do I need design or coding skills?', a: 'Not at all. Type what you want and Emlet handles the design and code. Every block is also editable in the visual editor — no code required.' },
-  { q: 'How many emails can I generate for free?', a: '5 emails per month on the free plan — no credit card required. Upgrade anytime for unlimited generation, priority AI, and advanced export options.' },
+  { q: 'Do I need design or coding skills?', a: 'Not at all. Type what you want and Emlet handles the design and code. Every block is also editable in the visual editor. No code required.' },
+  { q: 'What do I get for free?', a: 'A one-time trial with no credit card: one brand profile, one full email generation, and one each of AI edit, block regeneration, and test send. Upgrade to Professional ($29/mo) any time for unlimited use of all of it.' },
+  { q: 'Do unused trial actions roll over or reset?', a: "No. The trial is one-time per account and doesn't renew on a schedule. Upgrading is what unlocks unlimited use." },
   { q: 'Can I use my own brand colors and logo?', a: 'Yes. Create a Brand Profile with your colors, typography, and logo. Every email you generate automatically stays on-brand.' },
-  { q: 'What does "React Email powered" mean?', a: 'Emlet builds emails using React Email under the hood, ensuring pixel-perfect rendering in Gmail, Outlook, Apple Mail, and every major inbox.' },
+  { q: 'Will my emails look right in every inbox?', a: 'Yes. Every email Emlet generates is production-ready HTML tested to render correctly in Gmail, Outlook, Apple Mail, and every major inbox.' },
+  { q: 'Can I cancel anytime?', a: 'Yes. Manage or cancel your Professional subscription anytime from the billing portal. No long-term contract, no cancellation fee.' },
 ];
 
-const STARS = [
-  { x: 3,  y: 8,  size: 1.5, delay: 0,   dur: 4 },
-  { x: 8,  y: 72, size: 1,   delay: 1.5, dur: 6 },
-  { x: 14, y: 35, size: 1,   delay: 3,   dur: 5 },
-  { x: 19, y: 18, size: 2,   delay: 0.5, dur: 4 },
-  { x: 24, y: 55, size: 1,   delay: 2,   dur: 7 },
-  { x: 29, y: 82, size: 1.5, delay: 4,   dur: 5 },
-  { x: 33, y: 12, size: 1,   delay: 1,   dur: 6 },
-  { x: 38, y: 43, size: 2,   delay: 2.5, dur: 4 },
-  { x: 42, y: 67, size: 1,   delay: 0,   dur: 5 },
-  { x: 47, y: 28, size: 1.5, delay: 3.5, dur: 6 },
-  { x: 51, y: 90, size: 1,   delay: 1,   dur: 4 },
-  { x: 56, y: 5,  size: 2,   delay: 2,   dur: 7 },
-  { x: 61, y: 48, size: 1,   delay: 0.5, dur: 5 },
-  { x: 65, y: 75, size: 1.5, delay: 3,   dur: 6 },
-  { x: 70, y: 22, size: 1,   delay: 1.5, dur: 4 },
-  { x: 74, y: 60, size: 2,   delay: 4,   dur: 5 },
-  { x: 79, y: 38, size: 1,   delay: 0,   dur: 7 },
-  { x: 83, y: 85, size: 1.5, delay: 2,   dur: 4 },
-  { x: 88, y: 15, size: 1,   delay: 3,   dur: 6 },
-  { x: 92, y: 52, size: 2,   delay: 1,   dur: 5 },
-  { x: 96, y: 30, size: 1.5, delay: 2.5, dur: 4 },
-  { x: 11, y: 45, size: 1,   delay: 4,   dur: 7 },
-  { x: 17, y: 95, size: 1.5, delay: 0.5, dur: 5 },
-  { x: 22, y: 62, size: 1,   delay: 2,   dur: 6 },
-  { x: 36, y: 25, size: 2,   delay: 3,   dur: 4 },
-  { x: 44, y: 78, size: 1,   delay: 1.5, dur: 5 },
-  { x: 49, y: 15, size: 1.5, delay: 0,   dur: 7 },
-  { x: 58, y: 88, size: 1,   delay: 4,   dur: 4 },
-  { x: 63, y: 32, size: 2,   delay: 2,   dur: 6 },
-  { x: 76, y: 58, size: 1,   delay: 0.5, dur: 5 },
-  { x: 85, y: 42, size: 1.5, delay: 3.5, dur: 4 },
-  { x: 90, y: 70, size: 1,   delay: 1,   dur: 7 },
-  { x: 95, y: 10, size: 2,   delay: 2.5, dur: 5 },
-  { x: 7,  y: 50, size: 1,   delay: 0,   dur: 6 },
-  { x: 27, y: 3,  size: 1.5, delay: 2,   dur: 4 },
-  { x: 53, y: 40, size: 1,   delay: 3.5, dur: 5 },
-  { x: 68, y: 92, size: 2,   delay: 1,   dur: 7 },
-  { x: 81, y: 20, size: 1.5, delay: 4,   dur: 4 },
-  { x: 97, y: 80, size: 1,   delay: 0.5, dur: 6 },
-  { x: 2,  y: 65, size: 2,   delay: 2,   dur: 5 },
+const PROFESSIONAL_FEATURES = [
+  'Unlimited email generations',
+  'All design styles',
+  'Unlimited brand profiles',
+  'Export HTML',
+  'Unlimited AI edits & regenerations',
+  'Unlimited test sends',
+  'Priority support',
 ];
+
+const TRIAL_ITEMS = [
+  { label: 'Brand profile', desc: 'Set your colors, voice & logo once' },
+  { label: 'Email generation', desc: 'One full AI-generated email' },
+  { label: 'AI edit', desc: 'One "Edit with AI" pass' },
+  { label: 'Block regeneration', desc: 'One single-block AI rewrite' },
+  { label: 'Test send', desc: 'One test email to your own inbox' },
+];
+
+const PROFESSIONAL_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRO_PRICE_ID ?? null;
+
+function CheckIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+    </svg>
+  );
+}
 
 export default function Home() {
   const router = useRouter();
@@ -96,13 +88,23 @@ export default function Home() {
   const [userInput, setUserInput] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [currentPlan, setCurrentPlan] = useState<PlanType>('free');
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const isPaidUser = currentPlan === 'pro';
 
   const examples = [
     "Product launch with 40% discount...",
     "Customer thank you email...",
     "Black Friday sale announcement...",
-    "Welcome newsletter for subscribers...",
-    "Cart abandonment reminder..."
+    "Welcome email for new subscribers...",
+    "Cart abandonment reminder...",
+    "Webinar invite with countdown...",
+    "Wholesale pricing for retail partners...",
+    "Weekly newsletter with top tips...",
+    "Free trial expiring in 3 days...",
+    "Re-engagement email for lapsed users..."
   ];
 
   useEffect(() => {
@@ -148,6 +150,21 @@ export default function Home() {
     return () => clearInterval(typingInterval);
   }, [currentExampleIndex, isUserTyping]);
 
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      setUser(user);
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('plan_type')
+          .eq('id', user.id)
+          .single();
+        setCurrentPlan((data?.plan_type as PlanType) ?? 'free');
+      }
+    });
+  }, []);
+
   const handleGenerateEmail = () => {
     // Save the user's input to localStorage
     if (userInput.trim()) {
@@ -157,12 +174,53 @@ export default function Home() {
     router.push('/sign-in');
   };
 
+  const handleUpgrade = async () => {
+    if (!PROFESSIONAL_PRICE_ID) return;
+
+    if (!user) {
+      window.location.href = `/sign-in?next=/%23pricing`;
+      return;
+    }
+
+    setCheckoutLoading(true);
+    try {
+      const paddle = await getPaddle();
+      paddle.Checkout.open({
+        items: [{ priceId: PROFESSIONAL_PRICE_ID, quantity: 1 }],
+        customer: { email: user.email ?? '' },
+        customData: { userId: user.id },
+        settings: {
+          successUrl: `${window.location.origin}/dashboard?upgraded=true`,
+        },
+      });
+    } catch (err) {
+      console.error('Paddle checkout error:', err);
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
+
+  const handleManageBilling = async () => {
+    setPortalLoading(true);
+    try {
+      const res = await fetch('/api/paddle/portal', { method: 'POST' });
+      if (!res.ok) throw new Error('Failed to get portal URL');
+      const { url } = await res.json();
+      if (url) window.open(url, '_blank');
+    } catch (err) {
+      console.error('Portal error:', err);
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
   return (
 <div className="relative min-h-screen bg-black text-zinc-50 font-sans overflow-x-hidden">
+      <StarField />
       {/* ── Try for free announcement pill ──────────────────────────────────── */}
       <div className="relative z-50 flex items-center justify-center gap-3 bg-gradient-to-r from-[#00ffff]/10 via-[#00ff00]/10 to-[#ff00ff]/10 border-b border-white/5 px-4 py-2 text-center">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 px-3 py-0.5 text-xs font-semibold text-[#00ffff] tracking-wide uppercase">Free</span>
-        <span className="text-xs text-white/60">Try for free — no credit card required.</span>
+        <span className="text-xs text-white/60">Try for free, no credit card required.</span>
         <a href="/sign-up" className="text-xs font-semibold text-white underline underline-offset-2 hover:text-[#00ffff] transition-colors whitespace-nowrap">Start free →</a>
       </div>
       {/* Animated gradient blobs with magnetic effect */}
@@ -181,31 +239,6 @@ export default function Home() {
         />
       </div>
 
-      {/* Subtle grid overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 z-0 opacity-[0.03]"
-        style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '48px 48px' }}
-      />
-
-      {/* Twinkling stars */}
-      <div className="pointer-events-none fixed inset-0 z-[1]">
-        {STARS.map((s, i) => (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              left: `${s.x}%`,
-              top: `${s.y}%`,
-              width: `${s.size}px`,
-              height: `${s.size}px`,
-              borderRadius: '50%',
-              backgroundColor: 'white',
-              animation: `twinkle ${s.dur}s ease-in-out ${s.delay}s infinite`,
-            }}
-          />
-        ))}
-      </div>
-
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5">
         <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-3 md:px-6 md:py-4">
@@ -215,23 +248,48 @@ export default function Home() {
           <nav className="hidden items-center justify-center gap-8 text-sm text-white/70 md:flex">
             <a href="#how-it-works" className="transition-colors hover:text-white">How it works</a>
             <a href="#features" className="transition-colors hover:text-white">Features</a>
+            <a href="#pricing" className="transition-colors hover:text-white">Pricing</a>
             <a href="#faq" className="transition-colors hover:text-white">FAQ</a>
-            <a href="/pricing" className="transition-colors hover:text-white">Pricing</a>
           </nav>
           {/* Desktop auth buttons */}
           <div className="hidden items-center justify-end gap-3 md:flex">
-            <a href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
-              Sign in
-            </a>
-            <a href="/sign-up" className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
-              Get started free
-            </a>
+            {user ? (
+              <>
+                {isPaidUser && (
+                  <button
+                    onClick={handleManageBilling}
+                    disabled={portalLoading}
+                    className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white/70 transition-all hover:border-white/40 hover:text-white disabled:opacity-50"
+                  >
+                    {portalLoading ? 'Loading…' : 'Manage billing'}
+                  </button>
+                )}
+                <a href="/dashboard" className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
+                  Dashboard
+                </a>
+              </>
+            ) : (
+              <>
+                <a href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
+                  Sign in
+                </a>
+                <a href="/sign-up" className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
+                  Get started free
+                </a>
+              </>
+            )}
           </div>
-          {/* Mobile: sign-in link + hamburger */}
+          {/* Mobile: sign-in/dashboard link + hamburger */}
           <div className="flex items-center gap-2 md:hidden">
-            <a href="/sign-in" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white">
-              Sign in
-            </a>
+            {user ? (
+              <a href="/dashboard" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white">
+                Dashboard
+              </a>
+            ) : (
+              <a href="/sign-in" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white">
+                Sign in
+              </a>
+            )}
             <button
               onClick={() => setMobileMenuOpen((o) => !o)}
               aria-label="Toggle menu"
@@ -256,8 +314,8 @@ export default function Home() {
               {[
                 { href: '#how-it-works', label: 'How it works' },
                 { href: '#features', label: 'Features' },
+                { href: '#pricing', label: 'Pricing' },
                 { href: '#faq', label: 'FAQ' },
-                { href: '/pricing', label: 'Pricing' },
               ].map((link) => (
                 <a
                   key={link.href}
@@ -269,13 +327,21 @@ export default function Home() {
                 </a>
               ))}
             </nav>
-            <div className="mt-4 pt-4 border-t border-white/8">
-              <a
-                href="/sign-up"
-                className="block w-full rounded-full bg-white py-2.5 text-center text-sm font-bold text-black"
-              >
-                Get started free →
-              </a>
+            <div className="mt-4 pt-4 border-t border-white/8 flex flex-col gap-2">
+              {user ? (
+                <a href="/dashboard" className="block w-full rounded-full bg-white py-2.5 text-center text-sm font-bold text-black">
+                  Dashboard
+                </a>
+              ) : (
+                <a href="/sign-up" className="block w-full rounded-full bg-white py-2.5 text-center text-sm font-bold text-black">
+                  Get started free →
+                </a>
+              )}
+              {isPaidUser && (
+                <button onClick={handleManageBilling} className="block w-full rounded-full border border-white/20 py-2.5 text-center text-sm text-white/70">
+                  Manage billing
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -303,7 +369,7 @@ export default function Home() {
             </h1>
             <p className="mx-auto max-w-2xl text-sm text-white/60 sm:text-base md:text-lg leading-relaxed">
               Describe your campaign. Emlet's AI writes copy that converts, designs the layout, and outputs
-              production-ready HTML — faster than writing a single subject line.
+              production-ready HTML, faster than writing a single subject line.
             </p>
           </div>
 
@@ -323,9 +389,7 @@ export default function Home() {
                   <svg className="h-3.5 w-3.5 flex-shrink-0 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  <span className="text-[#00ffff]">Gemini AI</span>
-                  <span className="text-white/20">·</span>
-                  <span className="hidden sm:inline">React Email</span>
+                  <span className="text-[#00ffff]">AI-powered</span>
                   <span className="hidden sm:inline text-white/20">·</span>
                   <span className="hidden sm:inline">HTML & TSX export</span>
                 </div>
@@ -355,7 +419,7 @@ export default function Home() {
           </div>
 
           <p className="text-xs text-white/25">
-            No credit card required · 5 free emails per month · Cancel anytime
+            No credit card required · one free email to try it · cancel anytime after
           </p>
         </div>
       </section>
@@ -369,7 +433,7 @@ export default function Home() {
             {/* ↓ Replace src with your actual screenshot/GIF */}
             <img
               src="/images/editor-screenshot.png"
-              alt="Emlet AI email editor — drag-and-drop blocks, live preview, one-click HTML export"
+              alt="Emlet AI email editor: drag-and-drop blocks, live preview, one-click HTML export"
               className="w-full h-full object-cover object-top"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
@@ -386,12 +450,12 @@ export default function Home() {
         </div>
         {/* Caption */}
         <p className="mt-4 text-center text-xs text-white/30">
-          The Emlet email editor — write once, deploy anywhere
+          The Emlet email editor: write once, deploy anywhere
         </p>
       </section>
 
       {/* ── How it works ───────────────────────────────────────────────────── */}
-      <section id="how-it-works" className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-20 md:py-28">
+      <section id="how-it-works" className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-20 md:py-28 scroll-mt-24">
         <div className="text-center mb-16">
           <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">How it works</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
@@ -445,14 +509,14 @@ export default function Home() {
       </section>
 
       {/* ── Features grid ──────────────────────────────────────────────────── */}
-      <section id="features" className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-20 md:py-28">
+      <section id="features" className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-20 md:py-28 scroll-mt-24">
         <div className="text-center mb-14">
           <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Features</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
             Everything you need to convert
           </h2>
           <p className="text-base text-white/50 max-w-xl mx-auto">
-            High-converting emails, production-ready designs, and brand consistency — all generated in seconds.
+            High-converting emails, production-ready designs, and brand consistency, all generated in seconds.
           </p>
         </div>
 
@@ -467,36 +531,170 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── FAQ ─────────────────────────────────────────────────────────────── */}
-      <section id="faq" className="relative z-10 mx-auto max-w-3xl px-4 sm:px-6 py-20 md:py-28">
+      {/* ── Pricing ─────────────────────────────────────────────────────────── */}
+      <section id="pricing" className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-20 md:py-28 scroll-mt-24">
         <div className="text-center mb-14">
-          <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">FAQ</p>
+          <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Pricing</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
-            Common questions
+            Try it free. Then go{' '}
+            <span className="bg-gradient-to-r from-[#00ffff] via-[#00ff00] to-[#ff00ff] bg-clip-text text-transparent">unlimited</span>.
           </h2>
           <p className="text-base text-white/50 max-w-xl mx-auto">
-            Everything you need to know before you start generating.
+            Start with a real, no-card-required trial. When you're ready for more, Professional removes
+            every limit for one flat price.
           </p>
         </div>
-        <div className="flex flex-col gap-3">
-          {FAQS.map((faq, i) => (
-            <div key={i} className={`rounded-2xl border px-6 transition-colors duration-200 ${openFaq === i ? 'border-white/15 bg-white/[0.05]' : 'border-white/8 bg-white/[0.03]'}`}>
-              <button
-                onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                className="flex w-full items-center justify-between py-5 text-left gap-6 group"
-              >
-                <span className="text-base font-semibold text-white group-hover:text-[#00ffff] transition-colors">{faq.q}</span>
-                <span className={`flex-shrink-0 text-[#00ffff]/60 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                </span>
-              </button>
-              {openFaq === i && (
-                <p className="pb-5 text-sm text-white/55 leading-relaxed">{faq.a}</p>
-              )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-5 items-stretch">
+          {/* Free Trial card */}
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-7 sm:p-8 flex flex-col gap-6">
+            <div>
+              <p className="text-white/50 text-sm font-semibold uppercase tracking-widest mb-2">Free Trial</p>
+              <div className="flex items-end gap-1 mb-1">
+                <span className="text-3xl font-black text-white">$0</span>
+                <span className="text-white/40 mb-0.5 text-sm">one-time, no card</span>
+              </div>
+              <p className="text-white/40 text-sm">Try the real product before you pay.</p>
             </div>
-          ))}
+
+            <ul className="flex flex-col gap-3.5 flex-1">
+              {TRIAL_ITEMS.map((item) => (
+                <li key={item.label} className="flex items-start gap-3">
+                  <CheckIcon className="w-4 h-4 mt-0.5 shrink-0 text-white/40" />
+                  <div>
+                    <p className="text-sm text-white/85 font-medium leading-tight">{item.label}</p>
+                    <p className="text-xs text-white/40 leading-snug mt-0.5">{item.desc}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            {user ? (
+              <a href="/dashboard" className="w-full py-2.5 rounded-xl border border-white/15 text-white/80 text-sm font-bold text-center transition-all hover:border-white/30 hover:text-white">
+                Go to dashboard
+              </a>
+            ) : (
+              <a href="/sign-up" className="w-full py-2.5 rounded-xl border border-white/15 text-white/80 text-sm font-bold text-center transition-all hover:border-white/30 hover:text-white">
+                Start free trial
+              </a>
+            )}
+          </div>
+
+          {/* Professional card — the centerpiece */}
+          <div className="relative rounded-2xl border border-[#00ffff]/40 bg-gradient-to-b from-[#00ffff]/[0.07] to-transparent shadow-lg shadow-[#00ffff]/10 p-7 sm:p-8 flex flex-col gap-6">
+            <div className="absolute -top-3 left-7 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-xs font-black uppercase tracking-wide">
+              {isPaidUser ? 'Your plan' : 'Unlock everything'}
+            </div>
+
+            <div>
+              <p className="text-white/50 text-sm font-semibold uppercase tracking-widest mb-2">Professional</p>
+              <div className="flex items-end gap-1 mb-1">
+                <span className="text-4xl font-black text-white">$29</span>
+                <span className="text-white/40 mb-1">/mo</span>
+              </div>
+              <p className="text-white/40 text-sm">No limits, no per-email cost. Cancel anytime.</p>
+            </div>
+
+            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 flex-1">
+              {PROFESSIONAL_FEATURES.map((feature) => (
+                <li key={feature} className="flex items-center gap-2.5 text-sm text-white/85">
+                  <CheckIcon className="w-4 h-4 shrink-0 text-[#00ff00]" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+
+            {isPaidUser ? (
+              <div className="w-full py-2.5 rounded-xl border border-white/10 text-white/30 text-sm font-bold text-center">
+                Current plan
+              </div>
+            ) : (
+              <button
+                onClick={handleUpgrade}
+                disabled={checkoutLoading}
+                className="w-full py-3 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black hover:shadow-lg hover:shadow-[#00ffff]/30 hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              >
+                {checkoutLoading ? 'Opening checkout…' : user ? 'Upgrade to Professional' : 'Sign up & upgrade'}
+              </button>
+            )}
+          </div>
+        </div>
+
+        {isPaidUser && (
+          <p className="text-center mt-6 text-white/40 text-sm">
+            Need to cancel or update your payment method?{' '}
+            <button onClick={handleManageBilling} disabled={portalLoading} className="text-white/70 underline hover:text-white transition-colors disabled:opacity-50">
+              {portalLoading ? 'Loading…' : 'Manage billing'}
+            </button>
+          </p>
+        )}
+      </section>
+
+      {/* ── About + FAQ ────────────────────────────────────────────────────── */}
+      <section className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-20 md:py-28">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+
+          {/* About / founder note */}
+          <div>
+            <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-6">About</p>
+            <div className="flex items-center gap-4 mb-6">
+              {/* Photo — replace src with the real headshot at /public/images/founder-aarya.jpg */}
+              <div className="relative flex-shrink-0 w-14 h-14">
+                <img
+                  src="/images/founder-aarya.jpg"
+                  alt="Aarya, founder of Emlet"
+                  className="w-14 h-14 rounded-full object-cover border-2 border-white/10"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none';
+                    (e.target as HTMLImageElement).parentElement!.querySelector('.founder-placeholder')!.classList.remove('hidden');
+                  }}
+                />
+                <div className="founder-placeholder hidden absolute inset-0 flex items-center justify-center rounded-full border-2 border-white/10 bg-gradient-to-br from-[#00ffff]/20 via-[#00ff00]/10 to-[#ff00ff]/20 text-lg font-black text-white">
+                  A
+                </div>
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-white">
+                Hi, I'm Aarya 👋🏻
+              </p>
+            </div>
+            <div className="space-y-4">
+              <p className="text-base sm:text-lg text-white/70 leading-relaxed">
+                I'm a founder myself, and I know the struggle of putting together a marketing email that actually looks good, fast.
+              </p>
+              <p className="text-base sm:text-lg text-white/70 leading-relaxed">
+                Every time I needed one, I was either stuck fighting a clunky template builder for hours, or paying a designer just to change a headline.
+              </p>
+              <p className="text-base sm:text-lg text-white/70 leading-relaxed">
+                I wanted a simple, affordable, and time-efficient way to go from an idea to a ready-to-send email, and that's how Emlet started.
+              </p>
+            </div>
+          </div>
+
+          {/* FAQ */}
+          <div id="faq" className="scroll-mt-24">
+            <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-6">FAQ</p>
+            <div className="divide-y divide-white/8">
+              {FAQS.map((faq, i) => (
+                <div key={i}>
+                  <button
+                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                    className="flex w-full items-center justify-between py-4 text-left gap-6 group"
+                  >
+                    <span className="text-sm sm:text-base font-semibold text-white group-hover:text-[#00ffff] transition-colors">{faq.q}</span>
+                    <span className={`flex-shrink-0 text-[#00ffff]/60 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                    </span>
+                  </button>
+                  {openFaq === i && (
+                    <p className="pb-4 text-sm text-white/55 leading-relaxed">{faq.a}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
         </div>
       </section>
 
@@ -509,13 +707,13 @@ export default function Home() {
             <span className="bg-gradient-to-r from-[#00ffff] to-[#00ff00] bg-clip-text text-transparent">marketing emails today</span>
           </h2>
           <p className="relative text-base text-white/50 mb-8 max-w-lg mx-auto">
-            5 emails free every month. No credit card. Get your first high-converting email in under 60 seconds.
+            Try your first email free. No credit card. Get your first high-converting email in under 60 seconds.
           </p>
           <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4">
             <a href="/sign-up" className="rounded-full bg-white px-8 py-3 text-base font-bold text-black transition-all hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5">
               Get started free →
             </a>
-            <a href="/pricing" className="rounded-full border border-white/20 px-8 py-3 text-base text-white/70 hover:border-white/40 hover:text-white transition-all">
+            <a href="#pricing" className="rounded-full border border-white/20 px-8 py-3 text-base text-white/70 hover:border-white/40 hover:text-white transition-all">
               See pricing
             </a>
           </div>
@@ -542,8 +740,10 @@ export default function Home() {
               <ul className="space-y-3 text-sm text-white/50">
                 <li><a href="#how-it-works" className="hover:text-white transition-colors">How it works</a></li>
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="/pricing" className="hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
                 <li><a href="/dashboard" className="hover:text-white transition-colors">Dashboard</a></li>
+                <li><a href="/blog" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="/alternatives" className="hover:text-white transition-colors">Alternatives</a></li>
               </ul>
             </div>
 

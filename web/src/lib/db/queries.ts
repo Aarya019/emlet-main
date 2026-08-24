@@ -1,13 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
-import type { 
-  Profile, 
-  BrandProfile, 
-  BrandProfileInsert, 
+import type {
+  Profile,
+  BrandProfile,
+  BrandProfileInsert,
   BrandProfileUpdate,
   EmailGeneration,
   EmailGenerationInsert,
   EmailGenerationUpdate,
-  UserStats
+  UserStats,
+  PlanType,
+  FreeActionFlag
 } from './types';
 
 // =====================================================
@@ -16,7 +18,7 @@ import type {
 
 export async function getProfile(userId: string): Promise<Profile | null> {
   const supabase = await createClient();
-  
+
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -29,6 +31,34 @@ export async function getProfile(userId: string): Promise<Profile | null> {
   }
 
   return data;
+}
+
+/**
+ * Like `getProfile`, but self-heals if the row is missing — e.g. an auth.users
+ * row whose public.profiles row was deleted directly (rather than through
+ * account deletion). The signup trigger that creates this row only fires once,
+ * on the original auth.users INSERT, so without this a user in that state
+ * would be permanently locked out of every credit/plan-gated action. RLS
+ * allows a user to insert their own profile row, so this is safe to call with
+ * the request-scoped (non-admin) Supabase client.
+ */
+export async function getOrCreateProfile(userId: string): Promise<Profile | null> {
+  const supabase = await createClient();
+
+  const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
+  if (data) return data;
+
+  const { data: created, error: insertError } = await supabase
+    .from('profiles')
+    .insert({ id: userId })
+    .select('*')
+    .single();
+
+  if (insertError) {
+    console.error('Error creating missing profile for', userId, insertError);
+    return null;
+  }
+  return created;
 }
 
 export async function updateProfile(
@@ -54,39 +84,48 @@ export async function updateProfile(
 
 export async function getUserStats(userId: string): Promise<UserStats | null> {
   const supabase = await createClient();
-  
-  // Try RPC first, but fall back to direct query if it fails
-  const { data, error } = await supabase
-    .rpc('get_user_stats', { user_uuid: userId });
 
-  if (!error && data && Array.isArray(data) && data.length > 0) {
-    return data[0] as UserStats;
-  }
+  // Query profiles directly (self-healing a missing row — e.g. deleted
+  // independently of auth.users — rather than faking zeroed stats, which
+  // never actually fixes the underlying account) instead of the get_user_stats
+  // RPC, which predates the free-trial flags and doesn't return them.
+  const profile = await getOrCreateProfile(userId);
 
-  // Fallback: query profiles table directly
-  const { data: profileData, error: profileError } = await supabase
-    .from('profiles')
-    .select('credits_remaining, plan_type')
-    .eq('id', userId)
-    .single();
-
-  if (profileError || !profileData) {
-    console.error('Error fetching user stats:', error || profileError);
-    // Return default stats if user profile doesn't exist yet
+  if (!profile) {
+    console.error('Error fetching user stats: no profile for', userId);
     return {
       total_emails: 0,
+      emails_this_month: 0,
       credits_remaining: 0,
       plan_type: 'free',
-      emails_this_month: 0,
-    } as UserStats;
+      free_brand_used: false,
+      free_ai_edit_used: false,
+      free_block_regenerate_used: false,
+      free_test_email_used: false,
+      cancel_at: null,
+    };
   }
 
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
+
+  const [{ count: totalEmails }, { count: emailsThisMonth }] = await Promise.all([
+    supabase.from('email_generations').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'completed'),
+    supabase.from('email_generations').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('status', 'completed').gte('created_at', startOfMonth.toISOString()),
+  ]);
+
   return {
-    total_emails: 0,
-    credits_remaining: profileData.credits_remaining || 0,
-    plan_type: profileData.plan_type || 'free',
-    emails_this_month: 0,
-  } as UserStats;
+    total_emails: totalEmails || 0,
+    emails_this_month: emailsThisMonth || 0,
+    credits_remaining: profile.credits_remaining || 0,
+    plan_type: profile.plan_type || 'free',
+    free_brand_used: profile.free_brand_used,
+    free_ai_edit_used: profile.free_ai_edit_used,
+    free_block_regenerate_used: profile.free_block_regenerate_used,
+    free_test_email_used: profile.free_test_email_used,
+    cancel_at: profile.cancel_at,
+  };
 }
 
 // =====================================================
@@ -225,7 +264,7 @@ export async function deleteBrandProfile(id: string, userId: string): Promise<bo
 
 export async function getEmailGenerations(userId: string, limit = 50): Promise<EmailGeneration[]> {
   const supabase = await createClient();
-  
+
   const { data, error } = await supabase
     .from('email_generations')
     .select('*')
@@ -238,12 +277,12 @@ export async function getEmailGenerations(userId: string, limit = 50): Promise<E
     return [];
   }
 
-  return data || [];
+  return Promise.all((data || []).map(reapIfStale));
 }
 
 export async function getEmailGeneration(id: string, userId: string): Promise<EmailGeneration | null> {
   const supabase = await createClient();
-  
+
   const { data, error } = await supabase
     .from('email_generations')
     .select('*')
@@ -256,7 +295,32 @@ export async function getEmailGeneration(id: string, userId: string): Promise<Em
     return null;
   }
 
-  return data;
+  return reapIfStale(data);
+}
+
+// A generation stuck in 'generating' past every route's maxDuration (60-120s)
+// means the request that was supposed to complete it crashed or timed out
+// without ever reaching its own failure handler — otherwise it would already
+// be 'completed' or 'failed'. Flip it lazily whenever it's read next, rather
+// than running a cron job, so the dashboard/editor never show a row spinning
+// forever.
+const STALE_GENERATING_MS = 5 * 60 * 1000;
+
+async function reapIfStale(row: EmailGeneration): Promise<EmailGeneration> {
+  const isStale = row.status === 'generating' &&
+    (Date.now() - new Date(row.created_at).getTime()) > STALE_GENERATING_MS;
+  if (!isStale) return row;
+
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from('email_generations')
+    .update({ status: 'failed', error_message: 'Generation timed out or was interrupted' })
+    .eq('id', row.id)
+    .eq('status', 'generating')
+    .select()
+    .single();
+
+  return data ?? row;
 }
 
 export async function createEmailGeneration(generation: EmailGenerationInsert): Promise<EmailGeneration | null> {
@@ -335,6 +399,38 @@ export async function deductCredits(userId: string, credits: number): Promise<bo
   }
 
   return data;
+}
+
+/**
+ * Atomically claims a free-plan user's one-time use of `flag` (pro users
+ * always pass, no mutation). This claims the use BEFORE the gated action
+ * runs, via a single DB-side UPDATE ... WHERE ... flag = false, closing the
+ * check-then-act race where two concurrent requests could both read
+ * "not used yet" and both proceed. If the gated action subsequently fails,
+ * call `releaseFreeAction` to give the claim back so a failed request
+ * doesn't burn the user's one shot.
+ */
+export async function claimFreeAction(userId: string, flag: FreeActionFlag): Promise<{ allowed: boolean; planType: PlanType }> {
+  const supabase = await createClient();
+
+  const [{ data: claimed, error }, profile] = await Promise.all([
+    supabase.rpc('try_use_free_action', { user_uuid: userId, flag_name: flag }),
+    getOrCreateProfile(userId),
+  ]);
+
+  if (error) {
+    console.error('Error claiming free action:', error);
+    return { allowed: false, planType: profile?.plan_type ?? 'free' };
+  }
+
+  return { allowed: !!claimed, planType: profile?.plan_type ?? 'free' };
+}
+
+/** Gives back a claimed one-time free action after the gated work it guarded fails. */
+export async function releaseFreeAction(userId: string, flag: FreeActionFlag): Promise<void> {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc('release_free_action', { user_uuid: userId, flag_name: flag });
+  if (error) console.error('Error releasing free action:', error);
 }
 
 // =====================================================

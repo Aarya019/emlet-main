@@ -48,6 +48,22 @@ export async function PUT(
     const body = await request.json();
     const { id } = await params;
 
+    // secondary_color/background_color are required brand fields — reject an explicit
+    // attempt to clear them, but allow omitting the key entirely (partial update).
+    if ('secondary_color' in body && !body.secondary_color) {
+      return NextResponse.json(
+        { error: 'Secondary color is required' },
+        { status: 400 }
+      );
+    }
+
+    if ('background_color' in body && !body.background_color) {
+      return NextResponse.json(
+        { error: 'Background color is required' },
+        { status: 400 }
+      );
+    }
+
     const updates: BrandProfileUpdate = {
       brand_name: body.brand_name,
       industry: body.industry,

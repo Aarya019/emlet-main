@@ -1,0 +1,17 @@
+Prompt para a IA:
+"Crie um e-mail institucional idêntico ao da OLX Pay (Cores: Roxo e Laranja). O texto deve ser profissional e seguir exatamente este conteúdo:
+Assunto: Venda Aprovada - Pedido Confirmado
+Olá, Vendedor(a)!
+Sua venda para Henrique de Souza Ulian (CPF: 435.161.858-21) foi aprovada. O valor de R$ 5.800,00 está em garantia sob custódia da OLX Pay.
+Segurança OLX:
+Somos uma plataforma global e segura. Permitimos que o comprador parcele no cartão ou boleto, enquanto o vendedor recebe o valor à vista. Garantimos suporte total em retiradas ou entregas combinadas.
+Liberação do Pagamento:
+O saldo será liberado em sua conta em até 1 hora útil após a validação. Para o repasse, responda este e-mail com:
+• Nome Completo:
+• CPF:
+• Chave PIX:
+Logística:
+O comprador optou por Retirada Pessoalmente. A transação conta com Seguro de Venda.
+Para mais informações, responda a este e-mail.
+Atenciosamente,
+Equipe de Segurança OLX Brasil"

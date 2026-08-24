@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { generateEmailContent } from '@/lib/ai/gemini';
-import { getDefaultBrandProfile, getBrandProfile } from '@/lib/db/queries';
+import { generateEmailContent } from '@/lib/ai/claude';
+import { getDefaultBrandProfile, getBrandProfile, getOrCreateProfile } from '@/lib/db/queries';
 import { deductCredits } from '@/lib/db/queries';
 import { createEmailGeneration } from '@/lib/db/queries';
 import { generateEmailHtml } from '@/lib/email/renderer';
 import { batchFetchPexelsImages, styleImageConfig } from '@/lib/images/pexels';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 // Vercel max function duration (Pro plan allows up to 300s; target well under that)
 export const maxDuration = 60;
@@ -20,9 +21,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!(await checkRateLimit(user.id, 'generate-email', 60, 6))) {
+    return rateLimitResponse();
+  }
+
   try {
     const body = await request.json();
-    const { prompt, designStyle = 'minimalist', brandProfileId, userEmailType } = body;
+    const { prompt, designStyle = 'minimalist', brandProfileId } = body;
 
     // Validate prompt
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
@@ -39,18 +44,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check user has credits
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('credits_remaining, plan_type')
-      .eq('id', user.id)
-      .single();
+    // Check user has credits (self-heals a missing profile row rather than
+    // permanently locking the account out — see getOrCreateProfile)
+    const profile = await getOrCreateProfile(user.id);
 
-    const isEnterprise = profile?.plan_type === 'enterprise';
+    const isPro = profile?.plan_type === 'pro';
 
-    if (!isEnterprise && (!profile || profile.credits_remaining < 1)) {
+    if (!isPro && (!profile || profile.credits_remaining < 1)) {
       return NextResponse.json(
-        { error: 'Insufficient credits. Please upgrade your plan.' }, 
+        { error: "You've used your free email generation — upgrade to Professional for unlimited emails." },
         { status: 402 }
       );
     }
@@ -90,15 +92,14 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Generate email content with Gemini
+      // Generate email content with Claude
       const emailContent = await generateEmailContent(
         prompt.trim(), 
         brandProfile, 
-        designStyle,
-        typeof userEmailType === 'string' ? userEmailType : undefined
+        designStyle
       );
 
-      // Strip any HTML tags Gemini may have injected into plain text fields
+      // Strip any HTML tags Claude may have injected into plain text fields
       const stripHtml = (str?: string | null): string | undefined => str ? str.replace(/<[^>]*>/g, '').replace(/&[a-z]+;/gi, (m) => ({ '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'" }[m] || m)) : undefined;
       emailContent.subject = stripHtml(emailContent.subject) || emailContent.subject;
       emailContent.previewText = stripHtml(emailContent.previewText) || emailContent.previewText;
@@ -115,14 +116,88 @@ export async function POST(request: NextRequest) {
         stats: s.stats?.map(st => ({ ...st, value: stripHtml(st.value) || st.value, label: stripHtml(st.label) || st.label })),
       }));
 
-      // Normalize and validate email_type — prefer user-supplied value over AI's
+      // Normalize and validate email_type
       const validEmailTypes = ['promotional', 'newsletter', 'educational', 'transactional', 'other'];
-      const userSuppliedType = typeof userEmailType === 'string' && validEmailTypes.includes(userEmailType.toLowerCase()) ? userEmailType.toLowerCase() : null;
-      let normalizedEmailType = userSuppliedType ?? emailContent.emailType?.toLowerCase().trim() ?? 'other';
+      let normalizedEmailType = emailContent.emailType?.toLowerCase().trim() || 'other';
       
       if (!validEmailTypes.includes(normalizedEmailType)) {
         console.warn(`Invalid email_type returned: "${emailContent.emailType}", defaulting to "other"`);
         normalizedEmailType = 'other';
+      }
+
+      // ── Guarantee at least two photographic images in the email ───────────
+      // The model sometimes returns too few image-bearing sections (gradient
+      // hero, no gallery/image-text/image-block section) despite the prompt
+      // rule — especially for MINIMAL-length or photo-averse styles like
+      // Simple. A sparse or text-only email reads as unfinished, so force
+      // images onto the hero and/or a dedicated section rather than leaving
+      // it to chance.
+      const countImages = () => emailContent.sections.reduce((total, s) => {
+        let n = 0;
+        if (s.imageKeyword) n++;
+        if (s.backgroundImageKeyword) n++;
+        n += s.images?.filter(img => img.keyword).length ?? 0;
+        return total + n;
+      }, 0);
+
+      const fallbackKeywordByType: Record<string, string> = {
+        promotional: 'product showcase display modern studio light',
+        newsletter: 'team collaboration bright modern office',
+        educational: 'focused person learning workspace natural light',
+        transactional: 'clean modern office desk laptop',
+        other: 'modern professional workspace natural light',
+      };
+      // A different keyword from the primary fallback — using the same string
+      // twice would dedupe to the identical photo in both spots (batch image
+      // fetching treats identical keywords as one request).
+      const secondaryFallbackKeywordByType: Record<string, string> = {
+        promotional: 'customer using product lifestyle natural light',
+        newsletter: 'person reading laptop cafe morning light',
+        educational: 'notebook desk study bright natural light',
+        transactional: 'hands typing keyboard close up soft light',
+        other: 'team working together bright office window light',
+      };
+
+      if (countImages() === 0) {
+        const fallbackKeyword = brandProfile?.industry
+          ? `${brandProfile.industry} professional workspace natural light`
+          : fallbackKeywordByType[normalizedEmailType] || fallbackKeywordByType.other;
+
+        const heroSection = emailContent.sections.find(s => s.type === 'hero');
+        if (heroSection) {
+          heroSection.backgroundImageKeyword = fallbackKeyword;
+        }
+      }
+
+      if (countImages() < 2) {
+        const secondaryKeyword = brandProfile?.industry
+          ? `${brandProfile.industry} team at work bright natural light`
+          : secondaryFallbackKeywordByType[normalizedEmailType] || secondaryFallbackKeywordByType.other;
+
+        // Prefer filling an existing image-capable section that has no image yet.
+        const emptyImageTextSection = emailContent.sections.find(s => s.type === 'image-text' && !s.imageKeyword);
+        const emptyGallerySection = emailContent.sections.find(s => (s.type === 'gallery' || s.type === 'image-block') && !s.images?.length);
+
+        if (emptyImageTextSection) {
+          emptyImageTextSection.imageKeyword = secondaryKeyword;
+        } else if (emptyGallerySection) {
+          emptyGallerySection.images = [{ keyword: secondaryKeyword, url: '', alt: '' }];
+        } else {
+          // No existing section can hold a second image — add a lightweight one.
+          const newSection = {
+            type: 'image-text' as const,
+            heading: 'Built for people like you',
+            text: "We're glad you're here — here's a closer look at what makes this worth your time.",
+            imageKeyword: secondaryKeyword,
+            imagePosition: 'left' as const,
+          };
+          const footerIndex = emailContent.sections.findIndex(s => s.type === 'footer');
+          if (footerIndex >= 0) {
+            emailContent.sections.splice(footerIndex, 0, newSection);
+          } else {
+            emailContent.sections.push(newSection);
+          }
+        }
       }
 
       // ── Pexels image resolution ──────────────────────────────────────────
@@ -167,13 +242,6 @@ export async function POST(request: NextRequest) {
             preferPanoramic: true,
           });
         }
-        if (section.videoThumbnailKeyword) {
-          bgKeywordsToFetch.push({
-            keyword: section.videoThumbnailKeyword,
-            orientation: 'landscape',
-            preferPanoramic: true,
-          });
-        }
       }
 
       // ── Fetch both sets in parallel ──────────────────────────────────────
@@ -213,12 +281,6 @@ export async function POST(request: NextRequest) {
           if (resolved) updated.backgroundImageUrl = resolved;
         }
 
-        // Inject video thumbnail URL
-        if (updated.videoThumbnailKeyword) {
-          const resolved = bgPexelsMap[updated.videoThumbnailKeyword];
-          if (resolved) updated.videoThumbnailUrl = resolved;
-        }
-
         return updated;
       });
 
@@ -229,8 +291,8 @@ export async function POST(request: NextRequest) {
         brandProfile
       );
 
-      // Deduct credits (skip for enterprise — unlimited)
-      if (!isEnterprise) {
+      // Deduct credits (skip for pro — unlimited)
+      if (!isPro) {
         const creditsDeducted = await deductCredits(user.id, 1);
 
         if (!creditsDeducted) {
@@ -282,7 +344,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         generation: completedGeneration,
-        creditsRemaining: isEnterprise ? null : (updatedProfile?.credits_remaining || 0)
+        creditsRemaining: isPro ? null : (updatedProfile?.credits_remaining || 0)
       }, { status: 201 });
 
     } catch (generationError) {

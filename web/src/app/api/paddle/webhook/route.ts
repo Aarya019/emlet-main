@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { paddle, PLAN_CREDITS } from '@/lib/paddle/server';
 import { createAdminClient } from '@/lib/supabase/server';
 
-function planFromPriceId(priceId: string): 'pro' | 'enterprise' | null {
-  if (priceId === process.env.PADDLE_PRO_PRICE_ID) return 'pro';
-  if (priceId === process.env.PADDLE_ENTERPRISE_PRICE_ID) return 'enterprise';
-  return null;
+function planFromPriceId(priceId: string): 'pro' | null {
+  return priceId === process.env.PADDLE_PRO_PRICE_ID ? 'pro' : null;
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -47,7 +45,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const priceId: string = sub.items?.[0]?.price?.id ?? '';
         const plan = planFromPriceId(priceId);
         console.log('[paddle-webhook] activated - customerId:', customerId, 'subscriptionId:', subscriptionId, 'priceId:', priceId, 'plan:', plan);
-        if (!plan) { console.warn('[paddle-webhook] unknown priceId:', priceId, 'env pro:', process.env.PADDLE_PRO_PRICE_ID, 'env ent:', process.env.PADDLE_ENTERPRISE_PRICE_ID); break; }  
+        if (!plan) { console.warn('[paddle-webhook] unknown priceId:', priceId, 'env pro:', process.env.PADDLE_PRO_PRICE_ID); break; }
 
         // Paddle propagates checkout customData onto the subscription object
         const customDataUserId: string | undefined =
@@ -63,17 +61,21 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           break;
         }
         console.log('[paddle-webhook] resolved userId:', userId);
-        const credits = plan === 'enterprise' ? 999999 : PLAN_CREDITS[plan];
+        const credits = PLAN_CREDITS[plan];
         const { error } = await db.from('profiles').update({
           plan_type: plan,
           credits_remaining: credits,
           paddle_customer_id: customerId,
           paddle_subscription_id: subscriptionId,
           subscription_status: 'active',
+          cancel_at: null,
           updated_at: new Date().toISOString(),
         }).eq('id', userId);
-        if (error) console.error('[paddle-webhook] DB update error (activated):', error);
-        else console.log('[paddle-webhook] DB updated successfully for userId:', userId);
+        if (error) {
+          console.error('[paddle-webhook] DB update error (activated):', error);
+          throw error;
+        }
+        console.log('[paddle-webhook] DB updated successfully for userId:', userId);
         break;
       }
 
@@ -84,19 +86,37 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const priceId: string = sub.items?.[0]?.price?.id ?? '';
         const status: string = sub.status ?? 'active';
         const plan = planFromPriceId(priceId);
+        const scheduledChange = sub.scheduledChange ?? sub.scheduled_change ?? null;
+        const cancelAt: string | null = scheduledChange?.action === 'cancel'
+          ? (scheduledChange.effectiveAt ?? scheduledChange.effective_at ?? null)
+          : null;
 
         const { data: profile } = await db.from('profiles').select('id').eq('paddle_subscription_id', subscriptionId).single();
         if (!profile) break;
 
         if (plan) {
-          const credits = plan === 'enterprise' ? 999999 : PLAN_CREDITS[plan];
+          const credits = PLAN_CREDITS[plan];
           const { error } = await db.from('profiles').update({
             plan_type: plan,
             credits_remaining: credits,
             subscription_status: status,
+            cancel_at: cancelAt,
             updated_at: new Date().toISOString(),
           }).eq('id', profile.id);
-          if (error) console.error('DB update error (updated):', error);
+          if (error) {
+            console.error('DB update error (updated):', error);
+            throw error;
+          }
+        } else {
+          // Price unresolved (e.g. only the scheduled-change field changed) — still keep cancel_at in sync.
+          const { error } = await db.from('profiles').update({
+            cancel_at: cancelAt,
+            updated_at: new Date().toISOString(),
+          }).eq('id', profile.id);
+          if (error) {
+            console.error('DB update error (updated, cancel_at only):', error);
+            throw error;
+          }
         }
         break;
       }
@@ -113,27 +133,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           plan_type: 'free',
           credits_remaining: PLAN_CREDITS.free,
           subscription_status: 'canceled',
+          cancel_at: null,
           updated_at: new Date().toISOString(),
         }).eq('id', profile.id);
-        if (error) console.error('DB update error (canceled):', error);
-        break;
-      }
-
-      // ── Transaction completed = subscription renewal → reset credits ────────
-      case 'transaction.completed': {
-        const tx = event.data;
-        const subscriptionId: string | undefined = tx.subscriptionId ?? tx.subscription_id;
-        if (!subscriptionId) break;
-
-        const { data: profile } = await db.from('profiles').select('id, plan_type').eq('paddle_subscription_id', subscriptionId).single();
-        if (!profile) break;
-
-        if (profile.plan_type === 'pro') {
-          const { error } = await db.from('profiles').update({
-            credits_remaining: PLAN_CREDITS.pro,
-            updated_at: new Date().toISOString(),
-          }).eq('id', profile.id);
-          if (error) console.error('DB update error (transaction.completed):', error);
+        if (error) {
+          console.error('DB update error (canceled):', error);
+          throw error;
         }
         break;
       }
@@ -143,8 +148,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
   } catch (err) {
     console.error(`[paddle-webhook] unhandled error for event ${eventType}:`, err);
-    // Return 200 so Paddle doesn't keep retrying — processing errors are logged above
-    return NextResponse.json({ received: true, error: 'Processing error — see server logs' });
+    // Return 500 so Paddle retries the delivery — a 200 here would tell Paddle
+    // the event was handled when it wasn't, permanently desyncing plan state.
+    return NextResponse.json({ error: 'Processing error — see server logs' }, { status: 500 });
   }
 
   console.log('[paddle-webhook] done, eventType:', eventType);
