@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+import { anthropic } from '@/lib/ai/claude';
+import type Anthropic from '@anthropic-ai/sdk';
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 interface BrandAnalysisResult {
   brandName: string;
@@ -25,6 +27,10 @@ export async function POST(request: NextRequest) {
         { error: 'Unauthorized' },
         { status: 401 }
       );
+    }
+
+    if (!(await checkRateLimit(user.id, 'analyze-brand', 60, 5))) {
+      return rateLimitResponse();
     }
 
     const body = await request.json();
@@ -54,18 +60,18 @@ export async function POST(request: NextRequest) {
     // Step 3: Call Jina AI Reader to get clean website content for text analysis
     const websiteContent = await fetchWebsiteContent(websiteUrl);
 
-    // Step 4: Use Gemini to analyze brand information from content + CSS
-    const geminiAnalysis = await analyzeBrandWithGemini(websiteContent, websiteCSS, cleanDomain);
+    // Step 4: Use Claude to analyze brand information from content + CSS
+    const brandAnalysis = await analyzeBrandWithClaude(websiteContent, websiteCSS, cleanDomain);
 
     // Combine all data
     const result: BrandAnalysisResult = {
-      brandName: geminiAnalysis.brandName || extractDomainName(cleanDomain),
-      industry: geminiAnalysis.industry,
-      brandVoice: geminiAnalysis.brandVoice,
-      primaryColor: colors.primaryColor || geminiAnalysis.primaryColor || '#5c5cf0',
-      secondaryColor: colors.secondaryColor || geminiAnalysis.secondaryColor,
+      brandName: brandAnalysis.brandName || extractDomainName(cleanDomain),
+      industry: brandAnalysis.industry,
+      brandVoice: brandAnalysis.brandVoice,
+      primaryColor: colors.primaryColor || brandAnalysis.primaryColor || '#5c5cf0',
+      secondaryColor: colors.secondaryColor || brandAnalysis.secondaryColor,
       logoUrl: logoUrl, // Google's favicon service - works for virtually all websites
-      brandDescription: geminiAnalysis.description,
+      brandDescription: brandAnalysis.description,
     };
 
     return NextResponse.json({
@@ -84,6 +90,98 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// ── SSRF guard ──────────────────────────────────────────────────────────────
+// websiteUrl (and every stylesheet URL discovered inside its own HTML) is
+// attacker-controlled: a malicious site could point a <link rel=stylesheet>
+// at http://169.254.169.254/... (cloud metadata) or an internal 10.x host and
+// have our server dutifully fetch it. Resolve and validate the host before
+// every fetch, and re-validate on each redirect hop instead of letting
+// fetch() follow redirects blindly.
+
+function isPrivateIPv4(ip: string): boolean {
+  const parts = ip.split('.').map(Number);
+  if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return true; // fail closed
+  const [a, b] = parts;
+  if (a === 10 || a === 127 || a === 0) return true;
+  if (a === 169 && b === 254) return true; // link-local, incl. cloud metadata
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true; // CGNAT
+  return false;
+}
+
+function isPrivateIPv6(ip: string): boolean {
+  const lower = ip.toLowerCase();
+  if (lower === '::1' || lower === '::') return true;
+  if (lower.startsWith('fe80:') || lower.startsWith('fc') || lower.startsWith('fd')) return true;
+  if (lower.startsWith('::ffff:')) {
+    const v4 = lower.split(':').pop() ?? '';
+    if (v4.includes('.')) return isPrivateIPv4(v4);
+  }
+  return false;
+}
+
+async function assertPublicHttpUrl(rawUrl: string): Promise<URL> {
+  let url: URL;
+  try {
+    url = new URL(rawUrl);
+  } catch {
+    throw new Error('Invalid URL');
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new Error('Only http/https URLs are allowed');
+  }
+
+  const hostname = url.hostname.toLowerCase();
+  if (hostname === 'localhost' || hostname.endsWith('.localhost') || hostname === '0.0.0.0') {
+    throw new Error('URL host is not allowed');
+  }
+
+  const literalIpVersion = isIP(hostname);
+  const addresses: string[] = [];
+  if (literalIpVersion) {
+    addresses.push(hostname);
+  } else {
+    try {
+      const results = await lookup(hostname, { all: true });
+      addresses.push(...results.map(r => r.address));
+    } catch {
+      throw new Error('Could not resolve host');
+    }
+  }
+
+  for (const addr of addresses) {
+    const blocked = isIP(addr) === 4 ? isPrivateIPv4(addr) : isPrivateIPv6(addr);
+    if (blocked) throw new Error('URL resolves to a disallowed private address');
+  }
+
+  return url;
+}
+
+/** fetch() with SSRF validation on the initial URL and on every redirect hop, plus a timeout. */
+async function safeFetch(rawUrl: string, init: RequestInit = {}, timeoutMs = 8000, maxRedirects = 3): Promise<Response> {
+  let currentUrl = rawUrl;
+  for (let hop = 0; hop <= maxRedirects; hop++) {
+    const url = await assertPublicHttpUrl(currentUrl);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    let res: Response;
+    try {
+      res = await fetch(url.toString(), { ...init, signal: controller.signal, redirect: 'manual' });
+    } finally {
+      clearTimeout(timer);
+    }
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location');
+      if (!location) return res;
+      currentUrl = new URL(location, url).toString();
+      continue;
+    }
+    return res;
+  }
+  throw new Error('Too many redirects');
+}
+
 /**
  * Fetch the website HTML, extract inline <style> blocks, and fetch up to 4 external
  * CSS stylesheets so we have real brand CSS to analyse.
@@ -95,7 +193,7 @@ async function extractColorsFromWebsite(
     const fullUrl = url.startsWith('http') ? url : `https://${url}`;
     const baseUrl = new URL(fullUrl);
 
-    const response = await fetch(fullUrl, {
+    const response = await safeFetch(fullUrl, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
     });
     if (!response.ok) return { css: '', colors: {} };
@@ -124,9 +222,9 @@ async function extractColorsFromWebsite(
     const externalSheets = await Promise.all(
       cssUrls.slice(0, 4).map(async cssUrl => {
         try {
-          const res = await fetch(cssUrl, {
+          const res = await safeFetch(cssUrl, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-          });
+          }, 5000);
           if (!res.ok) return '';
           const text = await res.text();
           return text.slice(0, 60_000);
@@ -178,7 +276,7 @@ async function extractColorsFromWebsite(
     }
 
     return {
-      css: allCSS.slice(0, 12_000), // trim for Gemini prompt
+      css: allCSS.slice(0, 12_000), // trim for prompt
       colors: { primaryColor: picks[0], secondaryColor: picks[1] },
     };
   } catch (error) {
@@ -223,11 +321,17 @@ function colorDistance(a: string, b: string): number {
 async function fetchWebsiteContent(url: string): Promise<string> {
   try {
     const jinaUrl = `https://r.jina.ai/${url}`;
-    const response = await fetch(jinaUrl, {
-      headers: {
-        'Accept': 'text/plain',
-      },
-    });
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10_000);
+    let response: Response;
+    try {
+      response = await fetch(jinaUrl, {
+        headers: { 'Accept': 'text/plain' },
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!response.ok) {
       console.warn('Jina AI Reader failed:', response.status);
@@ -245,22 +349,20 @@ async function fetchWebsiteContent(url: string): Promise<string> {
 }
 
 /**
- * Analyze brand using Gemini - extracts all brand information
+ * Analyze brand using Claude - extracts all brand information
  */
-async function analyzeBrandWithGemini(
+async function analyzeBrandWithClaude(
   websiteContent: string,
   websiteCSS: string,
   domain: string
-): Promise<{ 
+): Promise<{
   brandName: string;
-  brandVoice: 'professional' | 'friendly' | 'casual' | 'formal'; 
-  industry: string; 
+  brandVoice: 'professional' | 'friendly' | 'casual' | 'formal';
+  industry: string;
   description: string;
   primaryColor: string;
   secondaryColor?: string;
 }> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
-
   const cssSection = websiteCSS
     ? `\nWEBSITE CSS (first 12,000 chars — use this to identify real brand colors):\n${websiteCSS}\n`
     : '';
@@ -297,9 +399,15 @@ Focus on:
 Return ONLY valid JSON, no markdown formatting or explanations.`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    
+    const response = await anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 1024,
+      thinking: { type: 'disabled' },
+      messages: [{ role: 'user', content: prompt }],
+    });
+    const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === 'text');
+    const text = textBlock?.text ?? '';
+
     // Extract JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -329,7 +437,7 @@ Return ONLY valid JSON, no markdown formatting or explanations.`;
       secondaryColor: analysis.secondaryColor || undefined,
     };
   } catch (error) {
-    console.warn('Gemini analysis failed:', error);
+    console.warn('Claude analysis failed:', error);
     return {
       brandName: extractDomainName(domain),
       brandVoice: 'professional',

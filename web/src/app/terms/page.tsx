@@ -4,35 +4,26 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Terms of Service | Emlet',
   description: 'Terms of Service for Emlet — AI Email Generator.',
-  alternates: { canonical: 'https://emlet.app/terms' },
 };
 
-const LAST_UPDATED = 'March 17, 2026';
+const LAST_UPDATED = 'August 9, 2026';
 const CONTACT_EMAIL = 'support@emlet.app';
 
 export default function TermsPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5">
-        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-3 md:px-6 md:py-4">
-          <Link href="/" className="flex items-center">
-            <img src="/logo.png" alt="Emlet" className="h-7 w-auto md:h-8" />
-          </Link>
-          <nav className="hidden items-center justify-center gap-8 text-sm text-white/70 md:flex">
-            <Link href="/pricing" className="transition-colors hover:text-white">Pricing</Link>
-            <Link href="/#features" className="transition-colors hover:text-white">Features</Link>
-          </nav>
-          <div className="flex items-center justify-end gap-3">
-            <Link href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
-              Sign in
-            </Link>
-            <Link href="/sign-up" className="hidden sm:block rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
-              Get started free
-            </Link>
-          </div>
+      <div className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
+        <Link href="/" className="text-lg font-black tracking-tight">
+          <span className="bg-gradient-to-r from-[#00ffff] to-[#00ff00] bg-clip-text text-transparent">
+            emlet
+          </span>
+        </Link>
+        <div className="flex items-center gap-4 text-sm text-white/60">
+          <Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link>
+          <Link href="/sign-in" className="hover:text-white transition-colors">Sign in</Link>
         </div>
-      </header>
+      </div>
 
       {/* Content */}
       <div className="max-w-3xl mx-auto px-6 py-16">
@@ -95,21 +86,18 @@ export default function TermsPage() {
             </ul>
           </Section>
 
-          <Section title="4. Credits & Subscriptions">
+          <Section title="4. Free Trial & Subscriptions">
             <p>
-              Emlet operates on a credit-based system. Credits are consumed when you generate emails.
-              Free accounts receive a limited number of credits per month. Paid plans (Pro, Enterprise)
-              provide additional credits as described on the{' '}
-              <Link href="/pricing" className="text-[#00ffff] hover:underline">pricing page</Link>.
+              Free accounts receive a one-time trial allotment: one brand profile, one email
+              generation, one AI-assisted edit, one block regeneration, and one test email send.
+              Each of these is available once per account and does not reset or renew. The paid
+              Professional plan provides unlimited use of all features as described on the{' '}
+              <Link href="/#pricing" className="text-[#00ffff] hover:underline">pricing page</Link>.
             </p>
             <p className="mt-3">
               Subscriptions are billed monthly through Paddle, our payment processor. By subscribing,
               you authorize recurring charges to your payment method. You may cancel at any time from
               your account settings; cancellation takes effect at the end of the current billing period.
-            </p>
-            <p className="mt-3">
-              Credits reset monthly and do not roll over. Unused credits are forfeited at the end of
-              each billing cycle.
             </p>
           </Section>
 
@@ -187,15 +175,16 @@ export default function TermsPage() {
 
           <Section title="12. Governing Law">
             <p>
-              These Terms are governed by and construed in accordance with applicable law. Any disputes
-              arising under these Terms shall be resolved through binding arbitration or in a court of
-              competent jurisdiction.
+              These Terms are governed by and construed in accordance with the laws of India, without
+              regard to its conflict of law principles. Any disputes arising under these Terms shall be
+              subject to the exclusive jurisdiction of the courts located in Hyderabad, Telangana, India.
             </p>
           </Section>
 
           <Section title="13. Contact">
             <p>
-              If you have any questions about these Terms, please contact us at{' '}
+              Emlet is operated from Hyderabad, Telangana, India. If you have any questions about these
+              Terms, please contact us at{' '}
               <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">
                 {CONTACT_EMAIL}
               </a>.
@@ -211,7 +200,7 @@ export default function TermsPage() {
           <span>© {new Date().getFullYear()} Emlet. All rights reserved.</span>
           <div className="flex items-center gap-6">
             <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy Policy</Link>
-            <Link href="/pricing" className="hover:text-white/60 transition-colors">Pricing</Link>
+            <Link href="/#pricing" className="hover:text-white/60 transition-colors">Pricing</Link>
           </div>
         </div>
       </footer>

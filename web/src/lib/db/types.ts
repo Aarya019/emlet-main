@@ -5,7 +5,7 @@ export type BrandVoice = 'professional' | 'friendly' | 'casual' | 'formal';
 export type EmailType = 'promotional' | 'newsletter' | 'educational' | 'transactional' | 'other';
 export type GenerationStatus = 'generating' | 'completed' | 'failed';
 export type ActionType = 'email_generation' | 'credit_purchase' | 'credit_refund' | 'plan_upgrade';
-export type DesignStyle = 'minimalist' | 'editorial' | 'retro' | 'brutalist' | 'cyberpunk' | 'handwritten' | 'bauhaus';
+export type DesignStyle = 'simple' | 'minimalist' | 'editorial' | 'retro' | 'brutalist' | 'cyberpunk' | 'handwritten' | 'bauhaus';
 
 export interface Profile {
   id: string;
@@ -17,9 +17,21 @@ export interface Profile {
   paddle_customer_id: string | null;
   paddle_subscription_id: string | null;
   subscription_status: 'active' | 'canceled' | 'past_due' | 'paused' | 'trialing' | null;
+  /** Free-plan users get exactly one brand profile, ever — not reset by deleting it. */
+  free_brand_used: boolean;
+  /** Free-plan users get exactly one "Edit with AI" action, ever. */
+  free_ai_edit_used: boolean;
+  /** Free-plan users get exactly one per-block regenerate action, ever. */
+  free_block_regenerate_used: boolean;
+  /** Free-plan users get exactly one "Send Test Email" action, ever. */
+  free_test_email_used: boolean;
+  /** Set when a subscription is scheduled to cancel at period end; cleared on renewal/reactivation. */
+  cancel_at: string | null;
   created_at: string;
   updated_at: string;
 }
+
+export type FreeActionFlag = 'free_brand_used' | 'free_ai_edit_used' | 'free_block_regenerate_used' | 'free_test_email_used';
 
 export interface BrandProfile {
   id: string;
@@ -71,6 +83,11 @@ export interface UserStats {
   emails_this_month: number;
   credits_remaining: number;
   plan_type: PlanType;
+  free_brand_used: boolean;
+  free_ai_edit_used: boolean;
+  free_block_regenerate_used: boolean;
+  free_test_email_used: boolean;
+  cancel_at: string | null;
 }
 
 // Insert types (without auto-generated fields)

@@ -1,13 +1,15 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import type { EmailGeneration } from '@/lib/db/types';
-import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
-import { FONT_REGISTRY, fontVariants } from '@/lib/email/renderer';
+import type { GeneratedEmail, EmailSection } from '@/lib/ai/claude';
+import { FONT_REGISTRY, fontFamilyCSS, buildAllFontsGoogleUrl } from '@/lib/email/renderer';
+import { runEmailChecklist } from '@/lib/email/checklist';
 import ImageUploadInput from '@/components/ImageUploadInput';
-import { ESP_META, ESP_SLUGS } from '@/lib/esp';
-import type { EspSlug } from '@/lib/esp/types';
+import IconPicker from '@/components/IconPicker';
+import EmailVerifyModal from '@/components/EmailVerifyModal';
 import {
   DndContext,
   closestCenter,
@@ -46,144 +48,40 @@ function SortableSectionItem({ id, children }: { id: number; children: (dragHand
   );
 }
 
-// Computed once: Google Fonts URL loading all registry fonts at wght@400 for in-editor preview
-const FONT_PREVIEW_LINK = (() => {
-  const params = Object.values(FONT_REGISTRY)
-    .filter(def => def.gfParam)
-    .map(def => `family=${def.gfParam!.split(':')[0]}:wght@400`);
-  return `https://fonts.googleapis.com/css2?${params.join('&')}&display=swap`;
-})();
-
-function FontPicker({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-  placeholder: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const id = 'emlet-font-preview-link';
-    if (!document.getElementById(id)) {
-      const link = document.createElement('link');
-      link.id = id;
-      link.rel = 'stylesheet';
-      link.href = FONT_PREVIEW_LINK;
-      document.head.appendChild(link);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [open]);
-
-  const fontNames = Object.keys(FONT_REGISTRY);
-  const def = value ? FONT_REGISTRY[value] : null;
-  const displayFamily = def ? `${def.css}, ${def.fallback}` : 'inherit';
-
-  return (
-    <div ref={ref} className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(o => !o)}
-        className="w-full flex items-center justify-between bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white hover:border-white/20 transition-colors focus:outline-none"
-      >
-        <span style={{ fontFamily: displayFamily, fontSize: '13px' }}>
-          {value || placeholder}
-        </span>
-        <svg className={`h-3 w-3 flex-shrink-0 text-white/40 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
-      {open && (
-        <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-[#111] border border-white/15 rounded-lg shadow-2xl max-h-60 overflow-y-auto">
-          <button
-            type="button"
-            onClick={() => { onChange(''); setOpen(false); }}
-            className="w-full text-left px-3 py-2 text-[11px] text-white/40 hover:bg-white/5 transition-colors border-b border-white/8 italic"
-          >
-            {placeholder}
-          </button>
-          {fontNames.map(name => {
-            const d = FONT_REGISTRY[name];
-            const ff = `${d.css}, ${d.fallback}`;
-            return (
-              <button
-                key={name}
-                type="button"
-                onClick={() => { onChange(name); setOpen(false); }}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 transition-colors flex items-baseline justify-between gap-2 ${
-                  value === name ? 'bg-white/10 text-white' : 'text-white/80'
-                }`}
-                style={{ fontFamily: ff }}
-              >
-                <span>{name}</span>
-                <span className="text-[10px] text-white/25 font-sans flex-shrink-0" style={{ fontFamily: 'inherit' }}>
-                  → {d.fallback}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export default function EmailEditor({ emailId }: EmailEditorProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState<EmailGeneration | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deletingThisEmail, setDeletingThisEmail] = useState(false);
   const [aiChatOpen, setAiChatOpen] = useState(false);
   const [aiMessage, setAiMessage] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
-  const [aiHistory, setAiHistory] = useState<Array<{ role: 'user' | 'ai'; content: string }>>([]);
+  const [aiHistory, setAiHistory] = useState<Array<{ role: 'user' | 'ai'; content: string; isUpgradeError?: boolean }>>([]);
+  const [trialStatus, setTrialStatus] = useState<{ planType: string; aiEditUsed: boolean; blockRegenerateUsed: boolean; testEmailUsed: boolean } | null>(null);
   const aiInputRef = useRef<HTMLInputElement | null>(null);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
-  const [useFallbackFonts, setUseFallbackFonts] = useState(false);
 
   // Editor state
   const [editedEmail, setEditedEmail] = useState<GeneratedEmail | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<Set<number>>(new Set());
   const [showAddBlock, setShowAddBlock] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [sendToEmail, setSendToEmail] = useState('');
   const [sending, setSending] = useState(false);
-  const [sendResult, setSendResult] = useState<{ success: boolean; message: string } | null>(null);
-
-  // Publish to ESP state
-  const [showPublishModal, setShowPublishModal] = useState(false);
-  const [espConnections, setEspConnections] = useState<Record<EspSlug, { account_name: string; extra_metadata?: Record<string, string> } | null>>({
-    mailchimp: null, klaviyo: null, brevo: null, mailerlite: null,
-  });
-  const [publishEsp, setPublishEsp] = useState<EspSlug | null>(null);
-  const [publishType, setPublishType] = useState<'template' | 'campaign_draft'>('template');
-  const [publishLists, setPublishLists] = useState<{ id: string; name: string }[]>([]);
-  const [publishListId, setPublishListId] = useState('');
-  const [publishFromName, setPublishFromName] = useState('');
-  const [publishFromEmail, setPublishFromEmail] = useState('');
-  const [publishing, setPublishing] = useState(false);
-  const [publishResult, setPublishResult] = useState<{ success: boolean; message: string; url?: string } | null>(null);
+  const [sendResult, setSendResult] = useState<{ success: boolean; message: string; isUpgradeError?: boolean } | null>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [defaultColors, setDefaultColors] = useState<{ bodyBg: string; bodyColor: string; primaryColor: string; secondaryColor: string } | null>(null);
   const [regeneratingSection, setRegeneratingSection] = useState<number | null>(null);
-  const [blockError, setBlockError] = useState<{ index: number; message: string } | null>(null);
+  const [blockError, setBlockError] = useState<{ index: number; message: string; isUpgradeError?: boolean } | null>(null);
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
   const [aiOpenSection, setAiOpenSection] = useState<number | null>(null);
+  const [headingFontDropdownOpen, setHeadingFontDropdownOpen] = useState(false);
+  const [bodyFontDropdownOpen, setBodyFontDropdownOpen] = useState(false);
 
   // Always-current ref so the iframe onLoad handler reads latest sections without stale closure
 
@@ -195,30 +93,6 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const sectionRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
-  // Returns html with Google Fonts stripped and inline fallback font-family overrides injected
-  const getFallbackSrcDoc = useCallback((html: string) => {
-    if (!html) return html;
-    // Strip Google Fonts link tags and @import rules
-    let out = html
-      .replace(/<link[^>]+fonts\.googleapis\.com[^>]*>/gi, '')
-      .replace(/<link[^>]+fonts\.gstatic\.com[^>]*>/gi, '')
-      .replace(/@import\s+url\([^)]*fonts\.googleapis\.com[^)]*\)[^;]*;/gi, '')
-      .replace(/@font-face\s*\{[^}]*\}/gi, '');
-    // Determine fallback stacks from active pairing
-    const styleKey = (email?.design_style || 'minimalist') as string;
-    const sv = fontVariants[styleKey] ?? fontVariants.minimalist;
-    const av = sv[(editedEmail?.fontVariant ?? 0)] ?? sv[0];
-    const extractFontName = (f: string) => /'([^']+)'/.exec(f)?.[1] ?? f.split(',')[0].trim();
-    const hName = editedEmail?.fontPairing?.heading || extractFontName(av.headingFontFamily);
-    const bName = editedEmail?.fontPairing?.body    || extractFontName(av.fontFamily);
-    const hFallback = FONT_REGISTRY[hName]?.fallback ?? 'Georgia, serif';
-    const bFallback = FONT_REGISTRY[bName]?.fallback ?? 'Arial, sans-serif';
-    const overrideStyle = `<style id="emlet-fallback-override">body,p,td,div,span,li,a{font-family:${bFallback}!important}h1,h2,h3,h4,h5,h6{font-family:${hFallback}!important}</style>`;
-    out = out.replace(/<\/head>/i, `${overrideStyle}</head>`);
-    if (!out.includes('emlet-fallback-override')) out = overrideStyle + out;
-    return out;
-  }, [email?.design_style, editedEmail?.fontPairing, editedEmail?.fontVariant]);
-
   const BLOCK_TYPES: Array<{ type: EmailSection['type']; label: string; description: string; icon: string }> = [
     { type: 'hero',          label: 'Hero',          description: 'Large banner with heading & image',   icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
     { type: 'content',       label: 'Content',       description: 'Heading + body text block',           icon: 'M4 6h16M4 12h16M4 18h7' },
@@ -227,8 +101,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     { type: 'image-text',    label: 'Image + Text',  description: 'Side-by-side image and copy',        icon: 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2' },
     { type: 'feature-list',  label: 'Feature List',  description: 'Icon + title + description rows',    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
     { type: 'testimonial',   label: 'Testimonial',   description: 'Quote with author attribution',      icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
+    { type: 'testimonials',  label: 'Testimonials Grid', description: 'Multiple quote cards with ratings', icon: 'M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-4-4' },
     { type: 'stats',         label: 'Stats',         description: 'Key numbers / metrics',              icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
     { type: 'gallery',       label: 'Gallery',       description: 'Grid of images',                     icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
+    { type: 'image-block',   label: 'Image Block',   description: 'Full-bleed photo(s), no padding',    icon: 'M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M4 8h16M4 4h16v16H4V4z' },
     { type: 'pricing-table', label: 'Pricing Table', description: 'Plan comparison cards',              icon: 'M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z' },
     { type: 'coupon',        label: 'Coupon',        description: 'Promo code with expiry',             icon: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z' },
     { type: 'columns',       label: 'Columns',       description: 'Multi-column layout',                icon: 'M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7' },
@@ -238,55 +114,73 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     { type: 'divider',       label: 'Divider',       description: 'Horizontal rule spacer',             icon: 'M5 12h14' },
     { type: 'quote',         label: 'Quote',         description: 'Large pull-quote with attribution',   icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
     { type: 'code-block',    label: 'Code Block',    description: 'Syntax-highlighted code snippet',    icon: 'M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4' },
-    { type: 'video',         label: 'Video',         description: 'Linked thumbnail with play button',  icon: 'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
   ];
 
   const DEFAULT_SECTION: Record<EmailSection['type'], Partial<EmailSection>> = {
-    hero:          { heading: 'Welcome', subheading: 'Your subtitle here', text: '' },
+    hero:          { heading: 'Welcome', subheading: 'Your subtitle here', text: '', buttonText: '', buttonUrl: '' },
     content:       { heading: 'Section Heading', text: 'Your content goes here.' },
     cta:           { heading: 'Take Action', text: 'Convince them to click.', buttonText: 'Get Started', buttonUrl: 'https://' },
-    announcement:  { heading: 'Important Update', text: 'Details of your announcement here.' },
-    'image-text':  { heading: 'Feature Title', text: 'Describe the feature.', imageUrl: '', imagePosition: 'left' },
+    announcement:  { heading: 'Important Update', text: 'Details of your announcement here.', buttonText: '', buttonUrl: '' },
+    'image-text':  { heading: 'Feature Title', text: 'Describe the feature.', imageUrl: '', imagePosition: 'left', buttonText: '', buttonUrl: '' },
     'feature-list': { heading: 'Our Features', features: [{ title: 'Feature 1', description: 'Description here.' }] },
     testimonial:   { quote: 'This product changed my life.', author: 'Jane Doe', authorTitle: 'CEO, Acme Inc.' },
     testimonials:  { heading: 'What Our Customers Say', testimonials: [{ quote: 'This product changed my life.', author: 'Jane Doe', authorTitle: 'CEO, Acme Inc.', rating: 5 }, { quote: 'Highly recommend to everyone.', author: 'John Smith', authorTitle: 'Founder, StartupXYZ', rating: 5 }] },
     stats:         { heading: 'By the Numbers', stats: [{ value: '1,000+', label: 'Customers' }, { value: '99%', label: 'Satisfaction' }] },
     gallery:       { heading: 'Gallery', images: [{ url: '', alt: 'Image 1' }, { url: '', alt: 'Image 2' }] },
+    'image-block': { images: [{ url: '', alt: 'Image 1' }, { url: '', alt: 'Image 2' }] },
     'pricing-table': { heading: 'Pricing', plans: [{ name: 'Pro', price: '$29', period: '/mo', features: ['Feature A', 'Feature B'], buttonText: 'Start Free Trial' }] },
     coupon:        { heading: 'Special Offer', text: 'Use this code at checkout.', code: 'SAVE20', expiryText: 'Expires soon' },
-    columns:       { columns: [{ heading: 'Column 1', text: 'Content here.' }, { heading: 'Column 2', text: 'Content here.' }] },
-    'social-links': { text: 'Follow us on social media', socialLinks: [{ platform: 'Twitter', url: 'https://' }, { platform: 'Instagram', url: 'https://' }] },
-    header:        { logoUrl: '', logoAlt: 'Logo', tagline: '' },
-    footer:        { text: 'You received this email because you subscribed. Unsubscribe.' },
-    divider:       {},
+    columns:       { heading: '', columns: [{ heading: 'Column 1', text: 'Content here.' }, { heading: 'Column 2', text: 'Content here.' }] },
+    'social-links': { heading: '', text: 'Follow us on social media', socialLinks: [{ platform: 'Twitter', url: 'https://' }, { platform: 'Instagram', url: 'https://' }] },
+    header:        { logoUrl: '', logoAlt: 'Logo', tagline: '', columns: [] },
+    footer:        { text: 'You received this email because you subscribed. Unsubscribe.', buttonText: '', buttonUrl: '', logoUrl: '' },
+    divider:       { text: '' },
     quote:         { text: 'A memorable insight or statement that stands on its own.', author: 'Author Name', authorTitle: 'Title, Company' },
     'code-block':  { heading: 'Code Example', text: 'console.log("Hello, world!");', language: 'javascript', subheading: 'Caption or explanation of the code.' },
-    video:         { heading: 'Watch the Overview', videoTitle: 'Watch the 2-minute demo', videoUrl: 'https://youtu.be/' },
   };
+
+  const GRADIENT_PRESETS: Array<{ label: string; css: string }> = [
+    { label: 'Midnight',  css: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)' },
+    { label: 'Sunset',    css: 'linear-gradient(135deg, #ff512f 0%, #dd2476 100%)' },
+    { label: 'Ocean',     css: 'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)' },
+    { label: 'Violet',    css: 'linear-gradient(135deg, #5f2c82 0%, #49a09d 100%)' },
+    { label: 'Emerald',   css: 'linear-gradient(135deg, #0f3d3e 0%, #1a936f 100%)' },
+    { label: 'Peach',     css: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)' },
+    { label: 'Blush',     css: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)' },
+    { label: 'Cyan Glow', css: 'linear-gradient(135deg, #00c2c2 0%, #005f5f 100%)' },
+    { label: 'Slate',     css: 'linear-gradient(135deg, #414345 0%, #232526 100%)' },
+  ];
 
   useEffect(() => {
     loadEmail();
-    // Load ESP connections for publish modal
-    fetch('/api/esp/connections')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (!data) return;
-        const map: Record<EspSlug, { account_name: string; extra_metadata?: Record<string, string> } | null> = {
-          mailchimp: null, klaviyo: null, brevo: null, mailerlite: null,
-        };
-        for (const conn of (data.connections ?? [])) {
-          if (ESP_SLUGS.includes(conn.esp_slug)) {
-            map[conn.esp_slug as EspSlug] = { account_name: conn.account_name, extra_metadata: conn.extra_metadata };
-          }
-        }
-        setEspConnections(map);
-      })
-      .catch(() => {});
   }, [emailId]);
+
+  // Warn before closing/refreshing the tab with unsaved edits — the browser
+  // shows its own generic message; custom text is ignored by modern browsers.
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  // Load every registered font's webfont once so the font picker can render live previews.
+  useEffect(() => {
+    const id = 'font-picker-preview-fonts';
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = buildAllFontsGoogleUrl();
+    document.head.appendChild(link);
+  }, []);
 
   // Sync editedEmail when email loads (only on first load), seeding section colors from brand defaults
   useEffect(() => {
-    if (email && !editedEmail && defaultColors) {
+    if (email && !editedEmail && defaultColors && email.content_json) {
       const raw = email.content_json as GeneratedEmail;
       const seeded: GeneratedEmail = {
         ...raw,
@@ -332,6 +226,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     }, 700);
     return () => {
       if (previewDebounceRef.current) clearTimeout(previewDebounceRef.current);
+      previewAbortRef.current?.abort();
     };
   }, [editedEmail, emailId]);
 
@@ -350,6 +245,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       const data = await res.json();
       setEmail(data.generation);
       if (data.defaultColors) setDefaultColors(data.defaultColors);
+      if (data.trialStatus) setTrialStatus(data.trialStatus);
     } catch (err) {
       console.error('Error loading email:', err);
       setError('An error occurred while loading the email');
@@ -424,7 +320,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     var si = parseInt(el.getAttribute('data-em-si'), 10);
     if (!field || isNaN(si)) return;
     var isText = field === 'text';
-    var sectionEl = sections[si];
+    // Walk up from the clicked element itself rather than indexing the
+    // \`sections\` array by \`si\` — that array only contains elements with the
+    // em-section class, which header/footer/divider/social-links sections
+    // don't have, so its DOM-order index doesn't line up with the true JSON
+    // section index \`si\`. Using closest() is correct regardless of that gap.
+    var sectionEl = el.closest('.em-section');
     var textGroup = isText
       ? Array.from(sectionEl ? sectionEl.querySelectorAll('[data-em-field="text"]') : [el])
       : null;
@@ -476,18 +377,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       prev.forEach(i => { if (i < index) next.add(i); else if (i > index) next.add(i - 1); });
       return next;
     });
-    setIsDirty(true);
-  }, []);
-
-  const moveSection = useCallback((index: number, direction: 'up' | 'down') => {
-    setEditedEmail(prev => {
-      if (!prev) return prev;
-      const sections = [...prev.sections];
-      const swapIndex = direction === 'up' ? index - 1 : index + 1;
-      if (swapIndex < 0 || swapIndex >= sections.length) return prev;
-      [sections[index], sections[swapIndex]] = [sections[swapIndex], sections[index]];
-      return { ...prev, sections };
-    });
+    // Same reindexing every other section index below has to do — otherwise
+    // deleting a section above the selected/AI-open one leaves that state
+    // pointing at whatever section slid into the old index.
+    const shiftOrClear = (i: number | null) => i === null ? null : i === index ? null : i > index ? i - 1 : i;
+    setSelectedSection(shiftOrClear);
+    setAiOpenSection(shiftOrClear);
     setIsDirty(true);
   }, []);
 
@@ -515,13 +410,15 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       });
       return next;
     });
-    setSelectedSection(prev => {
+    const shiftForMove = (prev: number | null) => {
       if (prev === null) return null;
       if (prev === oldIndex) return newIndex;
       if (oldIndex < newIndex && prev > oldIndex && prev <= newIndex) return prev - 1;
       if (oldIndex > newIndex && prev >= newIndex && prev < oldIndex) return prev + 1;
       return prev;
-    });
+    };
+    setSelectedSection(shiftForMove);
+    setAiOpenSection(shiftForMove);
     setIsDirty(true);
   }, []);
 
@@ -539,10 +436,15 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     if (!email) return;
     setEditedEmail(JSON.parse(JSON.stringify(email.content_json)) as GeneratedEmail);
     setIsDirty(false);
+    // Any selection/AI-panel state may reference sections that no longer
+    // exist (or moved) once the array reverts to the last-saved shape.
+    setSelectedSection(null);
+    setAiOpenSection(null);
+    setCollapsedSections(new Set());
   }, [email]);
 
-  const handleSave = async () => {
-    if (!editedEmail) return;
+  const handleSave = async (): Promise<boolean> => {
+    if (!editedEmail) return false;
     setSaving(true);
     setSaveError(null);
     try {
@@ -553,15 +455,17 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       });
       if (!res.ok) {
         setSaveError('Failed to save changes');
-        return;
+        return false;
       }
       const data = await res.json();
       setEmail(data.generation);
       setPreviewKey(k => k + 1);
       setIsDirty(false);
+      return true;
     } catch (err) {
       console.error('Save error:', err);
       setSaveError('An error occurred while saving');
+      return false;
     } finally {
       setSaving(false);
     }
@@ -584,14 +488,25 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       const data = await res.json();
 
       if (!res.ok) {
-        setAiHistory(prev => [...prev, { role: 'ai', content: `Sorry, something went wrong: ${data.error || 'Unknown error'}` }]);
+        if (res.status === 402) {
+          setAiHistory(prev => [...prev, { role: 'ai', content: data.error || "You've used your free AI edit.", isUpgradeError: true }]);
+          setTrialStatus(prev => prev ? { ...prev, aiEditUsed: true } : prev);
+        } else {
+          setAiHistory(prev => [...prev, { role: 'ai', content: `Sorry, something went wrong: ${data.error || 'Unknown error'}` }]);
+        }
         return;
       }
 
       setEditedEmail(data.content_json);
       setLivePreviewHtml(data.html_code);
       setPreviewKey(k => k + 1);
-      setIsDirty(true);
+      // The server already persisted this result (built from our current edits,
+      // not stale DB content — see currentContent above), so there's nothing
+      // left unsaved; showing "Save Changes" here would just be a no-op save.
+      setIsDirty(false);
+      // This request just consumed the free-plan user's one AI edit — reflect
+      // that immediately instead of waiting for a second attempt to 402.
+      setTrialStatus(prev => prev ? { ...prev, aiEditUsed: true } : prev);
       setAiHistory(prev => [...prev, { role: 'ai', content: 'Done! The email has been updated. You can keep refining or close this panel.' }]);
     } catch {
       setAiHistory(prev => [...prev, { role: 'ai', content: 'Network error. Please try again.' }]);
@@ -601,18 +516,21 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     }
   };
 
-  const copyHtml = () => {
-    if (!email?.html_code) return;
-    navigator.clipboard.writeText(email.html_code).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-
   const handleSendTestEmail = async () => {
     if (!sendToEmail.trim() || !email) return;
     setSending(true);
     setSendResult(null);
+    // Test sends always email out the last-saved html_code — with unsaved edits
+    // sitting in editedEmail, the recipient would silently get a stale version
+    // (and, for a free-plan user, that could burn their one free test send on it).
+    if (isDirty) {
+      const saved = await handleSave();
+      if (!saved) {
+        setSendResult({ success: false, message: 'Could not save your changes before sending — please try again.' });
+        setSending(false);
+        return;
+      }
+    }
     try {
       const res = await fetch('/api/send-test-email', {
         method: 'POST',
@@ -621,7 +539,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setSendResult({ success: false, message: data.error || 'Failed to send' });
+        setSendResult({ success: false, message: data.error || 'Failed to send', isUpgradeError: res.status === 402 });
+        if (res.status === 402) setTrialStatus(prev => prev ? { ...prev, testEmailUsed: true } : prev);
       } else {
         setSendResult({ success: true, message: `Sent! Check your inbox at ${sendToEmail.trim()}` });
       }
@@ -681,14 +600,26 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
   const emailContent = email?.content_json as GeneratedEmail | null;
 
+  const verifyIssueCount = useMemo(() => {
+    if (!editedEmail || !defaultColors) return 0;
+    return runEmailChecklist(editedEmail, defaultColors, email?.html_code ?? null)
+      .flatMap((c) => c.checks)
+      .filter((c) => c.status === 'fail').length;
+  }, [editedEmail, defaultColors, email?.html_code]);
+
+  const isFreePlan = trialStatus !== null && trialStatus.planType !== 'pro';
+  const aiEditLocked = isFreePlan && trialStatus!.aiEditUsed;
+  const regenerateLocked = isFreePlan && trialStatus!.blockRegenerateUsed;
+  const testSendLocked = isFreePlan && trialStatus!.testEmailUsed;
+
   // Block type → accent color for left border
   const BLOCK_COLORS: Record<string, string> = {
     hero: '#a855f7', content: '#3b82f6', cta: '#00ffff', announcement: '#f59e0b',
     'image-text': '#10b981', 'feature-list': '#6366f1', testimonial: '#ec4899',
-    testimonials: '#ec4899', stats: '#f97316', gallery: '#14b8a6',
+    testimonials: '#ec4899', stats: '#f97316', gallery: '#14b8a6', 'image-block': '#2dd4bf',
     'pricing-table': '#8b5cf6', coupon: '#ef4444', columns: '#06b6d4',
     'social-links': '#84cc16', header: '#94a3b8', footer: '#64748b',
-    divider: '#475569', quote: '#d946ef', 'code-block': '#22d3ee', video: '#f43f5e',
+    divider: '#475569', quote: '#d946ef', 'code-block': '#22d3ee',
   };
 
   if (loading) {
@@ -700,17 +631,53 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   }
 
   if (error || !email || !emailContent) {
+    const isFailed = email?.status === 'failed';
+    // Only reachable if a prior generate-email request crashed/timed out mid-flight —
+    // generation completes synchronously within one request, so a lingering
+    // 'generating' row means it never finished and never will on its own.
+    const isStuckGenerating = email?.status === 'generating';
+
+    const handleDeleteAndGoBack = async () => {
+      if (!email) return;
+      setDeletingThisEmail(true);
+      try {
+        await fetch(`/api/email-generations/${email.id}`, { method: 'DELETE' });
+      } catch (err) {
+        console.error('Error deleting email:', err);
+      } finally {
+        router.push('/dashboard');
+      }
+    };
+
+    const title = isFailed ? 'Generation failed' : isStuckGenerating ? 'Generation interrupted' : 'Error';
+    const message = isFailed
+      ? (email?.error_message || 'This email failed to generate.')
+      : isStuckGenerating
+      ? "This email got interrupted while generating and never finished. Try generating a new one."
+      : (error || 'Email not found');
+
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="max-w-md w-full p-8 rounded-xl border border-red-500/30 bg-red-500/10 text-center">
-          <h2 className="text-xl font-bold text-red-400 mb-2">Error</h2>
-          <p className="text-red-300 mb-6">{error || 'Email not found'}</p>
-          <button
-            onClick={() => router.push('/dashboard')}
-            className="px-6 py-3 rounded-full bg-white text-black font-medium hover:shadow-xl transition-all"
-          >
-            Back to Dashboard
-          </button>
+          <h2 className="text-xl font-bold text-red-400 mb-2">{title}</h2>
+          <p className="text-red-300 mb-6">{message}</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            {(isFailed || isStuckGenerating) && email && (
+              <button
+                onClick={handleDeleteAndGoBack}
+                disabled={deletingThisEmail}
+                className="px-6 py-3 rounded-full border border-red-500/40 text-red-300 font-medium hover:bg-red-500/10 transition-all disabled:opacity-50"
+              >
+                {deletingThisEmail ? 'Deleting…' : 'Delete this email'}
+              </button>
+            )}
+            <button
+              onClick={() => router.push('/dashboard')}
+              className="px-6 py-3 rounded-full bg-white text-black font-medium hover:shadow-xl transition-all"
+            >
+              Back to Dashboard
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -724,7 +691,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => {
+                  if (isDirty && !window.confirm('You have unsaved changes. Leave without saving?')) return;
+                  router.push('/dashboard');
+                }}
                 className="flex items-center gap-2 text-white/70 hover:text-white transition-colors group"
               >
                 <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -788,35 +758,34 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 )}
               </button>
               <button
+                onClick={() => setShowVerifyModal(true)}
+                disabled={!editedEmail}
+                className="relative px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-40"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Verify
+                {verifyIssueCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                    {verifyIssueCount}
+                  </span>
+                )}
+              </button>
+              <button
                 onClick={() => {
                   setSendResult(null);
                   setSendToEmail('');
                   setShowSendModal(true);
                 }}
-                disabled={!email.html_code}
+                disabled={!email.html_code || testSendLocked}
+                title={testSendLocked ? "You've used your free test send — upgrade to Professional for unlimited use." : undefined}
                 className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-40"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
                 Send Test
-              </button>
-              <button
-                onClick={() => {
-                  setPublishResult(null);
-                  setPublishEsp(null);
-                  setPublishType('template');
-                  setPublishLists([]);
-                  setPublishListId('');
-                  setShowPublishModal(true);
-                }}
-                disabled={!email.html_code}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-semibold transition-all text-sm flex items-center gap-2 disabled:opacity-40 hover:shadow-lg hover:shadow-[#00ffff]/20"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                </svg>
-                Publish
               </button>
               <button
                 onClick={() => {
@@ -896,227 +865,86 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     />
                   </div>
 
-                  {/* Email Style */}
-                  {(() => {
-                    const es = editedEmail.emailStyle ?? {};
-                    const setEs = (patch: Partial<NonNullable<typeof editedEmail.emailStyle>>) => {
-                      setEditedEmail(prev => prev ? { ...prev, emailStyle: { ...(prev.emailStyle ?? {}), ...patch } } : prev);
-                      setIsDirty(true);
-                    };
-                    return (
-                      <div className="p-4 rounded-lg border border-white/10 bg-white/5 space-y-3">
-                        <label className="block text-xs font-medium text-white/40 uppercase tracking-wider">Email Style</label>
-
-                        {/* Outer background */}
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-[11px] text-white/50 flex-1">Outer background</span>
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="color"
-                              value={es.outerBackground ?? '#f9f9f9'}
-                              onChange={e => setEs({ outerBackground: e.target.value })}
-                              className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5"
-                            />
-                            <input
-                              type="text"
-                              value={es.outerBackground ?? ''}
-                              onChange={e => setEs({ outerBackground: e.target.value })}
-                              placeholder="default"
-                              className="w-20 bg-black/30 border border-white/10 rounded px-1.5 py-1 text-xs text-white focus:outline-none focus:border-white/30 placeholder-white/20"
-                            />
-                            {es.outerBackground && (
-                              <button onClick={() => setEs({ outerBackground: undefined })} className="text-white/20 hover:text-white/60 text-xs">✕</button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Container background */}
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-[11px] text-white/50 flex-1">Card background</span>
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="color"
-                              value={es.containerBackground ?? '#ffffff'}
-                              onChange={e => setEs({ containerBackground: e.target.value })}
-                              className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5"
-                            />
-                            <input
-                              type="text"
-                              value={es.containerBackground ?? ''}
-                              onChange={e => setEs({ containerBackground: e.target.value })}
-                              placeholder="default"
-                              className="w-20 bg-black/30 border border-white/10 rounded px-1.5 py-1 text-xs text-white focus:outline-none focus:border-white/30 placeholder-white/20"
-                            />
-                            {es.containerBackground && (
-                              <button onClick={() => setEs({ containerBackground: undefined })} className="text-white/20 hover:text-white/60 text-xs">✕</button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Container border color */}
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-[11px] text-white/50 flex-1">Border color</span>
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="color"
-                              value={es.containerBorderColor || '#e8e8e8'}
-                              onChange={e => setEs({ containerBorderColor: e.target.value })}
-                              className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5"
-                            />
-                            <input
-                              type="text"
-                              value={es.containerBorderColor ?? ''}
-                              onChange={e => setEs({ containerBorderColor: e.target.value })}
-                              placeholder="default"
-                              className="w-20 bg-black/30 border border-white/10 rounded px-1.5 py-1 text-xs text-white focus:outline-none focus:border-white/30 placeholder-white/20"
-                            />
-                            {es.containerBorderColor !== undefined && (
-                              <button onClick={() => setEs({ containerBorderColor: undefined })} className="text-white/20 hover:text-white/60 text-xs">✕</button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Border width — only shown when a border color is set */}
-                        {es.containerBorderColor && (
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-[11px] text-white/50 flex-1">Border width</span>
-                            <select
-                              value={es.containerBorderWidth ?? 1}
-                              onChange={e => setEs({ containerBorderWidth: Number(e.target.value) })}
-                              className="w-24 bg-black/30 border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-white/30"
-                            >
-                              {[1, 2, 3, 4, 6].map(w => <option key={w} value={w}>{w}px</option>)}
-                            </select>
-                          </div>
-                        )}
-
-                        {/* Accent bar color */}
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-[11px] text-white/50 flex-1">Top accent bar</span>
-                          <div className="flex items-center gap-1.5">
-                            <input
-                              type="color"
-                              value={es.accentBarColor || '#5c5cf0'}
-                              onChange={e => setEs({ accentBarColor: e.target.value })}
-                              className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5"
-                            />
-                            <input
-                              type="text"
-                              value={es.accentBarColor ?? ''}
-                              onChange={e => setEs({ accentBarColor: e.target.value })}
-                              placeholder="brand primary"
-                              className="w-20 bg-black/30 border border-white/10 rounded px-1.5 py-1 text-xs text-white focus:outline-none focus:border-white/30 placeholder-white/20"
-                            />
-                            {es.accentBarColor !== undefined && (
-                              <button onClick={() => setEs({ accentBarColor: undefined })} className="text-white/20 hover:text-white/60 text-xs">✕</button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Hide accent bar toggle */}
-                        <label className="flex items-center gap-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={es.accentBarColor === ''}
-                            onChange={e => setEs({ accentBarColor: e.target.checked ? '' : undefined })}
-                            className="w-3.5 h-3.5 rounded accent-white/60"
-                          />
-                          <span className="text-[11px] text-white/40">Hide top accent bar</span>
-                        </label>
-
-                        {Object.keys(es).length > 0 && (
-                          <button
-                            onClick={() => {
-                              setEditedEmail(prev => prev ? { ...prev, emailStyle: undefined } : prev);
-                              setIsDirty(true);
-                            }}
-                            className="text-[11px] text-white/30 hover:text-white/60 transition-colors"
-                          >
-                            ✕ reset all to style defaults
-                          </button>
-                        )}
-                      </div>
-                    );
-                  })()}
-
                   {/* Font Picker */}
                   {(() => {
+                    const fontNames = Object.keys(FONT_REGISTRY);
                     const currentHeading = editedEmail.fontPairing?.heading ?? '';
                     const currentBody    = editedEmail.fontPairing?.body    ?? '';
                     const setPairing = (heading: string, body: string) => {
                       setEditedEmail(prev => prev ? { ...prev, fontPairing: { heading, body }, fontVariant: undefined } : prev);
                       setIsDirty(true);
                     };
-                    // Resolve the actual default fonts from the style variant
-                    const styleKey = (email?.design_style || 'minimalist') as string;
-                    const styleVars = fontVariants[styleKey] ?? fontVariants.minimalist;
-                    const activeVariant = styleVars[editedEmail.fontVariant ?? 0] ?? styleVars[0];
-                    const extractFont = (family: string) => /'([^']+)'/.exec(family)?.[1] ?? family.split(',')[0].trim();
-                    const defaultHeadingName = extractFont(activeVariant.headingFontFamily);
-                    const defaultBodyName    = extractFont(activeVariant.fontFamily);
+
+                    const FontDropdown = ({
+                      label, value, onSelect, isOpen, setIsOpen,
+                    }: {
+                      label: string;
+                      value: string;
+                      onSelect: (name: string) => void;
+                      isOpen: boolean;
+                      setIsOpen: (open: boolean) => void;
+                    }) => (
+                      <div>
+                        <span className="block text-[11px] text-white/40 mb-1">{label}</span>
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setIsOpen(!isOpen)}
+                            className="w-full flex items-center justify-between bg-black/30 border border-white/10 rounded px-2 py-1.5 text-xs text-white hover:border-white/30 focus:outline-none focus:border-white/30"
+                          >
+                            <span className="truncate" style={{ fontFamily: value ? fontFamilyCSS(value) : undefined }}>
+                              {value || '— style default —'}
+                            </span>
+                            <svg className={`w-3.5 h-3.5 text-white/40 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </button>
+                          {isOpen && (
+                            <>
+                              <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+                              <div className="absolute left-0 top-full mt-1 w-full max-h-[260px] bg-gradient-to-b from-black via-black to-black/95 border border-white/20 rounded-lg shadow-2xl shadow-black/50 overflow-y-auto z-20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 backdrop-blur-xl">
+                                <button
+                                  type="button"
+                                  onClick={() => { onSelect(''); setIsOpen(false); }}
+                                  className={`w-full px-3 py-2 text-left text-xs hover:bg-white/10 transition-colors border-b border-white/5 ${value === '' ? 'text-[#00ffff] bg-[#00ffff]/10' : 'text-white/50'}`}
+                                >
+                                  — style default —
+                                </button>
+                                {fontNames.map(name => (
+                                  <button
+                                    key={name}
+                                    type="button"
+                                    onClick={() => { onSelect(name); setIsOpen(false); }}
+                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${value === name ? 'text-[#00ffff] bg-[#00ffff]/10' : 'text-white'}`}
+                                    style={{ fontFamily: fontFamilyCSS(name) }}
+                                  >
+                                    {name}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+
                     return (
                       <div className="p-4 rounded-lg border border-white/10 bg-white/5 space-y-3">
                         <label className="block text-xs font-medium text-white/40 uppercase tracking-wider">Fonts</label>
-                        <div>
-                          <span className="block text-[11px] text-white/40 mb-1">Heading</span>
-                          <FontPicker
-                            value={currentHeading}
-                            onChange={v => setPairing(v, currentBody || v)}
-                            placeholder={`— ${defaultHeadingName} (default) —`}
-                          />
-                        </div>
-                        <div>
-                          <span className="block text-[11px] text-white/40 mb-1">Body</span>
-                          <FontPicker
-                            value={currentBody}
-                            onChange={v => setPairing(currentHeading || v, v)}
-                            placeholder={`— ${defaultBodyName} (default) —`}
-                          />
-                        </div>
-
-                        {/* Font preview — web font vs fallback */}
-                        {(() => {
-                          const hName = currentHeading || defaultHeadingName;
-                          const bName = currentBody || defaultBodyName;
-                          const hDef = FONT_REGISTRY[hName];
-                          const bDef = FONT_REGISTRY[bName];
-                          const hWeb = hDef ? `${hDef.css}, ${hDef.fallback}` : hName;
-                          const bWeb = bDef ? `${bDef.css}, ${bDef.fallback}` : bName;
-                          const hFallback = hDef?.fallback ?? 'Georgia, serif';
-                          const bFallback = bDef?.fallback ?? 'Arial, sans-serif';
-                          return (
-                            <div className="rounded-lg border border-white/8 overflow-hidden text-[11px]">
-                              {/* Column headers */}
-                              <div className="grid grid-cols-2 divide-x divide-white/8 border-b border-white/8 bg-white/[0.03]">
-                                <span className="px-3 py-1.5 text-white/30 tracking-wider uppercase">Web font</span>
-                                <span className="px-3 py-1.5 text-white/30 tracking-wider uppercase">Fallback</span>
-                              </div>
-                              {/* Heading row */}
-                              <div className="grid grid-cols-2 divide-x divide-white/8 border-b border-white/8">
-                                <div className="px-3 py-3 bg-black/20">
-                                  <p className="text-[10px] text-white/20 mb-1">Heading</p>
-                                  <p className="text-white/80 text-base leading-tight" style={{ fontFamily: hWeb }}>Aa Bb Cc 123</p>
-                                </div>
-                                <div className="px-3 py-3">
-                                  <p className="text-[10px] text-white/20 mb-1">Heading</p>
-                                  <p className="text-white/50 text-base leading-tight" style={{ fontFamily: hFallback }}>{hFallback.split(',')[0].replace(/['"]/g, '')}</p>
-                                </div>
-                              </div>
-                              {/* Body row */}
-                              <div className="grid grid-cols-2 divide-x divide-white/8">
-                                <div className="px-3 py-3 bg-black/20">
-                                  <p className="text-[10px] text-white/20 mb-1">Body</p>
-                                  <p className="text-white/80 text-sm leading-snug" style={{ fontFamily: bWeb }}>The quick brown fox</p>
-                                </div>
-                                <div className="px-3 py-3">
-                                  <p className="text-[10px] text-white/20 mb-1">Body</p>
-                                  <p className="text-white/50 text-sm leading-snug" style={{ fontFamily: bFallback }}>{bFallback.split(',')[0].replace(/['"]/g, '')}</p>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })()}
-
+                        <FontDropdown
+                          label="Heading"
+                          value={currentHeading}
+                          onSelect={name => setPairing(name, currentBody || name)}
+                          isOpen={headingFontDropdownOpen}
+                          setIsOpen={setHeadingFontDropdownOpen}
+                        />
+                        <FontDropdown
+                          label="Body"
+                          value={currentBody}
+                          onSelect={name => setPairing(currentHeading || name, name)}
+                          isOpen={bodyFontDropdownOpen}
+                          setIsOpen={setBodyFontDropdownOpen}
+                        />
                         {(currentHeading || currentBody) && (
                           <button
                             onClick={() => {
@@ -1222,7 +1050,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 </div>
                               )}
                               <button
-                                onClick={() => deleteSection(index)}
+                                onClick={() => { if (window.confirm('Delete this section?')) deleteSection(index); }}
                                 className="p-1.5 rounded text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
                                 title="Delete section"
                               >
@@ -1261,9 +1089,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 <div className="flex flex-col gap-1.5">
                                   <button
                                     data-ai-run
-                                    disabled={regeneratingSection !== null}
+                                    disabled={regeneratingSection !== null || regenerateLocked}
+                                    title={regenerateLocked ? "You've used your free block regeneration — upgrade to Professional for unlimited use." : undefined}
                                     onClick={async () => {
-                                      if (!email || regeneratingSection !== null) return;
+                                      if (!email || regeneratingSection !== null || regenerateLocked) return;
                                       setBlockError(null);
                                       setRegeneratingSection(index);
                                       try {
@@ -1274,11 +1103,24 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                             emailGenerationId: email.id,
                                             sectionIndex: index,
                                             designStyle: email.design_style,
+                                            currentContent: editedEmail,
                                           }),
                                         });
                                         const data = await res.json();
-                                        if (!res.ok) throw new Error(data.error || 'Failed to regenerate');
+                                        if (!res.ok) {
+                                          setBlockError({ index, message: data.error || 'Failed to regenerate', isUpgradeError: res.status === 402 });
+                                          if (res.status === 402) setTrialStatus(prev => prev ? { ...prev, blockRegenerateUsed: true } : prev);
+                                          return;
+                                        }
                                         updateSection(index, data.section);
+                                        // updateSection marks the email dirty (correct for manual
+                                        // edits), but the server already persisted this exact merged
+                                        // result (see currentContent above) — override back to clean.
+                                        setIsDirty(false);
+                                        // This request just consumed the free-plan user's one block
+                                        // regeneration — reflect that immediately instead of waiting
+                                        // for a second attempt to 402.
+                                        setTrialStatus(prev => prev ? { ...prev, blockRegenerateUsed: true } : prev);
                                         if (data.html_code) {
                                           setLivePreviewHtml(data.html_code);
                                           setPreviewKey(k => k + 1);
@@ -1304,7 +1146,23 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 </div>
                               </div>
                               {blockError?.index === index && (
-                                <p className="mt-1.5 text-[11px] text-red-400">{blockError.message}</p>
+                                <p className="mt-1.5 text-[11px] text-red-400 leading-relaxed">
+                                  {blockError.message}
+                                  {blockError.isUpgradeError && (
+                                    <>
+                                      {' '}
+                                      <Link href="/#pricing" className="underline font-semibold text-red-300 hover:text-white transition-colors">
+                                        Upgrade to Professional →
+                                      </Link>
+                                    </>
+                                  )}
+                                </p>
+                              )}
+                              {!blockError && regenerateLocked && (
+                                <p className="mt-1.5 text-[11px] text-white/30">
+                                  Free plan: block regeneration already used —{' '}
+                                  <Link href="/#pricing" className="underline hover:text-white/60 transition-colors">upgrade</Link> for unlimited.
+                                </p>
                               )}
                             </div>
                           )}
@@ -1342,7 +1200,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Opening statement or key summary…" />
                                 </div>
                               )}
-                              {section.text !== undefined && (
+                              {section.text !== undefined && !['footer', 'divider', 'social-links'].includes(section.type) && (
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Content</label>
                                   <textarea value={section.text || ''} onChange={e => updateSection(index, { text: e.target.value })} rows={3}
@@ -1417,6 +1275,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       <p className="text-[11px] text-white/25 mt-1">Regenerate to fetch a new photo, or paste a URL above.</p>
                                     </div>
                                   )}
+                                  {section.backgroundImageUrl && (
+                                    <div className="mt-2">
+                                      <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Overlay <span className="normal-case text-white/20 font-normal">(CSS color/rgba over the photo)</span></label>
+                                      <input type="text" value={section.backgroundImageOverlay || ''} onChange={e => updateSection(index, { backgroundImageOverlay: e.target.value || undefined })}
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white font-mono text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="default dark gradient — e.g. rgba(0,0,0,0.55)" />
+                                    </div>
+                                  )}
                                   {!section.backgroundImageUrl && (
                                     <div className="mt-2">
                                       <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Background Keyword <span className="normal-case text-white/20 font-normal">(auto-fetch)</span></label>
@@ -1430,17 +1295,31 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
                               {/* ── image-text: position toggle ── */}
                               {section.type === 'image-text' && (
-                                <div>
-                                  <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Image Position</label>
-                                  <div className="flex gap-2">
-                                    {(['left', 'right'] as const).map(pos => (
-                                      <button key={pos} onClick={() => updateSection(index, { imagePosition: pos })}
-                                        className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${section.imagePosition === pos ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
-                                        {pos.charAt(0).toUpperCase() + pos.slice(1)}
-                                      </button>
-                                    ))}
+                                <>
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Image Position</label>
+                                    <div className="flex gap-2">
+                                      {(['left', 'right'] as const).map(pos => (
+                                        <button key={pos} onClick={() => updateSection(index, { imagePosition: pos })}
+                                          className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${section.imagePosition === pos ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                          {pos.charAt(0).toUpperCase() + pos.slice(1)}
+                                        </button>
+                                      ))}
+                                    </div>
                                   </div>
-                                </div>
+                                  <div className="grid grid-cols-2 gap-3">
+                                    <div>
+                                      <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Byline <span className="normal-case text-white/20 font-normal">(optional)</span></label>
+                                      <input type="text" value={section.author || ''} onChange={e => updateSection(index, { author: e.target.value })}
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Name" />
+                                    </div>
+                                    <div>
+                                      <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Byline Title</label>
+                                      <input type="text" value={section.authorTitle || ''} onChange={e => updateSection(index, { authorTitle: e.target.value })}
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Title, Company" />
+                                    </div>
+                                  </div>
+                                </>
                               )}
 
                               {/* ── code-block ── */}
@@ -1474,6 +1353,37 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Tagline</label>
                                     <input type="text" value={section.tagline || ''} onChange={e => updateSection(index, { tagline: e.target.value })}
                                       className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Optional tagline…" />
+                                    <p className="text-[11px] text-white/25 mt-1">Hidden if nav links are added below.</p>
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center justify-between mb-1.5">
+                                      <label className="block text-xs text-white/40 uppercase tracking-wider">Nav Links</label>
+                                      <button
+                                        onClick={() => updateSection(index, { columns: [...(section.columns || []), { heading: 'Link', buttonUrl: 'https://' }] })}
+                                        className="text-[11px] text-[#00ffff]/70 hover:text-[#00ffff] transition-colors"
+                                      >
+                                        + Add link
+                                      </button>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {(section.columns || []).map((nav, ni) => (
+                                        <div key={ni} className="flex items-center gap-2">
+                                          <input type="text" value={nav.heading || ''} onChange={e => {
+                                            const next = [...(section.columns || [])];
+                                            next[ni] = { ...next[ni], heading: e.target.value };
+                                            updateSection(index, { columns: next });
+                                          }} className="w-24 flex-shrink-0 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Label" />
+                                          <input type="text" value={nav.buttonUrl || ''} onChange={e => {
+                                            const next = [...(section.columns || [])];
+                                            next[ni] = { ...next[ni], buttonUrl: e.target.value };
+                                            updateSection(index, { columns: next });
+                                          }} className="flex-1 min-w-0 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                          <button onClick={() => updateSection(index, { columns: (section.columns || []).filter((_, i) => i !== ni) })} className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                          </button>
+                                        </div>
+                                      ))}
+                                    </div>
                                   </div>
                                 </>
                               )}
@@ -1505,6 +1415,55 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     onRemove={section.authorImage ? () => updateSection(index, { authorImage: '' }) : undefined}
                                   />
                                 </>
+                              )}
+
+                              {/* ── testimonials (plural, 2-per-row grid) ── */}
+                              {section.type === 'testimonials' && (
+                                <div className="space-y-2">
+                                  <div>
+                                    <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Subheading</label>
+                                    <input type="text" value={section.subheading || ''} onChange={e => updateSection(index, { subheading: e.target.value })}
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Optional subheading…" />
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-xs text-white/40 uppercase tracking-wider">Quotes</label>
+                                    <button onClick={() => updateSection(index, { testimonials: [...(section.testimonials || []), { quote: '', author: '', rating: 5 }] })}
+                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                      Add quote
+                                    </button>
+                                  </div>
+                                  {(section.testimonials || []).map((t, ti) => (
+                                    <div key={ti} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1.5">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[10px] text-white/30 uppercase tracking-wider">{ti + 1}</span>
+                                        <button onClick={() => updateSection(index, { testimonials: (section.testimonials || []).filter((_, i) => i !== ti) })}
+                                          className="text-white/30 hover:text-red-400 transition-colors">
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                      </div>
+                                      <textarea value={t.quote} onChange={e => { const arr = (section.testimonials || []).map((x, i) => i === ti ? { ...x, quote: e.target.value } : x); updateSection(index, { testimonials: arr }); }} rows={2}
+                                        className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Quote…" />
+                                      <div className="grid grid-cols-2 gap-1.5">
+                                        <input type="text" value={t.author} onChange={e => { const arr = (section.testimonials || []).map((x, i) => i === ti ? { ...x, author: e.target.value } : x); updateSection(index, { testimonials: arr }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Author name" />
+                                        <input type="text" value={t.authorTitle || ''} onChange={e => { const arr = (section.testimonials || []).map((x, i) => i === ti ? { ...x, authorTitle: e.target.value } : x); updateSection(index, { testimonials: arr }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Title, Company" />
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <label className="text-[10px] text-white/30 uppercase tracking-wider flex-shrink-0">Rating</label>
+                                        <input type="number" min={1} max={5} value={t.rating ?? 5} onChange={e => { const r = Math.min(5, Math.max(1, parseInt(e.target.value, 10) || 5)); const arr = (section.testimonials || []).map((x, i) => i === ti ? { ...x, rating: r } : x); updateSection(index, { testimonials: arr }); }}
+                                          className="w-14 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors" />
+                                      </div>
+                                      <ImageUploadInput
+                                        label="Author Image URL"
+                                        value={t.authorImage || ''}
+                                        onChange={url => { const arr = (section.testimonials || []).map((x, i) => i === ti ? { ...x, authorImage: url } : x); updateSection(index, { testimonials: arr }); }}
+                                        onRemove={t.authorImage ? () => { const arr = (section.testimonials || []).map((x, i) => i === ti ? { ...x, authorImage: '' } : x); updateSection(index, { testimonials: arr }); } : undefined}
+                                      />
+                                    </div>
+                                  ))}
+                                </div>
                               )}
 
                               {/* ── quote: author attribution ── */}
@@ -1552,8 +1511,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   </div>
                                   {(section.stats || []).map((stat, si) => (
                                     <div key={si} className="flex gap-2 items-center">
+                                      <IconPicker
+                                        iconName={stat.iconName}
+                                        icon={stat.icon}
+                                        onChange={upd => { const s = (section.stats || []).map((x, i) => i === si ? { ...x, ...upd } : x); updateSection(index, { stats: s }); }}
+                                      />
                                       <input type="text" value={stat.value} onChange={e => { const s = (section.stats || []).map((x, i) => i === si ? { ...x, value: e.target.value } : x); updateSection(index, { stats: s }); }}
-                                        className="w-1/3 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="99%" />
+                                        className="w-1/4 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="99%" />
                                       <input type="text" value={stat.label} onChange={e => { const s = (section.stats || []).map((x, i) => i === si ? { ...x, label: e.target.value } : x); updateSection(index, { stats: s }); }}
                                         className="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Label" />
                                       <button onClick={() => updateSection(index, { stats: (section.stats || []).filter((_, i) => i !== si) })}
@@ -1605,6 +1569,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   {(section.features || []).map((feat, fi) => (
                                     <div key={fi} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1.5">
                                       <div className="flex items-center gap-2">
+                                        <IconPicker
+                                          iconName={feat.iconName}
+                                          icon={feat.icon}
+                                          onChange={upd => { const f = (section.features || []).map((x, i) => i === fi ? { ...x, ...upd } : x); updateSection(index, { features: f }); }}
+                                        />
                                         <input type="text" value={feat.title} onChange={e => { const f = (section.features || []).map((x, i) => i === fi ? { ...x, title: e.target.value } : x); updateSection(index, { features: f }); }}
                                           className="flex-1 px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Feature title" />
                                         <button onClick={() => updateSection(index, { features: (section.features || []).filter((_, i) => i !== fi) })}
@@ -1659,6 +1628,49 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 </div>
                               )}
 
+                              {/* ── image-block ── */}
+                              {section.type === 'image-block' && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <label className="text-xs text-white/40 uppercase tracking-wider">Images</label>
+                                    {(section.images || []).length < 4 && (
+                                      <button onClick={() => updateSection(index, { images: [...(section.images || []), { url: '', alt: '' }] })}
+                                        className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
+                                        Add image
+                                      </button>
+                                    )}
+                                  </div>
+                                  <p className="text-[10px] text-white/30">1 image = full width &middot; 2 = side by side &middot; 4 = 2&times;2 grid. No padding between images.</p>
+                                  {(section.images || []).map((img, ii) => (
+                                    <div key={ii} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1.5">
+                                      <div className="flex gap-2 items-center">
+                                        <span className="text-[10px] text-white/30 uppercase tracking-wider w-5 flex-shrink-0">{ii + 1}</span>
+                                        <button onClick={() => updateSection(index, { images: (section.images || []).filter((_, i) => i !== ii) })}
+                                          className="ml-auto text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
+                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                      </div>
+                                      <ImageUploadInput
+                                        label=""
+                                        value={img.url}
+                                        onChange={url => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, url } : x); updateSection(index, { images: imgs }); }}
+                                        compact
+                                        placeholder="Image URL"
+                                      />
+                                      <div className="grid grid-cols-2 gap-1.5">
+                                        <input type="text" value={img.alt} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, alt: e.target.value } : x); updateSection(index, { images: imgs }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Alt text" />
+                                        <input type="text" value={img.keyword || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, keyword: e.target.value } : x); updateSection(index, { images: imgs }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Pexels keyword" />
+                                      </div>
+                                    </div>
+                                  ))}
+                                  <input type="text" value={section.subheading || ''} onChange={e => updateSection(index, { subheading: e.target.value })}
+                                    className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Caption below the block (optional)" />
+                                </div>
+                              )}
+
                               {/* ── pricing-table ── */}
                               {section.type === 'pricing-table' && (
                                 <div className="space-y-3">
@@ -1693,8 +1705,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         <input type="text" value={plan.period || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, period: e.target.value } : x); updateSection(index, { plans: p }); }}
                                           className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="/mo" />
                                       </div>
-                                      <input type="text" value={plan.buttonText || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, buttonText: e.target.value } : x); updateSection(index, { plans: p }); }}
-                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button text" />
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <input type="text" value={plan.buttonText || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, buttonText: e.target.value } : x); updateSection(index, { plans: p }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button text" />
+                                        <input type="text" value={plan.buttonUrl || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, buttonUrl: e.target.value } : x); updateSection(index, { plans: p }); }}
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button URL" />
+                                      </div>
                                       <div className="space-y-1">
                                         <div className="flex items-center justify-between">
                                           <span className="text-[11px] text-white/30">Features</span>
@@ -1737,8 +1753,15 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                         </button>
                                       </div>
-                                      <input type="text" value={col.heading || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, heading: e.target.value } : x); updateSection(index, { columns: c }); }}
-                                        className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Column heading" />
+                                      <div className="flex items-center gap-2">
+                                        <IconPicker
+                                          iconName={col.iconName}
+                                          icon={col.icon}
+                                          onChange={upd => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, ...upd } : x); updateSection(index, { columns: c }); }}
+                                        />
+                                        <input type="text" value={col.heading || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, heading: e.target.value } : x); updateSection(index, { columns: c }); }}
+                                          className="flex-1 px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Column heading" />
+                                      </div>
                                       <textarea value={col.text || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, text: e.target.value } : x); updateSection(index, { columns: c }); }} rows={2}
                                         className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white/70 text-xs focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Column text…" />
                                       <ImageUploadInput
@@ -1792,24 +1815,54 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                           placeholder="Upload or paste icon URL"
                                         />
                                       </div>
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[10px] text-white/30 uppercase tracking-wider w-10 flex-shrink-0">Fallback</span>
+                                        {['🐦','📷','💼','👍','▶️','🎵','📌','💬'].map(emoji => (
+                                          <button
+                                            key={emoji}
+                                            type="button"
+                                            onClick={() => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, icon: emoji } : x); updateSection(index, { socialLinks: sl }); }}
+                                            className={`w-6 h-6 rounded flex items-center justify-center text-xs hover:bg-white/10 transition-colors ${link.icon === emoji ? 'bg-[#00ffff]/15 border border-[#00ffff]/50' : 'border border-transparent'}`}
+                                          >
+                                            {emoji}
+                                          </button>
+                                        ))}
+                                        {link.icon && (
+                                          <button type="button" onClick={() => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, icon: undefined } : x); updateSection(index, { socialLinks: sl }); }}
+                                            className="text-[10px] text-white/30 hover:text-red-400 transition-colors ml-0.5">
+                                            Clear
+                                          </button>
+                                        )}
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
                               )}
 
-                              {/* ── divider: nothing to edit ── */}
+                              {/* ── divider: optional centered label ── */}
                               {section.type === 'divider' && (
-                                <p className="text-xs text-white/30 italic">No editable content for a divider.</p>
+                                <div>
+                                  <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Label <span className="normal-case text-white/20 font-normal">(optional, shown centered under the rule)</span></label>
+                                  <input type="text" value={section.text || ''} onChange={e => updateSection(index, { text: e.target.value })}
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="e.g. OR, AND MORE…" />
+                                </div>
                               )}
 
                               {/* ── footer ── */}
                               {section.type === 'footer' && (
                                 <>
+                                  <ImageUploadInput
+                                    label="Logo URL (optional)"
+                                    value={section.logoUrl || ''}
+                                    onChange={url => updateSection(index, { logoUrl: url })}
+                                    onRemove={section.logoUrl ? () => updateSection(index, { logoUrl: '' }) : undefined}
+                                  />
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Footer Text</label>
                                     <textarea value={section.text || ''} onChange={e => updateSection(index, { text: e.target.value })} rows={2}
                                       className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Company Name · 123 Street, City" />
                                   </div>
+                                  {/* Extra link Button Text/URL fields are rendered by the common block below */}
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Unsubscribe URL</label>
                                     <input type="text" value={section.unsubscribeUrl || ''} onChange={e => updateSection(index, { unsubscribeUrl: e.target.value })}
@@ -1843,6 +1896,29 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                           placeholder="default"
                                         />
                                       </div>
+                                      <div className="mt-1.5">
+                                        <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Gradient <span className="normal-case text-white/20">(overrides background)</span></label>
+                                        <div className="flex flex-wrap gap-1.5">
+                                          <button
+                                            type="button"
+                                            onClick={() => updateSection(index, { backgroundGradient: undefined })}
+                                            title="None"
+                                            className={`w-7 h-7 rounded border flex items-center justify-center bg-white/5 transition-colors ${!section.backgroundGradient ? 'border-[#00ffff]' : 'border-white/15 hover:border-white/30'}`}
+                                          >
+                                            <svg className="w-3 h-3 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                          </button>
+                                          {GRADIENT_PRESETS.map(preset => (
+                                            <button
+                                              key={preset.label}
+                                              type="button"
+                                              onClick={() => updateSection(index, { backgroundGradient: preset.css })}
+                                              title={preset.label}
+                                              style={{ background: preset.css }}
+                                              className={`w-7 h-7 rounded border transition-transform hover:scale-110 ${section.backgroundGradient === preset.css ? 'border-[#00ffff] ring-1 ring-[#00ffff]' : 'border-white/15'}`}
+                                            />
+                                          ))}
+                                        </div>
+                                      </div>
                                     </div>
                                     <div>
                                       <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Text</label>
@@ -1862,9 +1938,9 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         />
                                       </div>
                                     </div>
-                                    {section.buttonText !== undefined || ['cta','hero','announcement'].includes(section.type) ? (
+                                    {!['gallery', 'image-block', 'code-block'].includes(section.type) ? (
                                       <div>
-                                        <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Button</label>
+                                        <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Accent</label>
                                         <div className="flex items-center gap-1.5">
                                           <input
                                             type="color"
@@ -1885,9 +1961,9 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       <div />
                                     )}
                                   </div>
-                                  {(section.backgroundColor || section.textColor || section.buttonColor) && (
+                                  {(section.backgroundColor || section.textColor || section.buttonColor || section.backgroundGradient) && (
                                     <button
-                                      onClick={() => updateSection(index, { backgroundColor: undefined, textColor: undefined, buttonColor: undefined })}
+                                      onClick={() => updateSection(index, { backgroundColor: undefined, textColor: undefined, buttonColor: undefined, backgroundGradient: undefined })}
                                       className="mt-2 text-[11px] text-white/30 hover:text-red-400 transition-colors"
                                     >
                                       Reset to defaults
@@ -2020,6 +2096,14 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     {sendResult && (
                       <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${sendResult.success ? 'bg-[#00ff80]/10 border border-[#00ff80]/30 text-[#00ff80]' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
                         {sendResult.message}
+                        {sendResult.isUpgradeError && (
+                          <>
+                            {' '}
+                            <Link href="/#pricing" className="underline font-semibold text-red-300 hover:text-white transition-colors">
+                              Upgrade to Professional →
+                            </Link>
+                          </>
+                        )}
                       </div>
                     )}
 
@@ -2069,204 +2153,14 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               </>
             )}
 
-            {/* Publish to ESP Modal */}
-            {showPublishModal && (
-              <>
-                <div
-                  className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10 animate-in fade-in duration-200"
-                  onClick={() => { setShowPublishModal(false); setPublishResult(null); setPublishEsp(null); }}
-                />
-                <div className="absolute inset-0 z-20 flex items-start justify-center p-6 pt-16 animate-in fade-in zoom-in-95 duration-200 overflow-y-auto">
-                  <div className="w-full max-w-lg bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl">
-                    {/* Header */}
-                    <div className="flex items-center justify-between mb-5">
-                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0">
-                          <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                          </svg>
-                        </div>
-                        Publish to ESP
-                      </h3>
-                      <button
-                        onClick={() => { setShowPublishModal(false); setPublishResult(null); setPublishEsp(null); }}
-                        className="text-white/40 hover:text-white transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                      </button>
-                    </div>
-
-                    {/* Result banner */}
-                    {publishResult && (
-                      <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium flex items-center justify-between gap-3 ${publishResult.success ? 'bg-[#00ff80]/10 border border-[#00ff80]/30 text-[#00ff80]' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
-                        <span>{publishResult.message}</span>
-                        {publishResult.url && (
-                          <a href={publishResult.url} target="_blank" rel="noopener noreferrer" className="underline whitespace-nowrap text-xs">Open in ESP →</a>
-                        )}
-                      </div>
-                    )}
-
-                    {/* ESP picker */}
-                    {!publishEsp ? (
-                      <div className="space-y-3">
-                        <p className="text-sm text-white/50 mb-3">Choose a connected ESP to push this email:</p>
-                        {ESP_SLUGS.map(slug => {
-                          const meta = ESP_META[slug];
-                          const conn = espConnections[slug];
-                          return (
-                            <button
-                              key={slug}
-                              disabled={!conn}
-                              onClick={() => { setPublishEsp(slug); if (slug === 'brevo') { const senderEmail = espConnections[slug]?.extra_metadata?.sender_email; if (senderEmail) setPublishFromEmail(senderEmail); } }}
-                              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all ${conn ? 'border-white/15 hover:border-[#00ffff]/40 hover:bg-white/5 cursor-pointer' : 'border-white/5 opacity-40 cursor-not-allowed'}`}
-                            >
-                              <div className="w-9 h-9 rounded-lg bg-white/10 flex items-center justify-center flex-shrink-0 text-xs font-bold text-white/60">
-                                {meta.name.slice(0, 2).toUpperCase()}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-white">{meta.name}</p>
-                                <p className="text-xs text-white/40 truncate">{conn ? conn.account_name : 'Not connected — go to Settings → Integrations'}</p>
-                              </div>
-                              {conn && (
-                                <svg className="w-4 h-4 text-white/30 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {/* Back */}
-                        <button onClick={() => { setPublishEsp(null); setPublishResult(null); setPublishLists([]); setPublishListId(''); }} className="flex items-center gap-1 text-xs text-white/40 hover:text-white transition-colors">
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                          Back
-                        </button>
-
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center text-xs font-bold text-white/60">
-                            {ESP_META[publishEsp].name.slice(0, 2).toUpperCase()}
-                          </div>
-                          <span className="text-sm font-semibold text-white">Push to {ESP_META[publishEsp].name}</span>
-                        </div>
-
-                        {/* Push type */}
-                        <div>
-                          <label className="block text-xs font-medium text-white/50 mb-2">What to create</label>
-                          <div className="grid grid-cols-2 gap-2">
-                            {(['template', 'campaign_draft'] as const).map(type => (
-                              <button
-                                key={type}
-                                onClick={async () => {
-                                  setPublishType(type);
-                                  if (type === 'campaign_draft' && publishLists.length === 0) {
-                                    try {
-                                      const res = await fetch(`/api/esp/lists/${publishEsp}`);
-                                      if (res.ok) {
-                                        const data = await res.json();
-                                        setPublishLists(data.lists ?? []);
-                                        if (data.lists?.length > 0) setPublishListId(data.lists[0].id);
-                                      }
-                                    } catch { /* non-fatal */ }
-                                  }
-                                }}
-                                className={`px-4 py-2.5 rounded-xl border text-sm font-medium transition-all ${publishType === type ? 'border-[#00ffff] bg-[#00ffff]/10 text-[#00ffff]' : 'border-white/10 text-white/60 hover:border-white/20 hover:text-white'}`}
-                              >
-                                {type === 'template' ? 'Template' : 'Campaign Draft'}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Sender fields — always shown (Brevo requires verified sender even for templates) */}
-                        {(publishType === 'campaign_draft' || publishEsp === 'brevo') && (
-                          <>
-                            {publishLists.length > 0 && (
-                              <div>
-                                <label className="block text-xs font-medium text-white/50 mb-1.5">Audience / List</label>
-                                <select
-                                  value={publishListId}
-                                  onChange={e => setPublishListId(e.target.value)}
-                                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
-                                >
-                                  <option value="">No list (unsegmented)</option>
-                                  {publishLists.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
-                                </select>
-                              </div>
-                            )}
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="block text-xs font-medium text-white/50 mb-1.5">From name</label>
-                                <input
-                                  type="text"
-                                  value={publishFromName}
-                                  onChange={e => setPublishFromName(e.target.value)}
-                                  placeholder="Your Brand"
-                                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-white/50 mb-1.5">From email</label>
-                                <input
-                                  type="email"
-                                  value={publishFromEmail}
-                                  onChange={e => setPublishFromEmail(e.target.value)}
-                                  placeholder="hello@brand.com"
-                                  className="w-full px-3 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
-                                />
-                              </div>
-                            </div>
-                          </>
-                        )}
-
-                        {/* Push button */}
-                        <button
-                          onClick={async () => {
-                            if (!email || !publishEsp) return;
-                            setPublishing(true);
-                            setPublishResult(null);
-                            try {
-                              const res = await fetch('/api/esp/push', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                  emailGenerationId: email.id,
-                                  espSlug: publishEsp,
-                                  pushType: publishType,
-                                  listId: publishListId || undefined,
-                                  fromName: publishFromName || undefined,
-                                  fromEmail: publishFromEmail || undefined,
-                                }),
-                              });
-                              const data = await res.json();
-                              if (!res.ok) throw new Error(data.error ?? 'Push failed');
-                              setPublishResult({
-                                success: true,
-                                message: `Pushed to ${ESP_META[publishEsp].name} as ${publishType === 'template' ? 'a template' : 'a campaign draft'}!`,
-                                url: data.result?.url,
-                              });
-                            } catch (err: any) {
-                              setPublishResult({ success: false, message: err.message });
-                            } finally {
-                              setPublishing(false);
-                            }
-                          }}
-                          disabled={publishing}
-                          className="w-full px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                          {publishing ? (
-                            <>
-                              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" /></svg>
-                              Pushing…
-                            </>
-                          ) : (
-                            `Push to ${ESP_META[publishEsp].name}`
-                          )}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </>
+            {/* Verify Email Modal */}
+            {showVerifyModal && editedEmail && defaultColors && (
+              <EmailVerifyModal
+                email={editedEmail}
+                colors={defaultColors}
+                htmlCode={email?.html_code ?? null}
+                onClose={() => setShowVerifyModal(false)}
+              />
             )}
 
             {/* AI Chat Panel - OVERLAY */}
@@ -2371,9 +2265,19 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                           <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
                             msg.role === 'user'
                               ? 'bg-[#00ffff]/10 border border-[#00ffff]/20 text-white ml-auto'
+                              : msg.isUpgradeError
+                              ? 'bg-red-500/10 border border-red-500/30 text-red-300'
                               : 'bg-white/5 border border-white/10 text-white/90'
                           }`}>
                             {msg.content}
+                            {msg.isUpgradeError && (
+                              <>
+                                {' '}
+                                <Link href="/#pricing" className="underline font-semibold text-red-200 hover:text-white transition-colors">
+                                  Upgrade to Professional →
+                                </Link>
+                              </>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -2397,38 +2301,48 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
                     {/* Chat Input */}
                     <div className="p-4 border-t border-white/10">
-                      <div className="flex gap-2">
-                        <input
-                          ref={aiInputRef}
-                          type="text"
-                          value={aiMessage}
-                          onChange={(e) => setAiMessage(e.target.value)}
-                          placeholder="Describe what to change..."
-                          disabled={aiLoading}
-                          className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] text-sm disabled:opacity-50"
-                          onKeyDown={async (e) => {
-                            if (e.key === 'Enter' && aiMessage.trim() && !aiLoading) {
-                              await handleAiEdit();
-                            }
-                          }}
-                        />
-                        <button
-                          disabled={!aiMessage.trim() || aiLoading}
-                          onClick={handleAiEdit}
-                          className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-                        >
-                          {aiLoading ? (
-                            <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                            </svg>
-                          ) : (
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                            </svg>
-                          )}
-                        </button>
-                      </div>
+                      {aiEditLocked ? (
+                        <div className="px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-300">
+                          You've used your free AI edit —{' '}
+                          <Link href="/#pricing" className="underline font-semibold text-red-200 hover:text-white transition-colors">
+                            upgrade to Professional
+                          </Link>{' '}
+                          for unlimited edits.
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <input
+                            ref={aiInputRef}
+                            type="text"
+                            value={aiMessage}
+                            onChange={(e) => setAiMessage(e.target.value)}
+                            placeholder="Describe what to change..."
+                            disabled={aiLoading}
+                            className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] text-sm disabled:opacity-50"
+                            onKeyDown={async (e) => {
+                              if (e.key === 'Enter' && aiMessage.trim() && !aiLoading) {
+                                await handleAiEdit();
+                              }
+                            }}
+                          />
+                          <button
+                            disabled={!aiMessage.trim() || aiLoading}
+                            onClick={handleAiEdit}
+                            className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+                          >
+                            {aiLoading ? (
+                              <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2454,26 +2368,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 </div>
 
                 {/* View Mode Toggle */}
-                <div className="flex items-center gap-2">
-                  {/* Fallback font toggle */}
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
-                    <span className="text-[11px] text-white/40 select-none">Fallback fonts</span>
-                    <button
-                      role="switch"
-                      aria-checked={useFallbackFonts}
-                      onClick={() => setUseFallbackFonts(f => !f)}
-                      title={useFallbackFonts ? 'Switch to web fonts' : 'Preview with fallback fonts only'}
-                      className={`relative inline-flex h-4 w-7 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
-                        useFallbackFonts ? 'bg-amber-500' : 'bg-white/20'
-                      }`}
-                    >
-                      <span className={`pointer-events-none inline-block h-3 w-3 transform rounded-full bg-white shadow transition-transform duration-200 ${
-                        useFallbackFonts ? 'translate-x-3' : 'translate-x-0'
-                      }`} />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2 p-1 rounded-lg bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2 p-1 rounded-lg bg-white/5 border border-white/10">
                   <button
                     onClick={() => setPreviewMode('desktop')}
                     className={`px-3 py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 ${
@@ -2500,7 +2395,6 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     </svg>
                     Mobile
                   </button>
-                </div>
                 </div>
               </div>
 
@@ -2533,7 +2427,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       <iframe
                         ref={iframeRef}
                         key={previewKey}
-                        srcDoc={useFallbackFonts ? getFallbackSrcDoc(livePreviewHtml ?? email.html_code) : (livePreviewHtml ?? email.html_code)}
+                        srcDoc={livePreviewHtml ?? email.html_code}
                         title="Email Preview"
                         className="w-full border-0 block"
                         style={{ height: '700px' }}
@@ -2599,7 +2493,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                             <iframe
                               ref={iframeRef}
                               key={previewKey}
-                              srcDoc={useFallbackFonts ? getFallbackSrcDoc(livePreviewHtml ?? email.html_code) : (livePreviewHtml ?? email.html_code)}
+                              srcDoc={livePreviewHtml ?? email.html_code}
                               title="Email Preview"
                               className="w-full border-0 block"
                               style={{ height: '764px' }}

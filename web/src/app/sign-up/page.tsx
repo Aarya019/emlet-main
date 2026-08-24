@@ -1,13 +1,18 @@
 'use client';
 
 import { signUp, signInWithGoogle } from '@/app/actions/auth';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
+
+const TURNSTILE_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
 export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasPendingPrompt, setHasPendingPrompt] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<TurnstileHandle>(null);
 
   useEffect(() => {
     // Check if there's a pending email prompt from the homepage
@@ -46,6 +51,9 @@ export default function SignUpPage() {
     if (result?.error) {
       setError(result.error);
       setLoading(false);
+      // Turnstile tokens are single-use — get a fresh one before the next attempt.
+      setTurnstileToken(null);
+      turnstileRef.current?.reset();
     } else if (result?.message) {
       setSuccess(result.message);
       setLoading(false);
@@ -306,9 +314,17 @@ export default function SignUpPage() {
                 />
               </div>
 
+              <input type="hidden" name="turnstileToken" value={turnstileToken ?? ''} />
+              <Turnstile
+                ref={turnstileRef}
+                onVerify={setTurnstileToken}
+                onExpire={() => setTurnstileToken(null)}
+                className="flex justify-center"
+              />
+
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || (TURNSTILE_ENABLED && !turnstileToken)}
                 className="w-full flex justify-center py-3 px-4 rounded-lg text-black bg-white font-medium hover:shadow-xl hover:shadow-white/20 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Creating account...' : 'Create account'}

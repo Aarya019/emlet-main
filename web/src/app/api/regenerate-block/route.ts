@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { regenerateSingleSection } from '@/lib/ai/gemini';
-import { getEmailGeneration, getBrandProfile, updateEmailGeneration } from '@/lib/db/queries';
+import { regenerateSingleSection } from '@/lib/ai/claude';
+import { getEmailGeneration, getBrandProfile, updateEmailGeneration, claimFreeAction, releaseFreeAction } from '@/lib/db/queries';
 import { generateEmailHtml } from '@/lib/email/renderer';
 import { batchFetchPexelsImages, styleImageConfig } from '@/lib/images/pexels';
-import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import type { GeneratedEmail, EmailSection } from '@/lib/ai/claude';
 
 export const maxDuration = 60;
 
@@ -16,9 +17,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!(await checkRateLimit(user.id, 'regenerate-block', 60, 10))) {
+    return rateLimitResponse();
+  }
+
+  let claimed = false;
   try {
     const body = await request.json();
-    const { emailGenerationId, sectionIndex, designStyle } = body;
+    const { emailGenerationId, sectionIndex, designStyle, currentContent } = body;
 
     if (!emailGenerationId || typeof emailGenerationId !== 'string') {
       return NextResponse.json({ error: 'emailGenerationId is required' }, { status: 400 });
@@ -27,13 +33,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'sectionIndex is required' }, { status: 400 });
     }
 
+    const { allowed } = await claimFreeAction(user.id, 'free_block_regenerate_used');
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "You've used your free block regeneration — upgrade to Professional for unlimited regenerations." },
+        { status: 402 }
+      );
+    }
+    claimed = true;
+
     // Fetch the email generation record
     const generation = await getEmailGeneration(emailGenerationId, user.id);
     if (!generation) {
       return NextResponse.json({ error: 'Email not found' }, { status: 404 });
     }
 
-    const emailContent = generation.content_json as GeneratedEmail;
+    // Prefer the editor's current in-memory content over the last-saved DB row —
+    // otherwise the regenerated section gets persisted on top of stale content,
+    // silently dropping any other unsaved edits the next time the page reloads.
+    const emailContent = (currentContent?.sections?.length ? currentContent : generation.content_json) as GeneratedEmail;
     if (!emailContent?.sections || sectionIndex < 0 || sectionIndex >= emailContent.sections.length) {
       return NextResponse.json({ error: 'Invalid section index' }, { status: 400 });
     }
@@ -48,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     const targetSection = emailContent.sections[sectionIndex];
 
-    // Call Gemini to regenerate just this section's content fields
+    // Call Claude to regenerate just this section's content fields
     const rewrittenFields = await regenerateSingleSection(
       targetSection,
       emailContent.subject,
@@ -129,6 +147,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    if (claimed) await releaseFreeAction(user.id, 'free_block_regenerate_used');
     console.error('Regenerate block error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to regenerate block' },
