@@ -19,7 +19,7 @@ import {
   atomDark,
   oneDark,
 } from '@react-email/components';
-import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
+import type { GeneratedEmail, EmailSection } from '@/lib/ai/claude';
 import type { BrandProfile } from '@/lib/db/types';
 
 // ─────────────────────────────────────────────
@@ -150,6 +150,14 @@ export function fontFamilyCSS(name: string, genericFallback = 'sans-serif'): str
   return `${def.css}, ${def.fallback}`;
 }
 
+/** Builds a single Google Fonts CSS2 URL covering every font in the registry — used to render live previews in the font picker UI. */
+export function buildAllFontsGoogleUrl(): string {
+  const params = Object.values(FONT_REGISTRY)
+    .filter((def): def is FontDef & { gfParam: string } => !!def.gfParam)
+    .map(def => `family=${def.gfParam}`);
+  return `https://fonts.googleapis.com/css2?${params.join('&')}&display=swap`;
+}
+
 // ─────────────────────────────────────────────
 // Style definitions per design style
 // ─────────────────────────────────────────────
@@ -172,9 +180,40 @@ interface StyleConfig {
   hrStyle: React.CSSProperties;
   sectionBorderStyle: React.CSSProperties;
   cardStyle: React.CSSProperties;
+  /** Background/border/radius/shadow for the small container icons sit inside (feature-list, stats, columns). */
+  iconBoxStyle: React.CSSProperties;
+  /** Padding/radius/border for eyebrow pill/badge labels — background color is applied per-section at the call site. */
+  badgeStyle: React.CSSProperties;
+  /** CSS box-shadow for buttons outside the hero (which computes its own). Empty string where the border already carries the weight. */
+  buttonShadow: string;
+  /** When true, eyebrow labels render as bare text — no tinted background, no border. For styles with zero badge/pill treatment. */
+  eyebrowFlat?: boolean;
 }
 
 export const styleConfigs: Record<string, StyleConfig> = {
+  simple: {
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
+    headingFontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
+    googleFontsUrl: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap",
+    bodyBg: '#ffffff',
+    bodyColor: '#1f1f1f',
+    headingWeight: '600',
+    headingLetterSpacing: '-0.01em',
+    borderRadius: '6px',
+    sectionBorderRadius: '0',
+    sectionPadding: '40px 40px',
+    buttonBorderRadius: '6px',
+    buttonPadding: '12px 28px',
+    containerBorder: 'none',
+    heroAlign: 'left',
+    hrStyle: { borderColor: '#e5e5e5', borderWidth: '1px', margin: '24px 0' },
+    sectionBorderStyle: {},
+    cardStyle: { backgroundColor: 'transparent', padding: '16px 0' },
+    iconBoxStyle: { backgroundColor: 'transparent', border: 'none', borderRadius: '0' },
+    badgeStyle: { padding: '0', borderRadius: '0', border: 'none' },
+    buttonShadow: '',
+    eyebrowFlat: true,
+  },
   minimalist: {
     fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
     headingFontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif",
@@ -193,6 +232,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     hrStyle: { borderColor: '#eeeeee', borderWidth: '1px', margin: '24px 0' },
     sectionBorderStyle: {},
     cardStyle: { backgroundColor: '#ffffff', borderRadius: '10px', padding: '24px', border: '1px solid #f0f0f0' },
+    iconBoxStyle: { backgroundColor: '#f7f7f8', border: '1px solid #ececec', borderRadius: '10px', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' },
+    badgeStyle: { padding: '5px 12px', borderRadius: '20px' },
+    buttonShadow: '0 2px 8px rgba(0,0,0,0.08)',
   },
   editorial: {
     fontFamily: "'Lora', Georgia, 'Palatino Linotype', serif",
@@ -212,6 +254,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     hrStyle: { borderColor: '#1a1a1a', borderWidth: '2px', margin: '24px 0' },
     sectionBorderStyle: { borderLeft: '4px solid #1a1a1a', paddingLeft: '16px' },
     cardStyle: { backgroundColor: '#f5f5f5', padding: '20px', borderLeft: '3px solid #1a1a1a' },
+    iconBoxStyle: { backgroundColor: '#f5f5f5', border: '1px solid #1a1a1a', borderRadius: '0' },
+    badgeStyle: { padding: '4px 10px', borderRadius: '0' },
+    buttonShadow: '',
   },
   retro: {
     fontFamily: "'Nunito', 'Trebuchet MS', Georgia, sans-serif",
@@ -231,6 +276,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     hrStyle: { borderColor: '#c8a96e', borderWidth: '2px', borderStyle: 'dashed', margin: '24px 0' },
     sectionBorderStyle: {},
     cardStyle: { backgroundColor: '#fffbf0', borderRadius: '16px', padding: '24px', border: '2px solid #c8a96e' },
+    iconBoxStyle: { backgroundColor: '#fffbf0', border: '2px solid #c8a96e', borderRadius: '50%', boxShadow: '0 2px 6px rgba(200,169,110,0.35)' },
+    badgeStyle: { padding: '5px 14px', borderRadius: '20px' },
+    buttonShadow: '0 3px 10px rgba(200,169,110,0.4)',
   },
   brutalist: {
     fontFamily: "'Space Grotesk', Arial, Helvetica, sans-serif",
@@ -250,6 +298,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     hrStyle: { borderColor: '#000000', borderWidth: '4px', margin: '24px 0' },
     sectionBorderStyle: { border: '3px solid #000', padding: '16px' },
     cardStyle: { backgroundColor: '#ffffff', padding: '24px', border: '3px solid #000000', boxShadow: '6px 6px 0px #000000' },
+    iconBoxStyle: { backgroundColor: '#ffffff', border: '3px solid #000000', borderRadius: '0', boxShadow: '4px 4px 0px #000000' },
+    badgeStyle: { padding: '6px 14px', borderRadius: '0', border: '3px solid #000000', boxShadow: '3px 3px 0px #000000' },
+    buttonShadow: '',
   },
   cyberpunk: {
     fontFamily: "'Share Tech Mono', 'Courier New', Courier, monospace",
@@ -269,6 +320,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     hrStyle: { borderColor: '#00ffff', borderWidth: '1px', margin: '24px 0' },
     sectionBorderStyle: { borderLeft: '3px solid #00ffff', paddingLeft: '16px' },
     cardStyle: { backgroundColor: '#0f0f1a', padding: '20px', border: '1px solid #00ffff', borderRadius: '6px' },
+    iconBoxStyle: { backgroundColor: '#0f0f1a', border: '1px solid #00ffff', borderRadius: '6px', boxShadow: '0 0 12px rgba(0,255,255,0.35)' },
+    badgeStyle: { padding: '5px 12px', borderRadius: '2px', border: '1px solid #00ffff' },
+    buttonShadow: '0 0 16px rgba(0,255,255,0.35)',
   },
   handwritten: {
     fontFamily: "'Nunito', 'Trebuchet MS', Verdana, Arial, sans-serif",
@@ -288,6 +342,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     hrStyle: { borderColor: '#d4c5a9', borderWidth: '1px', borderStyle: 'dashed', margin: '20px 0' },
     sectionBorderStyle: {},
     cardStyle: { backgroundColor: '#fffef9', padding: '24px', borderRadius: '14px', border: '1px dashed #d4c5a9' },
+    iconBoxStyle: { backgroundColor: '#fffef9', border: '1px dashed #d4c5a9', borderRadius: '50%', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' },
+    badgeStyle: { padding: '5px 14px', borderRadius: '20px' },
+    buttonShadow: '0 3px 8px rgba(0,0,0,0.10)',
   },
   bauhaus: {
     fontFamily: "'Work Sans', Verdana, Arial, Helvetica, sans-serif",
@@ -307,6 +364,9 @@ export const styleConfigs: Record<string, StyleConfig> = {
     hrStyle: { borderColor: '#cc0000', borderWidth: '4px', margin: '24px 0' },
     sectionBorderStyle: {},
     cardStyle: { backgroundColor: '#f5f5f5', padding: '24px', border: '3px solid #000' },
+    iconBoxStyle: { backgroundColor: '#ffffff', border: '3px solid #000000', borderRadius: '50%' },
+    badgeStyle: { padding: '5px 12px', borderRadius: '0', border: '2px solid #000000' },
+    buttonShadow: '',
   },
 };
 
@@ -322,6 +382,32 @@ export interface FontVariant {
 }
 
 export const fontVariants: Record<string, FontVariant[]> = {
+  simple: [
+    {
+      label: 'Inter',
+      fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      headingFontFamily: "'Inter', system-ui, -apple-system, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
+    },
+    {
+      label: 'IBM Plex Sans',
+      fontFamily: "'IBM Plex Sans', Arial, sans-serif",
+      headingFontFamily: "'IBM Plex Sans', Arial, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600&display=swap',
+    },
+    {
+      label: 'Source Sans 3',
+      fontFamily: "'Source Sans 3', Arial, sans-serif",
+      headingFontFamily: "'Source Sans 3', Arial, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&display=swap',
+    },
+    {
+      label: 'Work Sans',
+      fontFamily: "'Work Sans', Arial, sans-serif",
+      headingFontFamily: "'Work Sans', Arial, sans-serif",
+      googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600&display=swap',
+    },
+  ],
   minimalist: [
     {
       label: 'Plus Jakarta Sans',
@@ -538,6 +624,68 @@ function renderPhosphorIcon(
   }, emojiFallback || '\u2726');
 }
 
+/**
+ * Wraps a Phosphor/emoji icon in a per-style container (background, border,
+ * radius, shadow) so icons read as designed elements instead of bare glyphs
+ * floating next to text.
+ */
+function renderIconChip(
+  iconName: string | undefined,
+  emojiFallback: string | undefined,
+  color: string,
+  config: StyleConfig,
+  size: number,
+): React.ReactElement {
+  const box = size + 24;
+  // `lineHeight` only centers inline content — it has no effect on the Img
+  // (display:'block') or the emoji Text (a block-level <p>) this wraps, so the
+  // icon was sitting at the top of the box instead of centered in it. A lone
+  // `display:table-cell` div gets an anonymous table/row generated around it
+  // by the browser, so `verticalAlign:'middle'` reliably centers any child —
+  // block or inline — regardless of its own display type.
+  return React.createElement('div', {
+    style: { ...config.iconBoxStyle, width: `${box}px`, height: `${box}px`, display: 'table-cell', textAlign: 'center' as const, verticalAlign: 'middle' as const }
+  }, renderPhosphorIcon(iconName, emojiFallback, color, size));
+}
+
+/**
+ * Renders an eyebrow label as a per-style pill/badge instead of bare
+ * uppercase text — mirrors the small tag/stamp treatment used in polished
+ * hand-designed emails.
+ */
+function renderEyebrow(
+  text: string,
+  color: string,
+  config: StyleConfig,
+  preview: boolean,
+  si: number,
+): React.ReactElement {
+  return React.createElement('div', {
+    style: config.eyebrowFlat
+      ? { display: 'inline-block', marginBottom: '12px' }
+      : {
+          display: 'inline-block',
+          ...config.badgeStyle,
+          backgroundColor: color + '1A',
+          border: config.badgeStyle.border ?? `1px solid ${color}55`,
+          marginBottom: '12px',
+        }
+  },
+    React.createElement(Text, {
+      ...pv(preview, si, 'eyebrow'),
+      style: {
+        fontFamily: config.fontFamily,
+        fontSize: '11px',
+        fontWeight: '700',
+        textTransform: 'uppercase' as const,
+        letterSpacing: '0.1em',
+        color,
+        margin: '0',
+      }
+    }, text)
+  );
+}
+
 // ─────────────────────────────────────────────
 // Contrast helper — picks readable text color for a given card bg
 // ─────────────────────────────────────────────
@@ -560,6 +708,18 @@ function cardTextColor(bgHex: string | undefined): string {
 // ─────────────────────────────────────────────
 // Section renderers
 // ─────────────────────────────────────────────
+
+/**
+ * Background fill for a section's outer wrapper: gradient takes precedence
+ * over a solid color (matches the hero/cta priority), falls back to nothing
+ * (transparent, inherits the email body background) when neither is set.
+ */
+function bgFillStyle(section: EmailSection, borderRadius?: string): React.CSSProperties {
+  if (section.backgroundGradient) return { background: section.backgroundGradient, ...(borderRadius ? { borderRadius } : {}) };
+  if (section.backgroundColor) return { backgroundColor: section.backgroundColor, ...(borderRadius ? { borderRadius } : {}) };
+  return {};
+}
+
 function renderHero(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const hasBgImage = !!section.backgroundImageUrl;
   // When a background image is present, always force white text for readability
@@ -615,18 +775,7 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
         : null,
       // Eyebrow label
       section.eyebrow
-        ? React.createElement(Text, {
-            ...pv(preview, si, 'eyebrow'),
-            style: {
-              fontFamily: config.fontFamily,
-              fontSize: '11px',
-              fontWeight: '700',
-              textTransform: 'uppercase' as const,
-              letterSpacing: '0.14em',
-              color: eyebrowColor,
-              margin: '0 0 12px 0',
-            }
-          }, section.eyebrow)
+        ? renderEyebrow(section.eyebrow, eyebrowColor, config, preview, si)
         : null,
       // Main headline — 42px for cinematic impact
       section.heading
@@ -713,29 +862,17 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
 }
 
 function renderContent(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
-  const bg  = section.backgroundColor;
   const fg  = section.textColor || config.bodyColor;
   const accent = section.buttonColor || primaryColor;
   // Split text on double-newline to create multiple paragraphs
   const paragraphs = (section.text || '').split(/\n\n+/).filter(Boolean);
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: config.sectionPadding, ...config.sectionBorderStyle, ...(bg ? { backgroundColor: bg, borderRadius: config.sectionBorderRadius } : {}) }
+    style: { padding: config.sectionPadding, ...config.sectionBorderStyle, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     // Optional eyebrow label — small uppercase coloured category tag above heading
     section.eyebrow
-      ? React.createElement(Text, {
-          ...pv(preview, si, 'eyebrow'),
-          style: {
-            fontFamily: config.fontFamily,
-            fontSize: '11px',
-            fontWeight: '700',
-            textTransform: 'uppercase' as const,
-            letterSpacing: '0.12em',
-            color: accent,
-            margin: '0 0 8px 0',
-          }
-        }, section.eyebrow)
+      ? renderEyebrow(section.eyebrow, accent, config, preview, si)
       : null,
     section.heading
       ? React.createElement(Heading, {
@@ -787,7 +924,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
   const btn = section.buttonColor || primaryColor;
   // Side-by-side layout: circular avatar on the left, quote + author on the right
   if (section.authorImage) {
-    return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
+    return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) } },
       React.createElement('div', { style: { ...config.cardStyle } },
         React.createElement(Row, null,
           React.createElement(Column, { style: { width: '76px', verticalAlign: 'top' } },
@@ -845,7 +982,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
   // Centered card layout (no avatar)
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
+    style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     React.createElement('div', {
       style: {
@@ -933,7 +1070,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
   if (isGrid) {
     const pairs: typeof features[] = [];
     for (let i = 0; i < features.length; i += 2) pairs.push(features.slice(i, i + 2));
-    return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
+    return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) } },
       headingEl,
       ...pairs.map((pair, rowIdx) =>
         React.createElement(Section, { key: rowIdx, style: { marginBottom: '16px' } },
@@ -942,11 +1079,11 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
             React.createElement(Column, {
               key: i,
               className: 'em-col',
-              style: { verticalAlign: 'top', padding: '0 8px' }
+              style: { verticalAlign: 'top', padding: '0 8px', width: `${100 / pair.length}%` }
             },
               React.createElement('div', { style: { ...config.cardStyle, textAlign: 'center' as const } },
                 React.createElement('div', { style: { margin: '0 0 10px 0' } },
-                  renderPhosphorIcon(feature.iconName, feature.icon, btn, 32)
+                  renderIconChip(feature.iconName, feature.icon, btn, config, 32)
                 ),
                 React.createElement(Text, {
                   style: {
@@ -976,10 +1113,17 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
   }
 
   // Default vertical list (numbered badges or icon bullets)
-  return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) } },
+  return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) } },
     headingEl,
     ...features.map((feature, i) =>
-      React.createElement(Section, { key: i, style: { marginBottom: '16px', display: 'table', width: '100%' } },
+      React.createElement(Section, { key: i, style: {
+        marginBottom: '16px',
+        paddingBottom: i < features.length - 1 ? '16px' : '0',
+        borderBottom: i < features.length - 1
+          ? `${config.hrStyle.borderWidth ?? '1px'} ${config.hrStyle.borderStyle ?? 'solid'} ${config.hrStyle.borderColor ?? '#eeeeee'}`
+          : 'none',
+        display: 'table', width: '100%',
+      } },
         React.createElement(Row, null,
           React.createElement(Column, { style: { width: '40px', verticalAlign: 'top' } },
             isNumbered
@@ -999,7 +1143,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
                   }
                 }, String(i + 1))
               : React.createElement('div', { style: { margin: '0' } },
-                  renderPhosphorIcon(feature.iconName, feature.icon, btn, 24)
+                  renderIconChip(feature.iconName, feature.icon, btn, config, 24)
                 )
           ),
           React.createElement(Column, { style: { verticalAlign: 'top' } },
@@ -1034,7 +1178,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
   const plans = section.plans || [];
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
+    style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -1057,6 +1201,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
           style: {
             padding: '16px',
             textAlign: 'center' as const,
+            width: `${100 / plans.length}%`,
             ...(plan.highlighted ? {
               backgroundColor: btn,
               color: '#fff',
@@ -1064,6 +1209,23 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
             } : config.cardStyle)
           }
         },
+          plan.highlighted
+            ? React.createElement(Text, {
+                style: {
+                  fontFamily: config.fontFamily,
+                  fontSize: '10px',
+                  fontWeight: '800',
+                  textTransform: 'uppercase' as const,
+                  letterSpacing: '0.08em',
+                  color: '#ffffff',
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  display: 'inline-block',
+                  padding: '3px 10px',
+                  borderRadius: '20px',
+                  margin: '0 0 10px 0',
+                }
+              }, 'Recommended')
+            : null,
           React.createElement(Text, {
             style: {
               fontFamily: config.fontFamily,
@@ -1109,7 +1271,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
           ),
           plan.buttonText
             ? React.createElement(Button, {
-                href: '#',
+                href: plan.buttonUrl || '#',
                 className: 'em-btn',
                 style: {
                   display: 'block',
@@ -1122,6 +1284,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
                   fontSize: '14px',
                   borderRadius: config.buttonBorderRadius,
                   textDecoration: 'none',
+                  boxShadow: config.buttonShadow,
                 }
               }, plan.buttonText)
             : null
@@ -1138,7 +1301,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
   const stats = section.stats || [];
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
+    style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -1158,7 +1321,11 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
         React.createElement(Column, {
           key: i,
           className: 'em-col',
-          style: { verticalAlign: 'top', padding: '6px' }
+          // Explicit even width — without it, table columns size to their own
+          // content, so a stat with a longer value ("10,000+") claims more
+          // width than a shorter one ("99%") and the row reads as lopsided
+          // instead of an evenly-spaced grid.
+          style: { verticalAlign: 'top', padding: '6px', width: `${100 / stats.length}%` }
         },
           React.createElement('div', {
             style: {
@@ -1170,7 +1337,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
           },
             (stat.icon || stat.iconName)
               ? React.createElement('div', { style: { margin: '0 0 8px 0' } },
-                  renderPhosphorIcon(stat.iconName, stat.icon, btn, 28)
+                  renderIconChip(stat.iconName, stat.icon, btn, config, 28)
                 )
               : null,
             React.createElement(Text, {
@@ -1211,7 +1378,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
 
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
+    style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -1269,6 +1436,86 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
   );
 }
 
+/**
+ * Full-bleed, edge-to-edge photo section — deliberately the visual opposite of
+ * renderGallery: no per-image padding/caption cards, no column width cap, and
+ * no extra horizontal section padding, so the image(s) fill the same width as
+ * the container itself instead of sitting in a padded thumbnail grid. Expects
+ * exactly 1, 2, or 4 images (see SECTION TYPES in claude.ts); other counts are
+ * handled gracefully (extra images fall into an uneven final row) rather than
+ * crashing, in case the model doesn't comply exactly.
+ */
+function renderImageBlock(section: EmailSection, config: StyleConfig): React.ReactElement {
+  const images = section.images || [];
+  const fg = section.textColor || config.bodyColor;
+  // Reuse this style's characteristic vertical rhythm, but drop the extra
+  // horizontal section padding so the image(s) reach the container's own edge.
+  const verticalPadding = config.sectionPadding.split(' ')[0] || '40px';
+
+  const caption = section.subheading
+    ? React.createElement(Text, {
+        style: {
+          fontFamily: config.fontFamily,
+          fontSize: '12px',
+          color: fg + '99',
+          textAlign: 'center' as const,
+          margin: '10px 0 0 0',
+        }
+      }, section.subheading)
+    : null;
+
+  if (images.length <= 1) {
+    const img = images[0];
+    return React.createElement(Section, {
+      className: 'em-section',
+      style: { padding: `${verticalPadding} 0`, ...bgFillStyle(section) }
+    },
+      img
+        ? React.createElement(Img, {
+            src: img.url,
+            alt: img.alt,
+            width: '600',
+            style: { width: '100%', display: 'block', borderRadius: config.borderRadius }
+          })
+        : null,
+      caption
+    );
+  }
+
+  // 2 images = one side-by-side row; 4 images = two rows of two — both use a
+  // 2-column grid with zero gutter so the photos touch, edge-to-edge.
+  const cols = 2;
+  const rows: typeof images[] = [];
+  for (let i = 0; i < images.length; i += cols) rows.push(images.slice(i, i + cols));
+
+  return React.createElement(Section, {
+    className: 'em-section',
+    style: { padding: `${verticalPadding} 0`, ...bgFillStyle(section) }
+  },
+    ...rows.map((rowImages, rowIdx) =>
+      React.createElement(Section, { key: rowIdx },
+        React.createElement(Row, null,
+          ...rowImages.map((img, i) =>
+            React.createElement(Column, {
+              key: i,
+              className: 'em-col',
+              style: { width: `${100 / cols}%`, verticalAlign: 'top' as const }
+            },
+              React.createElement(Img, {
+                src: img.url,
+                alt: img.alt,
+                width: '300',
+                style: { width: '100%', display: 'block' }
+              })
+            )
+          )
+        )
+      )
+    ),
+    caption
+  );
+}
+
 function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const accent = section.buttonColor || primaryColor;
   const fg = section.textColor || config.bodyColor;
@@ -1280,7 +1527,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
   },
     React.createElement('div', {
       style: {
-        backgroundColor: (section.backgroundColor) || (accent + '15'),
+        ...(section.backgroundGradient ? { background: section.backgroundGradient } : { backgroundColor: section.backgroundColor || (accent + '15') }),
         border: `2px solid ${accent}`,
         borderRadius: config.sectionBorderRadius,
         padding: '24px',
@@ -1325,6 +1572,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
               fontSize: '14px',
               borderRadius: config.buttonBorderRadius,
               textDecoration: 'none',
+              boxShadow: config.buttonShadow,
             }
           }, section.buttonText)
         : null
@@ -1431,7 +1679,7 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || secondaryColor;
   return React.createElement(Section, {
-    style: { padding: '24px 0 20px 0', textAlign: 'center' as const, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
+    style: { padding: '24px 0 20px 0', textAlign: 'center' as const, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     React.createElement(Hr, { style: config.hrStyle }),
     section.logoUrl
@@ -1491,7 +1739,7 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
   const btn = section.buttonColor || secondaryColor;  // tagline + nav links
   const borderVal = `${config.hrStyle.borderWidth ?? '1px'} ${config.hrStyle.borderStyle ?? 'solid'} ${config.hrStyle.borderColor ?? '#e0e0e0'}`;
   return React.createElement(Section, {
-    style: { padding: '20px 0', borderBottom: borderVal, marginBottom: '8px', ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
+    style: { padding: '20px 0', borderBottom: borderVal, marginBottom: '8px', ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     React.createElement(Row, null,
       React.createElement(Column, { style: { verticalAlign: 'middle' } },
@@ -1623,6 +1871,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
             fontSize: '14px',
             borderRadius: config.buttonBorderRadius,
             textDecoration: 'none',
+            boxShadow: config.buttonShadow,
           }
         }, section.buttonText)
       : null,
@@ -1644,7 +1893,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
 
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
+    style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     hasImage
       ? React.createElement(Row, null,
@@ -1659,12 +1908,12 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
   const btn = section.buttonColor || primaryColor;
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: config.sectionPadding, ...bgFillStyle(section) }
   },
     React.createElement('div', {
       style: {
         border: `2px dashed ${btn}`,
-        borderRadius: config.sectionBorderRadius,
+        borderRadius: config.borderRadius,
         padding: '32px 24px',
         textAlign: 'center' as const,
         backgroundColor: btn + '0d',
@@ -1752,7 +2001,7 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
   const btn = section.buttonColor || primaryColor;
   const links = section.socialLinks || [];
   return React.createElement(Section, {
-    style: { padding: '16px 0', textAlign: 'center' as const, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
+    style: { padding: '16px 0', textAlign: 'center' as const, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     section.heading
       ? React.createElement(Text, {
@@ -1777,7 +2026,8 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
           href: link.url,
           style: {
             display: 'inline-block',
-            margin: '0 6px',
+            margin: '0 2px',
+            padding: '8px',
             color: btn,
             textDecoration: 'none',
             fontFamily: config.fontFamily,
@@ -1808,7 +2058,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
   const colItems = section.columns || [];
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
+    style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -1829,14 +2079,16 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
         React.createElement(Column, {
           key: i,
           className: 'em-col',
-          style: { verticalAlign: 'top', padding: '0 8px' }
+          // Same fix as renderStats — explicit even width so N columns form a
+          // balanced grid instead of sizing to whichever column has the most content.
+          style: { verticalAlign: 'top', padding: '0 8px', width: `${100 / colItems.length}%` }
         },
           React.createElement('div', {
             style: { ...config.cardStyle, textAlign: 'center' as const }
           },
             (col.icon || col.iconName)
               ? React.createElement('div', { style: { margin: '0 0 12px 0' } },
-                  renderPhosphorIcon(col.iconName, col.icon, btn, 36)
+                  renderIconChip(col.iconName, col.icon, btn, config, 36)
                 )
               : null,
             col.imageUrl
@@ -1883,6 +2135,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
                     fontSize: '12px',
                     borderRadius: config.buttonBorderRadius,
                     textDecoration: 'none',
+                    boxShadow: config.buttonShadow,
                   }
                 }, col.buttonText)
               : null
@@ -1898,7 +2151,7 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
   const btn = section.buttonColor || primaryColor;
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: config.sectionPadding, ...bgFillStyle(section) }
   },
     React.createElement('div', {
       style: {
@@ -1946,7 +2199,7 @@ function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColo
   const theme = isDark ? oneDark : atomDark;
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor } : {}) }
+    style: { padding: config.sectionPadding, ...bgFillStyle(section) }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -2048,7 +2301,7 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
 
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: config.sectionPadding, ...(section.backgroundColor ? { backgroundColor: section.backgroundColor, borderRadius: config.sectionBorderRadius } : {}) }
+    style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     headingEl,
     subheadingEl,
@@ -2061,7 +2314,7 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
             return React.createElement(Column, {
               key: i,
               className: 'em-col',
-              style: { verticalAlign: 'top', padding: '0 8px' }
+              style: { verticalAlign: 'top', padding: '0 8px', width: `${100 / pair.length}%` }
             },
               React.createElement('div', { style: { ...config.cardStyle } },
                 // Star rating
@@ -2151,6 +2404,7 @@ function renderSection(
     case 'pricing-table': return renderPricingTable(section, config, primaryColor);
     case 'stats':         return renderStats(section, config, primaryColor);
     case 'gallery':       return renderGallery(section, config);
+    case 'image-block':   return renderImageBlock(section, config);
     case 'announcement':  return renderAnnouncement(section, config, primaryColor, si, preview);
     case 'image-text':    return renderImageText(section, config, primaryColor, si, preview);
     case 'coupon':        return renderCoupon(section, config, primaryColor, si, preview);
@@ -2204,24 +2458,27 @@ export async function generateEmailHtml(
       if (!sec.logoAlt) sec.logoAlt = brandName;
     }
 
-    // Hero: use brand logo as the image only when AI left imageUrl undefined (not when user cleared it)
-    if (sec.type === 'hero' && sec.imageUrl === undefined && logoUrl) {
-      sec.imageUrl = logoUrl;
-      sec.imageAlt = brandName;
-    }
-
     // Footer: inject brand logo only if not already set
     if (sec.type === 'footer') {
       if (logoUrl && !sec.logoUrl) sec.logoUrl = logoUrl;
       if (!sec.logoAlt) sec.logoAlt = brandName;
     }
 
-    // CTA / announcement / image-text: replace placeholder # with real website
-    if (
-      websiteUrl &&
-      (sec.type === 'cta' || sec.type === 'announcement' || sec.type === 'image-text')
-    ) {
-      if (!sec.buttonUrl || sec.buttonUrl === '#') sec.buttonUrl = websiteUrl;
+    // CTA / hero / announcement / image-text: replace placeholder # with real website
+    if (websiteUrl) {
+      if (sec.type === 'cta' || sec.type === 'hero' || sec.type === 'announcement' || sec.type === 'image-text') {
+        if (!sec.buttonUrl || sec.buttonUrl === '#') sec.buttonUrl = websiteUrl;
+        if (sec.secondaryButtonText && (!sec.secondaryButtonUrl || sec.secondaryButtonUrl === '#')) {
+          sec.secondaryButtonUrl = websiteUrl;
+        }
+      }
+      if (sec.type === 'pricing-table' && sec.plans) {
+        sec.plans = sec.plans.map(plan =>
+          plan.buttonText && (!plan.buttonUrl || plan.buttonUrl === '#')
+            ? { ...plan, buttonUrl: websiteUrl }
+            : plan
+        );
+      }
     }
 
     return sec;
@@ -2245,6 +2502,10 @@ export async function generateEmailHtml(
         name: 'viewport',
         content: 'width=device-width, initial-scale=1.0',
       }),
+      // Declares this email as light-only so dark-mode clients (Apple Mail, Outlook.com)
+      // render our chosen colors as-is instead of auto-inverting them.
+      React.createElement('meta', { name: 'color-scheme', content: 'light' }),
+      React.createElement('meta', { name: 'supported-color-schemes', content: 'light' }),
       // All fonts are system fonts — no external loading needed, renders correctly on every client
       React.createElement('style', null,
         fontFaceCSS + '\n' +

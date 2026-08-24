@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Privacy Policy for Emlet — AI Email Generator.',
 };
 
-const LAST_UPDATED = 'March 21, 2026';
+const LAST_UPDATED = 'August 9, 2026';
 const CONTACT_EMAIL = 'support@emlet.app';
 
 export default function PrivacyPage() {
@@ -20,7 +20,7 @@ export default function PrivacyPage() {
           </span>
         </Link>
         <div className="flex items-center gap-4 text-sm text-white/60">
-          <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+          <Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link>
           <Link href="/sign-in" className="hover:text-white transition-colors">Sign in</Link>
         </div>
       </div>
@@ -109,8 +109,10 @@ export default function PrivacyPage() {
                 'Supabase — our database and authentication provider, stores your account and content data',
                 'Google (via OAuth) — authenticates your identity; we receive only your name and email',
                 'Paddle — our payment processor; handles billing and subscription management',
-                'Google Gemini / AI providers — receives your prompts to generate email content',
-                'Pexels — used to fetch stock images for generated emails',
+                'Anthropic (Claude) — receives your prompts to generate email content',
+                'Pexels and Pixabay — used to fetch stock images for generated emails',
+                'Resend — sends transactional emails on our behalf, including test sends you request',
+                'Cloudflare Turnstile — verifies you are not a bot during sign-in and sign-up',
               ].map((item) => (
                 <li key={item} className="flex items-start gap-2">
                   <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
@@ -135,9 +137,9 @@ export default function PrivacyPage() {
           <Section title="5. Cookies">
             <p>
               We use essential cookies to keep you signed in and maintain your session. We may also use
-              analytics cookies (e.g. Google Analytics) to understand how the Service is used. You can
-              disable cookies in your browser settings, but some features of the Service may not work
-              correctly without them.
+              analytics tools (Google Analytics and Vercel Analytics) to understand how the Service is
+              used. You can disable cookies in your browser settings, but some features of the Service
+              may not work correctly without them.
             </p>
           </Section>
 
@@ -192,7 +194,8 @@ export default function PrivacyPage() {
 
           <Section title="10. Contact">
             <p>
-              If you have any questions or concerns about this Privacy Policy, please contact us at{' '}
+              Emlet is operated from Hyderabad, Telangana, India. If you have any questions or concerns
+              about this Privacy Policy, please contact us at{' '}
               <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">
                 {CONTACT_EMAIL}
               </a>.
@@ -208,7 +211,7 @@ export default function PrivacyPage() {
           <span>© {new Date().getFullYear()} Emlet. All rights reserved.</span>
           <div className="flex items-center gap-6">
             <Link href="/terms" className="hover:text-white/60 transition-colors">Terms of Service</Link>
-            <Link href="/pricing" className="hover:text-white/60 transition-colors">Pricing</Link>
+            <Link href="/#pricing" className="hover:text-white/60 transition-colors">Pricing</Link>
           </div>
         </div>
       </footer>

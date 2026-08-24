@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getBrandProfiles, createBrandProfile } from '@/lib/db/queries';
+import { getBrandProfiles, createBrandProfile, claimFreeAction, releaseFreeAction } from '@/lib/db/queries';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import type { BrandProfileInsert } from '@/lib/db/types';
 
 export async function GET() {
@@ -26,14 +27,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!(await checkRateLimit(user.id, 'brand-profiles', 60, 10))) {
+    return rateLimitResponse();
+  }
+
   try {
     const body = await request.json();
-    
+
     // Validate required fields
     if (!body.brand_name) {
       return NextResponse.json(
-        { error: 'Brand name is required' }, 
+        { error: 'Brand name is required' },
         { status: 400 }
+      );
+    }
+
+    if (!body.secondary_color) {
+      return NextResponse.json(
+        { error: 'Secondary color is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!body.background_color) {
+      return NextResponse.json(
+        { error: 'Background color is required' },
+        { status: 400 }
+      );
+    }
+
+    const { allowed } = await claimFreeAction(user.id, 'free_brand_used');
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "You've used your free brand profile — upgrade to Professional for unlimited brands." },
+        { status: 402 }
       );
     }
 
@@ -43,8 +70,8 @@ export async function POST(request: NextRequest) {
       industry: body.industry || null,
       brand_voice: body.brand_voice || 'professional',
       primary_color: body.primary_color || '#5c5cf0',
-      secondary_color: body.secondary_color || null,
-      background_color: body.background_color || null,
+      secondary_color: body.secondary_color,
+      background_color: body.background_color,
       brand_description: body.brand_description || null,
       logo_url: body.logo_url || null,
       website_url: body.website_url || null,
@@ -52,10 +79,11 @@ export async function POST(request: NextRequest) {
     };
 
     const profile = await createBrandProfile(profileData);
-    
+
     if (!profile) {
+      await releaseFreeAction(user.id, 'free_brand_used');
       return NextResponse.json(
-        { error: 'Failed to create brand profile' }, 
+        { error: 'Failed to create brand profile' },
         { status: 500 }
       );
     }

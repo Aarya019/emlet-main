@@ -2,7 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { verifyTurnstileToken } from '@/lib/turnstile';
+
+async function getRequestIp(): Promise<string | undefined> {
+  const headersList = await headers();
+  return headersList.get('x-forwarded-for')?.split(',')[0]?.trim() || headersList.get('x-real-ip') || undefined;
+}
 
 function getSiteUrl() {
   // SITE_URL is a server-only env var (set in Vercel without NEXT_PUBLIC_ prefix)
@@ -11,6 +18,12 @@ function getSiteUrl() {
 }
 
 export async function signIn(formData: FormData) {
+  const turnstileToken = formData.get('turnstileToken') as string | null;
+  const verified = await verifyTurnstileToken(turnstileToken, await getRequestIp());
+  if (!verified) {
+    return { error: 'Verification failed. Please refresh the page and try again.' };
+  }
+
   const supabase = await createClient();
 
   const data = {
@@ -29,6 +42,12 @@ export async function signIn(formData: FormData) {
 }
 
 export async function signUp(formData: FormData) {
+  const turnstileToken = formData.get('turnstileToken') as string | null;
+  const verified = await verifyTurnstileToken(turnstileToken, await getRequestIp());
+  if (!verified) {
+    return { error: 'Verification failed. Please refresh the page and try again.' };
+  }
+
   const supabase = await createClient();
 
   const data = {

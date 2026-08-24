@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Terms of Service for Emlet — AI Email Generator.',
 };
 
-const LAST_UPDATED = 'March 17, 2026';
+const LAST_UPDATED = 'August 9, 2026';
 const CONTACT_EMAIL = 'support@emlet.app';
 
 export default function TermsPage() {
@@ -20,7 +20,7 @@ export default function TermsPage() {
           </span>
         </Link>
         <div className="flex items-center gap-4 text-sm text-white/60">
-          <Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link>
+          <Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link>
           <Link href="/sign-in" className="hover:text-white transition-colors">Sign in</Link>
         </div>
       </div>
@@ -86,21 +86,18 @@ export default function TermsPage() {
             </ul>
           </Section>
 
-          <Section title="4. Credits & Subscriptions">
+          <Section title="4. Free Trial & Subscriptions">
             <p>
-              Emlet operates on a credit-based system. Credits are consumed when you generate emails.
-              Free accounts receive a limited number of credits per month. Paid plans (Pro, Enterprise)
-              provide additional credits as described on the{' '}
-              <Link href="/pricing" className="text-[#00ffff] hover:underline">pricing page</Link>.
+              Free accounts receive a one-time trial allotment: one brand profile, one email
+              generation, one AI-assisted edit, one block regeneration, and one test email send.
+              Each of these is available once per account and does not reset or renew. The paid
+              Professional plan provides unlimited use of all features as described on the{' '}
+              <Link href="/#pricing" className="text-[#00ffff] hover:underline">pricing page</Link>.
             </p>
             <p className="mt-3">
               Subscriptions are billed monthly through Paddle, our payment processor. By subscribing,
               you authorize recurring charges to your payment method. You may cancel at any time from
               your account settings; cancellation takes effect at the end of the current billing period.
-            </p>
-            <p className="mt-3">
-              Credits reset monthly and do not roll over. Unused credits are forfeited at the end of
-              each billing cycle.
             </p>
           </Section>
 
@@ -178,15 +175,16 @@ export default function TermsPage() {
 
           <Section title="12. Governing Law">
             <p>
-              These Terms are governed by and construed in accordance with applicable law. Any disputes
-              arising under these Terms shall be resolved through binding arbitration or in a court of
-              competent jurisdiction.
+              These Terms are governed by and construed in accordance with the laws of India, without
+              regard to its conflict of law principles. Any disputes arising under these Terms shall be
+              subject to the exclusive jurisdiction of the courts located in Hyderabad, Telangana, India.
             </p>
           </Section>
 
           <Section title="13. Contact">
             <p>
-              If you have any questions about these Terms, please contact us at{' '}
+              Emlet is operated from Hyderabad, Telangana, India. If you have any questions about these
+              Terms, please contact us at{' '}
               <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">
                 {CONTACT_EMAIL}
               </a>.
@@ -202,7 +200,7 @@ export default function TermsPage() {
           <span>© {new Date().getFullYear()} Emlet. All rights reserved.</span>
           <div className="flex items-center gap-6">
             <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy Policy</Link>
-            <Link href="/pricing" className="hover:text-white/60 transition-colors">Pricing</Link>
+            <Link href="/#pricing" className="hover:text-white/60 transition-colors">Pricing</Link>
           </div>
         </div>
       </footer>

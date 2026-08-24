@@ -1,9 +1,46 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { signOut } from '@/app/actions/auth';
-import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle } from '@/lib/db/types';
+import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle, PlanType } from '@/lib/db/types';
 import EmailGeneratingOverlay from '@/components/EmailGeneratingOverlay';
+import StarField from '@/components/StarField';
+
+/** Mirrors each design style's signature look (from renderer.tsx styleConfigs) for the picker swatches. */
+const STYLE_SWATCHES: Record<DesignStyle, { style: React.CSSProperties; dot?: string }> = {
+  simple:      { style: { backgroundColor: '#ffffff', border: '1px solid #e5e5e5', borderRadius: '6px' } },
+  minimalist:  { style: { backgroundColor: '#f9f9f9', border: '1px solid #e8e8e8', borderRadius: '6px' } },
+  editorial:   { style: { backgroundColor: '#fefefe', borderLeft: '3px solid #1a1a1a', borderRadius: '0px' } },
+  retro:       { style: { backgroundColor: '#fdf6e3', border: '2px dashed #c8a96e', borderRadius: '10px' } },
+  brutalist:   { style: { backgroundColor: '#ffffff', border: '3px solid #000000', borderRadius: '0px', boxShadow: '2px 2px 0px #000000' } },
+  cyberpunk:   { style: { backgroundColor: '#0a0a0f', border: '1px solid #00ffff', borderRadius: '4px', boxShadow: '0 0 6px rgba(0,255,255,0.4)' } },
+  handwritten: { style: { backgroundColor: '#fdfaf5', border: '1px dashed #d4c5a9', borderRadius: '10px' } },
+  bauhaus:     { style: { backgroundColor: '#ffffff', border: '2px solid #000000', borderRadius: '0px' }, dot: '#cc0000' },
+};
+
+/** Options for the style picker dropdown. */
+const DESIGN_STYLE_OPTIONS: { value: DesignStyle; label: string; desc: string }[] = [
+  { value: 'simple', label: 'Simple', desc: 'Plain text-led design, one font, no decoration' },
+  { value: 'minimalist', label: 'Minimalist', desc: 'Lots of whitespace, clean fonts, simple layout' },
+  { value: 'editorial', label: 'Editorial', desc: 'Structured story layout, like a magazine article' },
+  { value: 'retro', label: 'Retro', desc: 'Warm nostalgic colors and classic typefaces' },
+  { value: 'brutalist', label: 'Brutalist', desc: 'Heavy borders, stark contrast, bold raw layout' },
+  { value: 'cyberpunk', label: 'Cyberpunk', desc: 'Neon colors, dark background, futuristic feel' },
+  { value: 'handwritten', label: 'Handwritten', desc: 'Personal and friendly, sketch-like elements' },
+  { value: 'bauhaus', label: 'Bauhaus', desc: 'Geometric shapes, primary colors, structured grid' },
+];
+
+function StyleSwatch({ styleValue, size = 20 }: { styleValue: DesignStyle; size?: number }) {
+  const swatch = STYLE_SWATCHES[styleValue];
+  return (
+    <div
+      className="flex-shrink-0 flex items-center justify-center"
+      style={{ width: size, height: size, ...swatch.style }}
+    >
+      {swatch.dot && <div className="rounded-full" style={{ width: size / 4, height: size / 4, backgroundColor: swatch.dot }} />}
+    </div>
+  );
+}
 
 function ManageBillingButton() {
   const [loading, setLoading] = useState(false);
@@ -61,7 +98,7 @@ export default function DashboardContent() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [emailInput, setEmailInput] = useState('');
   const [designStyle, setDesignStyle] = useState<DesignStyle>('minimalist');
-  
+
   // Brand profile state
   const [brandProfiles, setBrandProfiles] = useState<BrandProfile[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<BrandProfile | null>(null);
@@ -74,8 +111,8 @@ export default function DashboardContent() {
     industry: '',
     brand_voice: 'professional' as BrandVoice,
     primary_color: '#5c5cf0',
-    secondary_color: '',
-    background_color: '',
+    secondary_color: '#111827',
+    background_color: '#ffffff',
     brand_description: '',
     website_url: '',
     logo_url: ''
@@ -85,9 +122,10 @@ export default function DashboardContent() {
   // Email generation state
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  const [generatedEmail, setGeneratedEmail] = useState<EmailGeneration | null>(null);
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
-  const [planType, setPlanType] = useState<'free' | 'pro' | 'enterprise'>('free');
+  const [planType, setPlanType] = useState<PlanType>('free');
+  const [trialFlags, setTrialFlags] = useState<{ brand: boolean; aiEdit: boolean; blockRegenerate: boolean; testEmail: boolean } | null>(null);
+  const [cancelAt, setCancelAt] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
   const [memberSince, setMemberSince] = useState<string>('');
   const [totalEmails, setTotalEmails] = useState<number>(0);
@@ -95,10 +133,17 @@ export default function DashboardContent() {
   // History state
   const [emailHistory, setEmailHistory] = useState<EmailGeneration[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyStyleFilter, setHistoryStyleFilter] = useState<DesignStyle | 'all'>('all');
 
   // Brand delete confirmation modal
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [brandToDelete, setBrandToDelete] = useState<{ id: string; name: string } | null>(null);
+
+  // Cancel subscription confirmation modal
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelingSubscription, setCancelingSubscription] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   // Email delete state
   const [emailToDelete, setEmailToDelete] = useState<EmailGeneration | null>(null);
@@ -112,6 +157,9 @@ export default function DashboardContent() {
   const [brandIdUserSet, setBrandIdUserSet] = useState(false);
   const [brandDropdownOpen, setBrandDropdownOpen] = useState(false);
 
+  // Post-checkout upgrade confirmation (?upgraded=true redirect from Paddle)
+  const [upgradeStatus, setUpgradeStatus] = useState<'idle' | 'checking' | 'success' | 'pending'>('idle');
+
   useEffect(() => {
     // Retrieve and clear the pending prompt from localStorage
     const prompt = localStorage.getItem('pendingEmailPrompt');
@@ -121,11 +169,46 @@ export default function DashboardContent() {
       setEmailInput(prompt); // Pre-fill the textarea
       localStorage.removeItem('pendingEmailPrompt');
     }
-    
+
     // Load brand profile, user stats and email history
     loadBrandProfile();
     loadUserStats();
     loadEmailHistory();
+  }, []);
+
+  useEffect(() => {
+    // Paddle's checkout successUrl redirects here with ?upgraded=true. The redirect
+    // itself doesn't write anything to Supabase — the actual plan change comes from
+    // Paddle's async subscription.activated webhook, which can lag a second or two
+    // behind the redirect. Poll briefly instead of assuming the DB is already updated.
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('upgraded') !== 'true') return;
+
+    // Strip the query param immediately so a refresh doesn't re-trigger this.
+    window.history.replaceState({}, '', window.location.pathname);
+
+    setUpgradeStatus('checking');
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 8; // ~20s total — generous since webhook delivery can occasionally lag
+
+    const poll = async () => {
+      attempts++;
+      const data = await loadUserStats();
+      if (cancelled) return;
+      if (data?.plan_type === 'pro') {
+        setUpgradeStatus('success');
+        return;
+      }
+      if (attempts < maxAttempts) {
+        setTimeout(poll, 2500);
+      } else {
+        setUpgradeStatus('pending');
+      }
+    };
+    poll();
+
+    return () => { cancelled = true; };
   }, []);
 
   const loadUserStats = async () => {
@@ -135,13 +218,22 @@ export default function DashboardContent() {
         const data = await res.json();
         setCreditsRemaining(data.credits_remaining);
         setPlanType(data.plan_type ?? 'free');
+        setTrialFlags({
+          brand: !!data.free_brand_used,
+          aiEdit: !!data.free_ai_edit_used,
+          blockRegenerate: !!data.free_block_regenerate_used,
+          testEmail: !!data.free_test_email_used,
+        });
+        setCancelAt(data.cancel_at ?? null);
         if (data.email) setUserEmail(data.email);
         if (data.member_since) setMemberSince(data.member_since);
         if (data.total_emails != null) setTotalEmails(data.total_emails);
+        return data;
       }
     } catch (error) {
       console.error('Error loading user stats:', error);
     }
+    return null;
   };
 
   const loadEmailHistory = async () => {
@@ -156,6 +248,23 @@ export default function DashboardContent() {
       console.error('Error loading email history:', error);
     } finally {
       setHistoryLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    setCancelingSubscription(true);
+    setCancelError(null);
+    try {
+      const res = await fetch('/api/paddle/cancel-subscription', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to cancel subscription');
+      setCancelAt(data.cancelAt ?? null);
+      setCancelModalOpen(false);
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      setCancelError('Could not cancel subscription. Please try again.');
+    } finally {
+      setCancelingSubscription(false);
     }
   };
 
@@ -268,11 +377,19 @@ export default function DashboardContent() {
 
       if (res.ok) {
         const data = await res.json();
+        const wasCreate = !selectedBrand;
         setBrandMessage({ type: 'success', text: selectedBrand ? 'Brand updated successfully!' : 'Brand created successfully!' });
         setTimeout(() => setBrandMessage(null), 3000);
-        
+
         // Reload brands and close form
         await loadBrandProfile();
+        // A brand just created (as opposed to edited) is almost always meant to be
+        // used right away — select it for the next generation instead of leaving
+        // whatever was previously selected (or nothing, for a first-time user).
+        if (wasCreate && data.profile?.id) {
+          setGenerateBrandId(data.profile.id);
+          setBrandIdUserSet(true);
+        }
         setShowBrandForm(false);
         setSelectedBrand(null);
         resetBrandForm();
@@ -294,8 +411,8 @@ export default function DashboardContent() {
       industry: '',
       brand_voice: 'professional' as BrandVoice,
       primary_color: '#5c5cf0',
-      secondary_color: '',
-      background_color: '',
+      secondary_color: '#111827',
+      background_color: '#ffffff',
       brand_description: '',
       website_url: '',
       logo_url: ''
@@ -309,8 +426,9 @@ export default function DashboardContent() {
       industry: brand.industry || '',
       brand_voice: brand.brand_voice,
       primary_color: brand.primary_color,
-      secondary_color: brand.secondary_color || '',
-      background_color: brand.background_color || '',
+      // Legacy brands created before these fields were required may have no value saved — fall back to a sensible default so editing pre-fills instead of showing blank.
+      secondary_color: brand.secondary_color || brand.primary_color,
+      background_color: brand.background_color || '#ffffff',
       brand_description: brand.brand_description || '',
       website_url: brand.website_url || '',
       logo_url: brand.logo_url || ''
@@ -322,6 +440,10 @@ export default function DashboardContent() {
     setSelectedBrand(null);
     resetBrandForm();
     setShowBrandForm(true);
+    // Called from anywhere (new-email page, brand dropdown, brand tab itself) —
+    // always land on the Brand tab with the form already open, rather than a
+    // floating overlay on top of whatever page the user was on.
+    handleTabChange('brand');
   };
 
   const deleteBrand = async (brandId: string) => {
@@ -405,14 +527,13 @@ export default function DashboardContent() {
       return;
     }
 
-    if (planType !== 'enterprise' && creditsRemaining !== null && creditsRemaining < 1) {
-      setGenerationError('Insufficient credits. Please upgrade your plan.');
+    if (planType !== 'pro' && creditsRemaining !== null && creditsRemaining < 1) {
+      setGenerationError("You've used your free email generation — upgrade to Professional for unlimited emails.");
       return;
     }
 
     setGenerating(true);
     setGenerationError(null);
-    setGeneratedEmail(null);
 
     try {
       const res = await fetch('/api/generate-email', {
@@ -433,7 +554,6 @@ export default function DashboardContent() {
       }
 
       // Success
-      setGeneratedEmail(data.generation);
       if (data.creditsRemaining !== null && data.creditsRemaining !== undefined) {
         setCreditsRemaining(data.creditsRemaining);
       }
@@ -474,8 +594,40 @@ export default function DashboardContent() {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
+  const filteredHistory = emailHistory.filter(e => {
+    if (historyStyleFilter !== 'all' && e.design_style !== historyStyleFilter) return false;
+    if (historySearch.trim() && !(e.subject_line || '').toLowerCase().includes(historySearch.trim().toLowerCase())) return false;
+    return true;
+  });
+
+  // Last-14-days activity, bucketed from the already-fetched history — no extra API call.
+  const activityData = useMemo(() => {
+    const DAYS = 14;
+    const buckets: { date: string; dayLabel: string; count: number }[] = [];
+    const today = new Date();
+    for (let i = DAYS - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      buckets.push({
+        date: d.toISOString().slice(0, 10),
+        dayLabel: d.toLocaleDateString('en-US', { weekday: 'narrow' }),
+        count: 0,
+      });
+    }
+    const byDate = new Map(buckets.map(b => [b.date, b]));
+    for (const e of emailHistory) {
+      if (e.status !== 'completed') continue;
+      const bucket = byDate.get(e.created_at.slice(0, 10));
+      if (bucket) bucket.count++;
+    }
+    return buckets;
+  }, [emailHistory]);
+  const activityMax = Math.max(1, ...activityData.map(d => d.count));
+  const activityTotal = activityData.reduce((sum, d) => sum + d.count, 0);
+
   return (
     <div className="flex h-screen overflow-hidden overflow-x-hidden">
+      <StarField />
       {generating && <EmailGeneratingOverlay />}
 
       {/* Delete Confirmation Modal */}
@@ -488,9 +640,9 @@ export default function DashboardContent() {
           />
           
           {/* Modal */}
-          <div className="relative bg-gradient-to-br from-black to-gray-900 border-4 border-red-500 rounded-2xl shadow-2xl shadow-red-500/50 max-w-md w-full p-8 transform transition-all">
+          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-black/60 max-w-md w-full p-8 transform transition-all">
             {/* Warning Icon */}
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/20 border-4 border-red-500 flex items-center justify-center">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
               <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
@@ -517,7 +669,7 @@ export default function DashboardContent() {
               </button>
               <button
                 onClick={() => brandToDelete && deleteBrand(brandToDelete.id)}
-                className="flex-1 px-6 py-3 rounded-xl bg-red-500 border-2 border-red-600 text-white font-black hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/50 transition-all transform hover:scale-105"
+                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all"
               >
                 Delete
               </button>
@@ -530,8 +682,8 @@ export default function DashboardContent() {
       {emailToDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setEmailToDelete(null)} />
-          <div className="relative bg-gradient-to-br from-black to-gray-900 border-4 border-red-500 rounded-2xl shadow-2xl shadow-red-500/50 max-w-md w-full p-8">
-            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/20 border-4 border-red-500 flex items-center justify-center">
+          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-black/60 max-w-md w-full p-8">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
               <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
               </svg>
@@ -551,9 +703,49 @@ export default function DashboardContent() {
               <button
                 onClick={() => handleDeleteEmail(emailToDelete)}
                 disabled={deletingEmailId === emailToDelete.id}
-                className="flex-1 px-6 py-3 rounded-xl bg-red-500 border-2 border-red-600 text-white font-black hover:bg-red-600 hover:shadow-xl hover:shadow-red-500/50 transition-all hover:scale-105 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {deletingEmailId === emailToDelete.id ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancel Subscription Confirmation Modal */}
+      {cancelModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            onClick={() => { setCancelModalOpen(false); setCancelError(null); }}
+          />
+          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-black/60 max-w-md w-full p-8">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+              <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-black text-white mb-3 text-center">Cancel Subscription?</h3>
+            <p className="text-white/70 text-center mb-2 leading-relaxed">
+              You'll keep Professional access until the end of your current billing period. After that, your account reverts to the free trial plan.
+            </p>
+            {cancelError && (
+              <p className="text-red-400 text-sm text-center mb-2 font-semibold">{cancelError}</p>
+            )}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => { setCancelModalOpen(false); setCancelError(null); }}
+                disabled={cancelingSubscription}
+                className="flex-1 px-6 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white font-bold hover:bg-white/20 transition-all disabled:opacity-60"
+              >
+                Keep Subscription
+              </button>
+              <button
+                onClick={handleCancelSubscription}
+                disabled={cancelingSubscription}
+                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {cancelingSubscription ? 'Canceling...' : 'Cancel Subscription'}
               </button>
             </div>
           </div>
@@ -644,6 +836,24 @@ export default function DashboardContent() {
             </button>
           </nav>
 
+          {/* Credits indicator — always visible regardless of active tab */}
+          <button
+            onClick={() => handleTabChange('user')}
+            className="border-t border-white/10 flex items-center gap-3 justify-start py-3 lg:px-2 lg:group-hover:px-4 px-4 hover:bg-white/5 transition-all"
+            title={planType === 'pro' ? 'Unlimited credits' : `${creditsRemaining ?? '—'} credits left`}
+          >
+            <div className="w-8 h-8 flex-shrink-0 lg:mx-auto lg:group-hover:mx-0 transition-all duration-500 ease-in-out rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 flex items-center justify-center">
+              <span className="text-[10px] font-black text-[#00ffff]">
+                {planType === 'pro' ? '∞' : creditsRemaining ?? '–'}
+              </span>
+            </div>
+            <div className="flex-1 text-left lg:max-w-0 lg:group-hover:max-w-xs overflow-hidden transition-all duration-500 ease-in-out">
+              <p className="text-xs font-medium text-white whitespace-nowrap">
+                {planType === 'pro' ? 'Unlimited credits' : `${creditsRemaining ?? '—'} credits left`}
+              </p>
+            </div>
+          </button>
+
           {/* User section at bottom */}
           <div className="border-t border-white/10">
             <button
@@ -669,15 +879,9 @@ export default function DashboardContent() {
 
       {/* Main content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden lg:ml-16 relative">
-        {/* Animated gradient blobs background - only for new-email tab */}
-        {activeTab === 'new-email' && (
-          <div className="pointer-events-none absolute top-0 left-0 right-0 bottom-0 min-h-full z-0 overflow-hidden">
-            <div className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-br from-[#00ff00]/20 via-[#00ffff]/20 to-[#ff00ff]/20 rounded-full blur-3xl animate-blob" />
-            <div className="absolute top-1/2 -left-32 w-80 h-80 bg-gradient-to-br from-[#ff00ff]/20 via-[#00ffff]/20 to-[#00ff00]/20 rounded-full blur-3xl animate-blob animation-delay-2000" />
-            <div className="absolute bottom-1/4 right-1/3 w-96 h-96 bg-gradient-to-br from-[#00ffff]/20 via-[#ff00ff]/20 to-[#00ff00]/20 rounded-full blur-3xl animate-blob animation-delay-4000" />
-            <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-gradient-to-br from-[#00ff00]/20 via-[#ff00ff]/20 to-[#00ffff]/20 rounded-full blur-3xl animate-blob animation-delay-6000" />
-          </div>
-        )}
+        {/* Note: the gradient blob background lives inside the new-email tab's own
+            content wrapper below (not here), so it spans the tab's actual scroll
+            height instead of being clamped to one viewport-height box. */}
 
         {/* Mobile header */}
         <div className="lg:hidden sticky top-0 z-30 bg-black border-b border-white/10 px-4 py-3 flex items-center justify-between">
@@ -695,15 +899,63 @@ export default function DashboardContent() {
             {activeTab === 'history' && 'History'}
             {activeTab === 'user' && 'Settings'}
           </span>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <button
+            onClick={() => handleTabChange('user')}
+            className="text-xs font-semibold text-[#00ffff] px-2.5 py-1.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 whitespace-nowrap"
+            title="Credits remaining"
+          >
+            {planType === 'pro' ? '∞' : creditsRemaining ?? '—'}
+          </button>
         </div>
+
+        {/* Post-checkout upgrade confirmation banner */}
+        {upgradeStatus !== 'idle' && (
+          <div className={`px-4 sm:px-6 lg:px-8 pt-4 ${upgradeStatus === 'checking' ? '' : 'relative z-10'}`}>
+            {upgradeStatus === 'checking' && (
+              <div className="flex items-center gap-3 p-3 rounded-lg border border-white/10 bg-white/5 text-sm text-white/70">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#00ffff] flex-shrink-0" />
+                Confirming your upgrade...
+              </div>
+            )}
+            {upgradeStatus === 'success' && (
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-green-500/30 bg-green-500/10 text-sm text-green-400">
+                <span>You&apos;re now on the Professional plan — unlimited emails, edits, and more.</span>
+                <button onClick={() => setUpgradeStatus('idle')} className="text-green-400/70 hover:text-green-400 flex-shrink-0">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            {upgradeStatus === 'pending' && (
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg border border-yellow-500/30 bg-yellow-500/10 text-sm text-yellow-400">
+                <span>Payment received — your plan can take a minute to finish updating. If it doesn&apos;t update shortly, refresh the page or contact support.</span>
+                <button onClick={() => setUpgradeStatus('idle')} className="text-yellow-400/70 hover:text-yellow-400 flex-shrink-0">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="p-4 sm:p-6 lg:p-8 relative z-10 overflow-x-hidden">
           {/* Tab content */}
           {activeTab === 'new-email' && (
             <div className="space-y-6 pt-12 sm:pt-16 lg:pt-24 relative z-10 overflow-x-hidden">
+              {/* Animated gradient blobs — sized to this tab's full content height
+                  (not main's viewport-clamped box), so they cover the whole scroll
+                  area instead of cutting off to plain black partway down the page. */}
+              <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+                <div className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-br from-[#00ff00]/10 via-[#00ffff]/10 to-[#ff00ff]/10 rounded-full blur-3xl animate-blob" />
+                <div className="absolute top-1/3 -left-32 w-80 h-80 bg-gradient-to-br from-[#ff00ff]/10 via-[#00ffff]/10 to-[#00ff00]/10 rounded-full blur-3xl animate-blob animation-delay-2000" />
+                <div className="absolute top-2/3 right-1/3 w-96 h-96 bg-gradient-to-br from-[#00ffff]/10 via-[#ff00ff]/10 to-[#00ff00]/10 rounded-full blur-3xl animate-blob animation-delay-4000" />
+                <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-gradient-to-br from-[#00ff00]/10 via-[#ff00ff]/10 to-[#00ffff]/10 rounded-full blur-3xl animate-blob animation-delay-6000" />
+              </div>
+
               {/* Email Generator - Homepage Style */}
-              <div className="max-w-4xl mx-auto relative z-10">
+              <div className="max-w-4xl mx-auto relative z-20">
                 <div className="text-center space-y-2 md:space-y-3 mb-6 md:mb-8">
                   <h2 className="text-3xl font-semibold text-white sm:text-4xl md:text-5xl lg:text-6xl">
                     Create better emails, faster.
@@ -712,7 +964,30 @@ export default function DashboardContent() {
                     Generate and send engaging emails in minutes.
                   </p>
                 </div>
-                
+
+                {!brandLoading && brandProfiles.length === 0 && (
+                  <div className="mb-6">
+                    <div className="relative rounded-xl sm:rounded-2xl border border-[#00ffff]/30 bg-gradient-to-r from-[#00ffff]/10 to-[#00ff00]/10 backdrop-blur-sm p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                      <div className="w-10 h-10 rounded-full bg-[#00ffff]/20 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-white">Have a website? Let us match your brand automatically.</p>
+                        <p className="text-xs text-white/60 mt-0.5">We&apos;ll pull your colors, logo, and voice from your site so your first email is already on-brand.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={createNewBrand}
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#00ffff] text-black text-sm font-bold hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all whitespace-nowrap"
+                      >
+                        Set up my brand
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="relative group">
                   <div className="absolute -inset-0.5 bg-gradient-to-r from-[#00ff00] via-[#00ffff] to-[#ff00ff] rounded-xl sm:rounded-2xl opacity-80 group-hover:opacity-100 blur transition duration-500 animate-gradient bg-[length:200%_auto]" />
                   <div className="relative rounded-xl sm:rounded-2xl border border-white/10 bg-black/80 p-1 sm:p-1.5 shadow-2xl backdrop-blur-sm">
@@ -728,22 +1003,25 @@ export default function DashboardContent() {
                       placeholder="Describe the email you want to create... (e.g., Product launch announcement with 30% discount for existing customers)"
                       className="w-full resize-none rounded-lg sm:rounded-xl border-0 bg-black/60 px-4 py-3 sm:px-5 sm:py-4 text-sm sm:text-base text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:text-white min-h-[140px] sm:min-h-[160px]"
                     />
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-3 py-2 sm:px-4 sm:py-3">
-                      <div className="flex items-center gap-3 text-xs sm:text-sm text-white/60 justify-center sm:justify-start flex-wrap">
-                        <span className="inline-flex items-center gap-1.5">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-3 py-2.5 sm:px-4 sm:py-3.5">
+                      <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-white/60 justify-center sm:justify-start flex-wrap">
+                        <span className="hidden sm:inline-flex items-center gap-1.5">
                           <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                           </svg>
                           <span className="text-[#00ffff]">AI-powered</span>
                         </span>
-                        <span className="text-white/30">·</span>
+                        <span className="hidden sm:inline text-white/30">·</span>
+                        <div className="flex items-center gap-2">
                         <div className="relative">
                           <button
                             type="button"
                             onClick={() => setStyleDropdownOpen(!styleDropdownOpen)}
-                            className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/20 rounded-lg pl-3 pr-2 py-1.5 text-xs font-medium text-white hover:border-white/40 hover:from-white/15 hover:to-white/10 transition-all min-w-[140px]"
+                            className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/20 rounded-lg pl-2.5 pr-2 py-1.5 text-xs font-medium text-white hover:border-white/40 hover:from-white/15 hover:to-white/10 transition-all min-w-[140px]"
                           >
+                            <StyleSwatch styleValue={designStyle} />
                             <span className="flex-1 text-left">
+                              {designStyle === 'simple' && 'Simple'}
                               {designStyle === 'minimalist' && 'Minimalist'}
                               {designStyle === 'editorial' && 'Editorial'}
                               {designStyle === 'retro' && 'Retro'}
@@ -764,15 +1042,7 @@ export default function DashboardContent() {
                                 onClick={() => setStyleDropdownOpen(false)}
                               />
                               <div className="absolute left-0 top-full mt-2 w-48 max-h-[240px] bg-gradient-to-b from-black via-black to-black/95 border-2 border-white/20 rounded-lg shadow-2xl shadow-black/50 overflow-y-auto z-20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 backdrop-blur-xl">
-                                {([
-                                  { value: 'minimalist', label: 'Minimalist', desc: 'Lots of whitespace, clean fonts, simple layout' },
-                                  { value: 'editorial', label: 'Editorial', desc: 'Structured story layout, like a magazine article' },
-                                  { value: 'retro', label: 'Retro', desc: 'Warm nostalgic colors and classic typefaces' },
-                                  { value: 'brutalist', label: 'Brutalist', desc: 'Heavy borders, stark contrast, bold raw layout' },
-                                  { value: 'cyberpunk', label: 'Cyberpunk', desc: 'Neon colors, dark background, futuristic feel' },
-                                  { value: 'handwritten', label: 'Handwritten', desc: 'Personal and friendly, sketch-like elements' },
-                                  { value: 'bauhaus', label: 'Bauhaus', desc: 'Geometric shapes, primary colors, structured grid' }
-                                ] as const).map((style) => (
+                                {DESIGN_STYLE_OPTIONS.map((style) => (
                                   <button
                                     key={style.value}
                                     type="button"
@@ -780,25 +1050,27 @@ export default function DashboardContent() {
                                       setDesignStyle(style.value);
                                       setStyleDropdownOpen(false);
                                     }}
-                                    className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${
+                                    className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 flex items-center gap-3 ${
                                       designStyle === style.value ? 'bg-[#00ffff]/10 text-[#00ffff]' : 'text-white'
                                     }`}
                                   >
-                                    <div className="font-medium text-sm">{style.label}</div>
-                                    <div className="text-xs text-white/50 mt-0.5">{style.desc}</div>
+                                    <StyleSwatch styleValue={style.value} size={28} />
+                                    <div className="min-w-0">
+                                      <div className="font-medium text-sm">{style.label}</div>
+                                      <div className="text-xs text-white/50 mt-0.5">{style.desc}</div>
+                                    </div>
                                   </button>
                                 ))}
                               </div>
                             </>
                           )}
                         </div>
-                        <span className="text-white/30">·</span>
                         {/* Brand selector */}
                         <div className="relative">
                           <button
                             type="button"
                             onClick={() => setBrandDropdownOpen(!brandDropdownOpen)}
-                            className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/20 rounded-lg pl-3 pr-2 py-1.5 text-xs font-medium text-white hover:border-white/40 hover:from-white/15 hover:to-white/10 transition-all min-w-[130px]"
+                            className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/20 rounded-lg pl-2.5 pr-2 py-1.5 text-xs font-medium text-white hover:border-white/40 hover:from-white/15 hover:to-white/10 transition-all min-w-[130px]"
                           >
                             {(() => {
                               const brand = brandProfiles.find(b => b.id === generateBrandId);
@@ -833,7 +1105,7 @@ export default function DashboardContent() {
                                     <p className="text-xs text-white/40 mb-2">No brand profiles yet</p>
                                     <button
                                       type="button"
-                                      onClick={() => { setBrandDropdownOpen(false); handleTabChange('brand'); }}
+                                      onClick={() => { setBrandDropdownOpen(false); createNewBrand(); }}
                                       className="text-xs text-[#00ffff] underline"
                                     >
                                       Create one →
@@ -875,20 +1147,31 @@ export default function DashboardContent() {
                                         )}
                                       </button>
                                     ))}
+                                    <button
+                                      type="button"
+                                      onClick={() => { setBrandDropdownOpen(false); createNewBrand(); }}
+                                      className="w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center gap-2 text-[#00ffff] text-xs font-medium"
+                                    >
+                                      <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                      </svg>
+                                      Create new brand
+                                    </button>
                                   </>
                                 )}
                               </div>
                             </>
                           )}
                         </div>
+                        </div>
                         <span className="text-white/30 hidden xs:inline">·</span>
                         <span className="hidden xs:inline">
-                          {planType === 'enterprise' ? 'Unlimited credits' : creditsRemaining !== null ? `${creditsRemaining} credits left` : 'Loading...'}
+                          {planType === 'pro' ? 'Unlimited credits' : creditsRemaining !== null ? `${creditsRemaining} credits left` : 'Loading...'}
                         </span>
                       </div>
-                      <button 
+                      <button
                         onClick={handleGenerateEmail}
-                        disabled={generating || !emailInput.trim() || (planType !== 'enterprise' && creditsRemaining !== null && creditsRemaining < 1)}
+                        disabled={generating || !emailInput.trim() || (planType !== 'pro' && creditsRemaining !== null && creditsRemaining < 1)}
                         className="w-full sm:w-auto rounded-full bg-white px-5 sm:px-6 py-2.5 text-sm font-medium text-black transition-all duration-300 hover:shadow-2xl hover:shadow-white/30 hover:-translate-y-1 hover:scale-105 active:scale-100 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:scale-100"
                       >
                         {generating ? 'Generating...' : 'Generate Email'}
@@ -904,13 +1187,6 @@ export default function DashboardContent() {
                   </div>
                 )}
 
-                {/* Success Message */}
-                {generatedEmail && !generating && (
-                  <div className="max-w-4xl mx-auto mt-4 p-4 rounded-lg border border-green-500/30 bg-green-500/10 text-green-400">
-                    Email generated successfully! Check the History tab to view it.
-                  </div>
-                )}
-
                 <div className="flex flex-wrap items-center gap-2 justify-center mt-6">
                   <span className="text-xs sm:text-sm text-white/60 w-full sm:w-auto text-center">Try:</span>
                   {[
@@ -921,6 +1197,7 @@ export default function DashboardContent() {
                   ].map((prompt, i) => (
                     <button
                       key={prompt}
+                      onClick={() => setEmailInput(prompt)}
                       className="rounded-full border border-white/20 bg-black/60 px-3 sm:px-4 py-1.5 text-xs sm:text-sm text-white/70 transition-all duration-300 hover:border-[#00ffff] hover:bg-black/80 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#00ffff]/40"
                       style={{ animationDelay: `${i * 100}ms` }}
                     >
@@ -931,25 +1208,77 @@ export default function DashboardContent() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto mt-8">
-                <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-white/5">
-                  <h3 className="text-xs sm:text-sm font-medium text-white/60 mb-1">Total Emails</h3>
-                  <p className="text-2xl sm:text-3xl font-bold text-white">{totalEmails}</p>
+              <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto mt-8">
+                <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-black/60 backdrop-blur-sm flex items-center gap-4">
+                  <div className="w-11 h-11 flex-shrink-0 rounded-xl bg-[#00ffff]/10 border border-[#00ffff]/25 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-medium text-white/60 mb-1">Total Emails</h3>
+                    <p className="text-2xl sm:text-3xl font-bold text-white">{totalEmails}</p>
+                  </div>
                 </div>
 
-                <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-white/5">
-                  <h3 className="text-xs sm:text-sm font-medium text-white/60 mb-1">This Month</h3>
-                  <p className="text-2xl sm:text-3xl font-bold text-white">{thisMonthEmails}</p>
+                <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-black/60 backdrop-blur-sm flex items-center gap-4">
+                  <div className="w-11 h-11 flex-shrink-0 rounded-xl bg-[#00ff00]/10 border border-[#00ff00]/25 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-[#00ff00]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-medium text-white/60 mb-1">This Month</h3>
+                    <p className="text-2xl sm:text-3xl font-bold text-white">{thisMonthEmails}</p>
+                  </div>
                 </div>
 
-                <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-white/5">
-                  <h3 className="text-xs sm:text-sm font-medium text-white/60 mb-1">Brands</h3>
-                  <p className="text-2xl sm:text-3xl font-bold text-white">{brandProfiles.length}</p>
+                <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-black/60 backdrop-blur-sm flex items-center gap-4">
+                  <div className="w-11 h-11 flex-shrink-0 rounded-xl bg-[#ff00ff]/10 border border-[#ff00ff]/25 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-[#ff00ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-5 5a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 9V4a1 1 0 011-1z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-medium text-white/60 mb-1">Brands</h3>
+                    <p className="text-2xl sm:text-3xl font-bold text-white">{brandProfiles.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Activity chart */}
+              <div className="relative z-10 max-w-4xl mx-auto">
+                <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-black/60 backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-5">
+                    <div>
+                      <h3 className="text-sm font-semibold text-white">Activity</h3>
+                      <p className="text-xs text-white/40 mt-0.5">Emails generated, last 14 days</p>
+                    </div>
+                    <span className="text-xs font-medium text-white/50">{activityTotal} total</span>
+                  </div>
+                  {activityTotal === 0 ? (
+                    <p className="text-sm text-white/30 py-6 text-center">No emails generated in the last 14 days yet — your first one will show up here.</p>
+                  ) : (
+                    <div className="flex items-end gap-1.5 sm:gap-2 h-28">
+                      {activityData.map((d) => (
+                        <div key={d.date} className="flex-1 flex flex-col items-center gap-2 h-full justify-end group">
+                          <div className="w-full flex items-end justify-center h-full">
+                            <div
+                              className="w-full max-w-[22px] rounded-t-md bg-gradient-to-t from-[#00ffff] to-[#00ff00] opacity-60 group-hover:opacity-100 transition-opacity"
+                              style={{ height: `${Math.max(6, (d.count / activityMax) * 100)}%` }}
+                              title={`${d.count} email${d.count === 1 ? '' : 's'}`}
+                            />
+                          </div>
+                          <span className="text-[9px] text-white/25">{d.dayLabel}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Quick templates */}
-              <div className="max-w-4xl mx-auto">
+              <div className="relative z-10 max-w-4xl mx-auto">
                 <h3 className="text-base sm:text-lg font-semibold text-white mb-3">Quick Start Templates</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   {([
@@ -967,7 +1296,7 @@ export default function DashboardContent() {
                         setDesignStyle(template.style);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }}
-                      className="p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all text-left group"
+                      className="p-4 rounded-lg border border-white/10 bg-black/60 backdrop-blur-sm hover:bg-black/70 hover:border-white/20 transition-all text-left group"
                     >
                       <h4 className="text-sm font-semibold text-white mb-1 group-hover:text-[#00ffff] transition-colors">{template.title}</h4>
                       <p className="text-xs text-white/60">{template.desc}</p>
@@ -992,15 +1321,25 @@ export default function DashboardContent() {
                           : `${brandProfiles.length} brand${brandProfiles.length === 1 ? '' : 's'} configured`}
                       </p>
                     </div>
-                    <button
-                      onClick={createNewBrand}
-                      className="px-6 py-3 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex items-center gap-2 self-start sm:self-auto"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      New Brand
-                    </button>
+                    {planType !== 'pro' && brandProfiles.length >= 1 ? (
+                      <a
+                        href="/#pricing"
+                        className="px-6 py-3 rounded-lg border border-white/20 text-white/70 hover:border-white/40 hover:text-white font-bold transition-all flex items-center gap-2 self-start sm:self-auto"
+                        title="Free trial includes 1 brand profile"
+                      >
+                        Upgrade to add more brands
+                      </a>
+                    ) : (
+                      <button
+                        onClick={createNewBrand}
+                        className="px-6 py-3 rounded-lg bg-[#00ffff] text-black font-bold hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex items-center gap-2 self-start sm:self-auto"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        New Brand
+                      </button>
+                    )}
                   </div>
 
                   {/* Success/Error Message */}
@@ -1033,17 +1372,17 @@ export default function DashboardContent() {
                       </p>
                       <button
                         onClick={createNewBrand}
-                        className="px-8 py-4 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold hover:shadow-xl hover:shadow-[#00ffff]/50 transition-all text-lg"
+                        className="px-8 py-4 rounded-full bg-[#00ffff] text-black font-bold hover:shadow-xl hover:shadow-[#00ffff]/50 transition-all text-lg"
                       >
                         Get Started
                       </button>
                     </div>
                     ) : (
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                       {brandProfiles.map((brand) => (
                         <div
                           key={brand.id}
-                          className="group relative rounded-xl border-2 border-white/10 bg-gradient-to-br from-white/5 to-white/10 hover:border-[#00ffff]/50 hover:shadow-xl hover:shadow-[#00ffff]/20 transition-all overflow-hidden"
+                          className="group relative rounded-xl border border-white/10 bg-white/5 hover:border-[#00ffff]/50 hover:shadow-xl hover:shadow-[#00ffff]/20 transition-all overflow-hidden"
                         >
                           {/* Decorative gradient */}
                           <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#00ffff]/10 to-transparent rounded-full blur-3xl -z-10" />
@@ -1158,7 +1497,7 @@ export default function DashboardContent() {
                             <div className="flex items-center gap-2">
                               <button
                                 onClick={() => editBrand(brand)}
-                                className="flex-1 px-3 py-2 rounded-lg bg-gradient-to-r from-[#00ffff]/10 to-[#00ff00]/10 border border-[#00ffff]/30 text-white text-[11px] font-bold hover:from-[#00ffff]/20 hover:to-[#00ff00]/20 hover:border-[#00ffff]/50 transition-all"
+                                className="flex-1 px-3 py-2 rounded-lg bg-[#00ffff]/10 border border-[#00ffff]/30 text-white text-[11px] font-bold hover:bg-[#00ffff]/20 hover:border-[#00ffff]/50 transition-all"
                               >
                                 Edit
                               </button>
@@ -1233,7 +1572,7 @@ export default function DashboardContent() {
                         type="button"
                         onClick={analyzeBrandWebsite}
                         disabled={analyzingWebsite || !brandForm.website_url.trim()}
-                        className="px-4 py-3 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
+                        className="px-4 py-3 rounded-lg bg-[#00ffff] text-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
                       >
                         {analyzingWebsite ? (
                           <>
@@ -1444,10 +1783,7 @@ export default function DashboardContent() {
 
                     {/* Secondary Color */}
                     <div>
-                      <label className="block text-sm font-medium text-white mb-2">
-                        Secondary Color
-                        <span className="ml-2 text-xs text-white/40 font-normal">(optional)</span>
-                      </label>
+                      <label className="block text-sm font-medium text-white mb-2">Secondary Color</label>
                       <div className="flex gap-3 items-center">
                         <div className="relative flex-shrink-0">
                           <input
@@ -1463,29 +1799,17 @@ export default function DashboardContent() {
                             }}
                           />
                         </div>
-                        <div className="flex-1 min-w-0 flex gap-2">
-                          <input
-                            type="text"
-                            value={brandForm.secondary_color || ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              if (val === '' || /^#[0-9A-Fa-f]{0,6}$/.test(val)) setBrandForm({ ...brandForm, secondary_color: val });
-                            }}
-                            maxLength={7}
-                            placeholder="#ffffff"
-                            className="flex-1 min-w-0 px-4 py-3 rounded-lg bg-black border border-white/20 text-white font-mono text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
-                          />
-                          {brandForm.secondary_color && (
-                            <button
-                              type="button"
-                              onClick={() => setBrandForm({ ...brandForm, secondary_color: '' })}
-                              className="px-3 py-3 rounded-lg border border-white/20 text-white/40 hover:text-white hover:border-white/40 transition-colors text-xs"
-                              title="Clear secondary color"
-                            >
-                              ✕
-                            </button>
-                          )}
-                        </div>
+                        <input
+                          type="text"
+                          value={brandForm.secondary_color || ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val === '' || /^#[0-9A-Fa-f]{0,6}$/.test(val)) setBrandForm({ ...brandForm, secondary_color: val });
+                          }}
+                          maxLength={7}
+                          placeholder="#ffffff"
+                          className="flex-1 min-w-0 px-4 py-3 rounded-lg bg-black border border-white/20 text-white font-mono text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                        />
                       </div>
                     </div>
                   </div>
@@ -1494,7 +1818,7 @@ export default function DashboardContent() {
                   <div>
                     <label className="block text-sm font-medium text-white mb-2">
                       Background Color
-                      <span className="ml-2 text-xs text-white/40 font-normal">(optional — used as email body background)</span>
+                      <span className="ml-2 text-xs text-white/40 font-normal">(used as email body background)</span>
                     </label>
                     <div className="flex gap-3 items-center">
                       <div className="relative flex-shrink-0">
@@ -1512,29 +1836,17 @@ export default function DashboardContent() {
                           }}
                         />
                       </div>
-                      <div className="flex-1 min-w-0 flex gap-2">
-                        <input
-                          type="text"
-                          value={brandForm.background_color || ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (val === '' || /^#[0-9A-Fa-f]{0,6}$/.test(val)) setBrandForm({ ...brandForm, background_color: val });
-                          }}
-                          maxLength={7}
-                          placeholder="#f5f5f5"
-                          className="flex-1 min-w-0 px-4 py-3 rounded-lg bg-black border border-white/20 text-white font-mono text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
-                        />
-                        {brandForm.background_color && (
-                          <button
-                            type="button"
-                            onClick={() => setBrandForm({ ...brandForm, background_color: '' })}
-                            className="px-3 py-3 rounded-lg border border-white/20 text-white/40 hover:text-white hover:border-white/40 transition-colors text-xs"
-                            title="Clear background color"
-                          >
-                            ✕
-                          </button>
-                        )}
-                      </div>
+                      <input
+                        type="text"
+                        value={brandForm.background_color || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || /^#[0-9A-Fa-f]{0,6}$/.test(val)) setBrandForm({ ...brandForm, background_color: val });
+                        }}
+                        maxLength={7}
+                        placeholder="#f5f5f5"
+                        className="flex-1 min-w-0 px-4 py-3 rounded-lg bg-black border border-white/20 text-white font-mono text-sm placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
+                      />
                     </div>
                   </div>
 
@@ -1549,9 +1861,9 @@ export default function DashboardContent() {
                     />
                   </div>
 
-                  <button 
+                  <button
                     onClick={saveBrandProfile}
-                    disabled={brandSaving || !brandForm.brand_name}
+                    disabled={brandSaving || !brandForm.brand_name || !brandForm.primary_color || !brandForm.secondary_color || !brandForm.background_color}
                     className="px-6 py-3 rounded-full bg-white text-black font-medium hover:shadow-xl hover:shadow-white/30 transition-all hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
                   >
                     {brandSaving ? 'Saving...' : selectedBrand ? 'Update Brand' : 'Create Brand'}
@@ -1567,6 +1879,38 @@ export default function DashboardContent() {
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 text-white">Email History</h1>
                 <p className="text-sm sm:text-base text-white/60">View and manage your generated emails</p>
               </div>
+
+              {!historyLoading && emailHistory.length > 0 && (
+                /* Search + style filter */
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="relative flex-1">
+                    <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input
+                      type="text"
+                      value={historySearch}
+                      onChange={(e) => setHistorySearch(e.target.value)}
+                      placeholder="Search by subject..."
+                      className="w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff]/50 focus:border-[#00ffff]/50"
+                    />
+                  </div>
+                  <select
+                    value={historyStyleFilter}
+                    onChange={(e) => setHistoryStyleFilter(e.target.value as DesignStyle | 'all')}
+                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#00ffff]/50 focus:border-[#00ffff]/50"
+                  >
+                    <option value="all" className="bg-black">All styles</option>
+                    <option value="minimalist" className="bg-black">Minimalist</option>
+                    <option value="editorial" className="bg-black">Editorial</option>
+                    <option value="retro" className="bg-black">Retro</option>
+                    <option value="brutalist" className="bg-black">Brutalist</option>
+                    <option value="cyberpunk" className="bg-black">Cyberpunk</option>
+                    <option value="handwritten" className="bg-black">Handwritten</option>
+                    <option value="bauhaus" className="bg-black">Bauhaus</option>
+                  </select>
+                </div>
+              )}
 
               {historyLoading ? (
                 <div className="flex items-center justify-center py-12">
@@ -1589,10 +1933,22 @@ export default function DashboardContent() {
                     Create Your First Email
                   </button>
                 </div>
+              ) : filteredHistory.length === 0 ? (
+                /* No results for current search/filter */
+                <div className="p-12 rounded-xl border border-white/10 bg-white/5 text-center">
+                  <h2 className="text-lg font-bold mb-2 text-white">No emails match your search</h2>
+                  <p className="text-white/60 mb-6">Try a different subject or style filter</p>
+                  <button
+                    onClick={() => { setHistorySearch(''); setHistoryStyleFilter('all'); }}
+                    className="px-5 py-2.5 rounded-full border border-white/20 text-white text-sm hover:bg-white/5 transition-all"
+                  >
+                    Clear filters
+                  </button>
+                </div>
               ) : (
                 /* Email grid with previews */
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {emailHistory.map((email) => {
+                  {filteredHistory.map((email) => {
                     const isDeleting = deletingEmailId === email.id;
                     
                     return (
@@ -1637,13 +1993,12 @@ export default function DashboardContent() {
                               title={email.subject_line || 'Email preview'}
                               sandbox="allow-same-origin"
                               scrolling="no"
-                              className="absolute top-0 left-1/2 border-0 pointer-events-none"
-                              style={{
-                                width: 600,
-                                height: 900,
-                                transform: 'translateX(-50%) scale(0.38)',
-                                transformOrigin: 'top center',
-                              }}
+                              // Scale steps roughly track this grid's own breakpoints
+                              // (grid-cols-2 → md:grid-cols-3 → lg:grid-cols-4) so the
+                              // preview fills its card consistently at every width,
+                              // instead of one fixed scale looking right at only one size.
+                              className="absolute top-0 left-1/2 -translate-x-1/2 origin-top border-0 pointer-events-none scale-[0.27] md:scale-[0.35] lg:scale-[0.4]"
+                              style={{ width: 600, height: 900 }}
                             />
                           ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-white/10 to-white/5">
@@ -1687,7 +2042,7 @@ export default function DashboardContent() {
               </div>
 
               {/* ── Profile card ─────────────────────────────────────── */}
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-5 flex items-center gap-4">
+              <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00ffff] to-[#00ff00] flex items-center justify-center text-black font-bold text-xl flex-shrink-0">
                   {userEmail ? userEmail[0].toUpperCase() : 'U'}
                 </div>
@@ -1704,9 +2059,9 @@ export default function DashboardContent() {
                 {[
                   { label: 'Total Emails', value: totalEmails },
                   { label: 'This Month', value: thisMonthEmails },
-                  { label: 'Credits Used', value: creditsRemaining !== null && planType !== 'enterprise' ? (planType === 'pro' ? 50 : 5) - creditsRemaining : '∞' },
+                  { label: 'Credits Used', value: creditsRemaining !== null && planType !== 'pro' ? 1 - creditsRemaining : '∞' },
                 ].map(stat => (
-                  <div key={stat.label} className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-center">
+                  <div key={stat.label} className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
                     <p className="text-2xl font-bold text-white">{stat.value}</p>
                     <p className="text-xs text-white/40 mt-1">{stat.label}</p>
                   </div>
@@ -1714,61 +2069,85 @@ export default function DashboardContent() {
               </div>
 
               {/* ── Plan & billing ───────────────────────────────────── */}
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 space-y-5">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-semibold text-white">Plan &amp; Billing</h3>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wide ${
-                    planType === 'enterprise'
-                      ? 'bg-[#ff00ff]/20 text-[#ff00ff] border border-[#ff00ff]/30'
-                      : planType === 'pro'
+                    planType === 'pro'
                       ? 'bg-[#00ffff]/20 text-[#00ffff] border border-[#00ffff]/30'
                       : 'bg-white/10 text-white/60 border border-white/10'
                   }`}>
-                    {planType === 'free' ? 'FREE' : planType === 'pro' ? 'PRO' : 'ENTERPRISE'}
+                    {planType === 'pro' ? 'PROFESSIONAL' : 'FREE TRIAL'}
                   </span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-white/60">Credits remaining</span>
-                    <span className="text-white font-medium">
-                      {planType === 'enterprise' ? 'Unlimited' : creditsRemaining !== null ? `${creditsRemaining} / ${planType === 'pro' ? 50 : 5}` : '—'}
-                    </span>
-                  </div>
-                  {planType !== 'enterprise' && creditsRemaining !== null && (
-                    <div className="w-full h-2 rounded-full bg-white/10 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all ${
-                          planType === 'pro'
-                            ? 'bg-gradient-to-r from-[#00ffff] to-[#00ff00]'
-                            : 'bg-gradient-to-r from-[#00ffff] to-[#00ff00]'
-                        }`}
-                        style={{ width: `${Math.round((creditsRemaining / (planType === 'pro' ? 50 : 5)) * 100)}%` }}
-                      />
-                    </div>
-                  )}
-                  {planType !== 'enterprise' && (
-                    <p className="text-xs text-white/30">Resets monthly</p>
+                  {planType === 'pro' ? (
+                    <>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-white/60">Usage</span>
+                        <span className="text-white font-medium">Unlimited</span>
+                      </div>
+                      {cancelAt ? (
+                        <p className="text-xs text-amber-400 pt-1">
+                          Cancels on {new Date(cancelAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. You'll keep Professional access until then.
+                        </p>
+                      ) : (
+                        <p className="text-xs text-white/30 pt-1">Renews automatically each billing period</p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-1.5">One-time free trial</p>
+                      {[
+                        { label: 'Brand profile', used: trialFlags?.brand },
+                        { label: 'Email generation', used: creditsRemaining !== null ? creditsRemaining < 1 : undefined },
+                        { label: 'AI edit', used: trialFlags?.aiEdit },
+                        { label: 'Block regenerate', used: trialFlags?.blockRegenerate },
+                        { label: 'Test send', used: trialFlags?.testEmail },
+                      ].map((row) => (
+                        <div key={row.label} className="flex items-center justify-between text-sm">
+                          <span className="flex items-center gap-2 text-white/70">
+                            <span className={`w-1.5 h-1.5 rounded-full ${row.used ? 'bg-white/30' : 'bg-[#00ff80]'}`} />
+                            {row.label}
+                          </span>
+                          <span className={row.used ? 'text-white/40' : 'text-[#00ff80]'}>
+                            {row.used === undefined ? '—' : row.used ? 'Used' : 'Available'}
+                          </span>
+                        </div>
+                      ))}
+                      <p className="text-xs text-white/30 pt-1">Doesn't renew — upgrade for unlimited use</p>
+                    </>
                   )}
                 </div>
 
                 <div className="flex flex-wrap gap-3 pt-1">
-                  {planType !== 'enterprise' && (
+                  {planType !== 'pro' && (
                     <a
-                      href="/pricing"
-                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 hover:-translate-y-px transition-all"
+                      href="/#pricing"
+                      className="px-5 py-2.5 rounded-xl bg-[#00ffff] text-black font-bold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 hover:-translate-y-px transition-all"
                     >
-                      {planType === 'free' ? 'Upgrade Plan' : 'Change Plan'}
+                      Upgrade Plan
                     </a>
                   )}
-                  {(planType === 'pro' || planType === 'enterprise') && (
-                    <ManageBillingButton />
+                  {planType === 'pro' && (
+                    <>
+                      <ManageBillingButton />
+                      {!cancelAt && (
+                        <button
+                          onClick={() => setCancelModalOpen(true)}
+                          className="px-6 py-2.5 rounded-full border border-red-500/30 text-red-400 hover:bg-red-500/10 transition-all text-sm"
+                        >
+                          Cancel Subscription
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
 
               {/* ── Session ──────────────────────────────────────────── */}
-              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 flex items-center justify-between">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-white">Sign out</p>
                   <p className="text-xs text-white/40 mt-0.5">You'll be redirected to the home page</p>
@@ -1787,9 +2166,12 @@ export default function DashboardContent() {
                   <p className="text-sm font-medium text-red-400">Delete account</p>
                   <p className="text-xs text-white/30 mt-0.5">Permanently remove your account and all data</p>
                 </div>
-                <button className="px-5 py-2 rounded-xl border border-red-500/40 text-red-400 text-sm font-medium hover:bg-red-500/10 transition-all">
-                  Delete
-                </button>
+                <a
+                  href="mailto:support@emlet.app?subject=Delete%20my%20Emlet%20account"
+                  className="px-5 py-2 rounded-xl border border-red-500/40 text-red-400 text-sm font-medium hover:bg-red-500/10 transition-all"
+                >
+                  Contact Support
+                </a>
               </div>
             </div>
           )}

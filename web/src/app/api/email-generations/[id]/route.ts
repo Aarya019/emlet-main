@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getEmailGeneration, getBrandProfile } from '@/lib/db/queries';
+import { getEmailGeneration, getBrandProfile, getOrCreateProfile } from '@/lib/db/queries';
 import { generateEmailHtml, styleConfigs } from '@/lib/email/renderer';
 
 export async function GET(
@@ -38,7 +38,15 @@ export async function GET(
     secondaryColor: brand?.secondary_color || brand?.primary_color || '#5c5cf0',
   };
 
-  return NextResponse.json({ generation, defaultColors });
+  const profile = await getOrCreateProfile(user.id);
+  const trialStatus = profile ? {
+    planType: profile.plan_type,
+    aiEditUsed: profile.free_ai_edit_used,
+    blockRegenerateUsed: profile.free_block_regenerate_used,
+    testEmailUsed: profile.free_test_email_used,
+  } : null;
+
+  return NextResponse.json({ generation, defaultColors, trialStatus });
 }
 
 export async function DELETE(

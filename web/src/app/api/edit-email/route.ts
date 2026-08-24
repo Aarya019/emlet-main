@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { editEmailWithInstruction } from '@/lib/ai/gemini';
-import { getEmailGeneration, getBrandProfile, updateEmailGeneration } from '@/lib/db/queries';
+import { editEmailWithInstruction } from '@/lib/ai/claude';
+import { getEmailGeneration, getBrandProfile, updateEmailGeneration, claimFreeAction, releaseFreeAction } from '@/lib/db/queries';
 import { generateEmailHtml } from '@/lib/email/renderer';
 import { batchFetchPexelsImages, styleImageConfig } from '@/lib/images/pexels';
-import type { GeneratedEmail, EmailSection } from '@/lib/ai/gemini';
+import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import type { GeneratedEmail, EmailSection } from '@/lib/ai/claude';
 
 export const maxDuration = 120;
 
@@ -16,9 +17,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  if (!(await checkRateLimit(user.id, 'edit-email', 60, 6))) {
+    return rateLimitResponse();
+  }
+
+  let claimed = false;
   try {
     const body = await request.json();
-    const { emailGenerationId, instruction } = body;
+    const { emailGenerationId, instruction, currentContent } = body;
 
     if (!emailGenerationId || typeof emailGenerationId !== 'string') {
       return NextResponse.json({ error: 'emailGenerationId is required' }, { status: 400 });
@@ -27,13 +33,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'instruction is required' }, { status: 400 });
     }
 
+    const { allowed } = await claimFreeAction(user.id, 'free_ai_edit_used');
+    if (!allowed) {
+      return NextResponse.json(
+        { error: "You've used your free AI edit — upgrade to Professional for unlimited edits." },
+        { status: 402 }
+      );
+    }
+    claimed = true;
+
     // Fetch email + brand profile
     const generation = await getEmailGeneration(emailGenerationId, user.id);
     if (!generation) {
       return NextResponse.json({ error: 'Email not found' }, { status: 404 });
     }
 
-    const emailContent = generation.content_json as GeneratedEmail;
+    // Prefer the editor's current in-memory content over the last-saved DB row —
+    // otherwise any unsaved edits (to this or any other section) get silently
+    // overwritten by the AI result, which is always persisted back afterward.
+    const emailContent = (currentContent?.sections?.length ? currentContent : generation.content_json) as GeneratedEmail;
     if (!emailContent?.sections?.length) {
       return NextResponse.json({ error: 'Email has no sections' }, { status: 400 });
     }
@@ -45,7 +63,7 @@ export async function POST(request: NextRequest) {
       brandProfile = await getBrandProfile(generation.brand_profile_id, user.id);
     }
 
-    // Call Gemini — full edit, anything can change
+    // Call Claude — full edit, anything can change
     const aiResult = await editEmailWithInstruction(
       instruction.trim(),
       emailContent,
@@ -151,6 +169,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    if (claimed) await releaseFreeAction(user.id, 'free_ai_edit_used');
     console.error('Edit email error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to edit email' },
