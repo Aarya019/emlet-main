@@ -215,7 +215,7 @@ export default function Home() {
   };
 
   return (
-<div className="relative min-h-screen bg-black text-zinc-50 font-sans overflow-x-hidden">
+<div className="landing-page relative min-h-screen bg-black text-zinc-50 font-sans overflow-x-hidden">
       <StarField />
       {/* ── Try for free announcement pill ──────────────────────────────────── */}
       <div className="relative z-50 flex items-center justify-center gap-3 bg-gradient-to-r from-[#00ffff]/10 via-[#00ff00]/10 to-[#ff00ff]/10 border-b border-white/5 px-4 py-2 text-center">
@@ -240,7 +240,7 @@ export default function Home() {
       </div>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5">
+      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5">
         <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-3 md:px-6 md:py-4">
           <a href="/" className="flex items-center gap-2 group">
             <img src="/logo.png" alt="Emlet" className="h-7 w-auto md:h-8" />

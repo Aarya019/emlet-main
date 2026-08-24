@@ -643,9 +643,17 @@ function renderIconChip(
   // `display:table-cell` div gets an anonymous table/row generated around it
   // by the browser, so `verticalAlign:'middle'` reliably centers any child —
   // block or inline — regardless of its own display type.
-  return React.createElement('div', {
-    style: { ...config.iconBoxStyle, width: `${box}px`, height: `${box}px`, display: 'table-cell', textAlign: 'center' as const, verticalAlign: 'middle' as const }
-  }, renderPhosphorIcon(iconName, emojiFallback, color, size));
+  //
+  // That anonymous table wrapper is block-level, though, so a centered
+  // ancestor (`textAlign:'center'` on a card) has no effect on *it* — only
+  // inline-level content gets centered by text-align. Without this outer
+  // inline-block wrapper the chip sits stuck to the left edge of centered
+  // cards instead of lining up with the centered text below it.
+  return React.createElement('div', { style: { display: 'inline-block' } },
+    React.createElement('div', {
+      style: { ...config.iconBoxStyle, width: `${box}px`, height: `${box}px`, display: 'table-cell', textAlign: 'center' as const, verticalAlign: 'middle' as const }
+    }, renderPhosphorIcon(iconName, emojiFallback, color, size))
+  );
 }
 
 /**
@@ -1311,7 +1319,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
             fontSize: '24px',
             fontWeight: config.headingWeight,
             color: fg,
-            margin: '0 0 20px 0',
+            margin: '0 0 24px 0',
             textAlign: 'center',
           }
         }, section.heading)
@@ -1324,19 +1332,34 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
           // Explicit even width — without it, table columns size to their own
           // content, so a stat with a longer value ("10,000+") claims more
           // width than a shorter one ("99%") and the row reads as lopsided
-          // instead of an evenly-spaced grid.
-          style: { verticalAlign: 'top', padding: '6px', width: `${100 / stats.length}%` }
+          // instead of an evenly-spaced grid. Horizontal-only gutter matches
+          // renderColumns/renderFeatureList so the card itself (not this
+          // wrapper) owns its own padding via config.cardStyle below.
+          style: { verticalAlign: 'top', padding: '0 8px', width: `${100 / stats.length}%` }
         },
           React.createElement('div', {
-            style: {
-              ...config.cardStyle,
-              textAlign: 'center' as const,
-              borderTop: `3px solid ${btn}`,
-              padding: '20px 12px',
-            }
+            // Full per-style card treatment (background/border/radius/shadow)
+            // instead of a hardcoded top border — keeps stats visually
+            // consistent with feature-list/columns cards across every design
+            // style, including ones whose cardStyle already has its own full
+            // border + shadow (brutalist, cyberpunk, retro, bauhaus), which a
+            // single-side color override used to clash with.
+            style: { ...config.cardStyle, textAlign: 'center' as const }
           },
+            // Short centered accent bar reads as an intentional design
+            // element regardless of what border the card style itself uses,
+            // where a full-width top border reads as diagonal/mismatched.
+            React.createElement('div', {
+              style: {
+                width: '32px',
+                height: '3px',
+                borderRadius: '2px',
+                backgroundColor: btn,
+                margin: '0 auto 14px auto',
+              }
+            }),
             (stat.icon || stat.iconName)
-              ? React.createElement('div', { style: { margin: '0 0 8px 0' } },
+              ? React.createElement('div', { style: { margin: '0 0 10px 0' } },
                   renderIconChip(stat.iconName, stat.icon, btn, config, 28)
                 )
               : null,
@@ -1344,21 +1367,24 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
               className: 'em-stat-value',
               style: {
                 fontFamily: config.fontFamily,
-                fontSize: '48px',
-                fontWeight: '900',
+                fontSize: '42px',
+                fontWeight: '800',
                 color: btn,
-                margin: '0 0 4px 0',
-                lineHeight: '1',
+                margin: '0 0 6px 0',
+                lineHeight: '1.1',
+                letterSpacing: '-0.02em',
               }
             }, stat.value),
             React.createElement(Text, {
               style: {
                 fontFamily: config.fontFamily,
-                fontSize: '13px',
-                color: cFg + '88',
+                fontSize: '12px',
+                fontWeight: '600',
+                color: cFg + '99',
                 margin: '0',
                 textTransform: 'uppercase',
-                letterSpacing: '0.06em',
+                letterSpacing: '0.08em',
+                lineHeight: '1.4',
               }
             }, stat.label)
           )

@@ -129,7 +129,7 @@ export default function EmailFontsGuide() {
     <div className="min-h-screen bg-black text-white">
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-black/90 backdrop-blur-xl border-b border-white/5">
+      <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5">
         <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-3 md:px-6 md:py-4">
           <Link href="/" className="flex items-center">
             <img src="/logo.png" alt="Emlet" className="h-7 w-auto md:h-8" />

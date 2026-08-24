@@ -59,6 +59,27 @@
   scrollbar-width: none;  /* Firefox */
 }
 
+/* Landing page only: show a slim, subtle scrollbar instead of hiding it.
+   Scoped via :has() so the dashboard/editor keep their hidden scrollbars. */
+html:has(.landing-page) {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+html:has(.landing-page)::-webkit-scrollbar {
+  display: block;
+  width: 6px;
+}
+html:has(.landing-page)::-webkit-scrollbar-track {
+  background: transparent;
+}
+html:has(.landing-page)::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+}
+html:has(.landing-page)::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.4);
+}
+
 body {
   background: var(--color-black);
   color: var(--color-white);

@@ -6,10 +6,8 @@
  * Pexels free tier: 200 requests/hour, no attribution required for commercial use.
  * Pixabay free tier: ~100 requests/minute, no attribution required.
  *
- * TEMPORARY (testing): Pixabay is currently tried FIRST, with Pexels as the
- * fallback — the reverse of the eventual intended setup — so Pixabay's output
- * quality can be evaluated directly. Swap the two calls in
- * `rankImageCandidates` to flip back to Pexels-primary/Pixabay-fallback.
+ * Pexels is tried first (better relevance ranking); Pixabay is the fallback
+ * for when Pexels' hourly quota is exhausted or a search comes back empty.
  */
 
 const PEXELS_API_BASE = 'https://api.pexels.com/v1';
@@ -264,9 +262,6 @@ async function rankPixabayCandidates(
  * first comes back empty — a 429/quota error, any other API error, or a
  * genuine no-match. This is the single point both `fetchPexelsImage` and
  * `batchFetchPexelsImages` go through.
- *
- * TEMPORARY (testing): Pixabay first, Pexels as fallback. Swap the two blocks
- * below to flip back to Pexels-primary once done evaluating Pixabay.
  */
 async function rankImageCandidates(
   keyword: string,
@@ -275,11 +270,11 @@ async function rankImageCandidates(
   color: string | undefined,
   preferPanoramic: boolean,
 ): Promise<RankedCandidate[]> {
-  const pixabayResults = await rankPixabayCandidates(keyword, orientation, color, preferPanoramic);
-  if (pixabayResults.length > 0) return pixabayResults;
+  const pexelsResults = await rankPexelsCandidates(keyword, orientation, size, color, preferPanoramic);
+  if (pexelsResults.length > 0) return pexelsResults;
 
-  console.warn(`Pixabay had no usable results for "${keyword}" — falling back to Pexels`);
-  return rankPexelsCandidates(keyword, orientation, size, color, preferPanoramic);
+  console.warn(`Pexels had no usable results for "${keyword}" — falling back to Pixabay`);
+  return rankPixabayCandidates(keyword, orientation, color, preferPanoramic);
 }
 
 /**
