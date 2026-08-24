@@ -120,8 +120,8 @@ export async function POST(request: NextRequest) {
     const finalSections: EmailSection[] = aiResult.sections.map(section => {
       const s: EmailSection = { ...section };
       // Strip any CDN URLs the AI may have copied — we always re-resolve
-      delete (s as Record<string, unknown>).imageUrl;
-      delete (s as Record<string, unknown>).backgroundImageUrl;
+      delete s.imageUrl;
+      delete s.backgroundImageUrl;
 
       if (s.imageKeyword) {
         const url = imageCache.get(`img:${s.imageKeyword}`) ?? fetchedMap[enrichKw(s.imageKeyword)];
