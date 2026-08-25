@@ -49,6 +49,25 @@ function SortableSectionItem({ id, children }: { id: number; children: (dragHand
   );
 }
 
+// Soft check, not a hard block — catches the common typos (stray spaces,
+// missing scheme) without rejecting legitimate relative paths, anchors, or
+// mailto:/tel: links.
+function isLikelyValidUrl(url: string): boolean {
+  const trimmed = url.trim();
+  if (!trimmed) return true;
+  if (/\s/.test(trimmed)) return false;
+  return /^(https?:\/\/|mailto:|tel:|\/|#)/i.test(trimmed);
+}
+
+function UrlWarning({ url }: { url: string | undefined }) {
+  if (!url || isLikelyValidUrl(url)) return null;
+  return (
+    <p className="text-[10px] text-yellow-500/80 mt-1">
+      Doesn&apos;t look like a valid link — expected https://, /path, #anchor, mailto:, or tel:
+    </p>
+  );
+}
+
 export default function EmailEditor({ emailId }: EmailEditorProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -68,6 +87,19 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [isDirty, setIsDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
+  // Undo/redo — a capped stack of full editedEmail snapshots. Rapid edits
+  // (typing) are coalesced into one entry via debounce; structural actions
+  // (delete/duplicate/add/reorder section) flush immediately so Ctrl+Z right
+  // after one of those always undoes exactly that action.
+  const MAX_HISTORY = 50;
+  const [historyState, setHistoryState] = useState<{ stack: GeneratedEmail[]; index: number }>({ stack: [], index: -1 });
+  const historyStateRef = useRef(historyState);
+  useEffect(() => { historyStateRef.current = historyState; }, [historyState]);
+  const applyingHistoryRef = useRef(false);
+  const forceImmediateHistoryRef = useRef(false);
+  const historyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [collapsedSections, setCollapsedSections] = useState<Set<number>>(new Set());
   const [showAddBlock, setShowAddBlock] = useState(false);
   const [showSendModal, setShowSendModal] = useState(false);
@@ -196,8 +228,74 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       setEditedEmail(seeded);
       // Collapse all sections by default
       setCollapsedSections(new Set(seeded.sections.map((_, i) => i)));
+      // Baseline for undo/redo — the loaded state is index 0, nothing to undo past it.
+      applyingHistoryRef.current = true;
+      setHistoryState({ stack: [seeded], index: 0 });
     }
   }, [email, editedEmail, defaultColors]);
+
+  const pushHistorySnapshot = useCallback((snapshot: GeneratedEmail) => {
+    setHistoryState(prev => {
+      const trimmed = prev.stack.slice(0, prev.index + 1);
+      const top = trimmed[trimmed.length - 1];
+      if (top && JSON.stringify(top) === JSON.stringify(snapshot)) return prev;
+      const next = [...trimmed, snapshot];
+      const overflow = next.length - MAX_HISTORY;
+      const capped = overflow > 0 ? next.slice(overflow) : next;
+      return { stack: capped, index: capped.length - 1 };
+    });
+  }, []);
+
+  // Records a debounced snapshot after every settled edit, coalescing rapid
+  // typing into one undo step. Structural actions (delete/duplicate/add/
+  // reorder section) set forceImmediateHistoryRef first so they commit on the
+  // next tick instead of waiting out the full debounce — otherwise Ctrl+Z
+  // pressed right after one of those would skip past it.
+  useEffect(() => {
+    if (!editedEmail) return;
+    if (applyingHistoryRef.current) { applyingHistoryRef.current = false; return; }
+    if (historyDebounceRef.current) clearTimeout(historyDebounceRef.current);
+    const delay = forceImmediateHistoryRef.current ? 0 : 600;
+    forceImmediateHistoryRef.current = false;
+    historyDebounceRef.current = setTimeout(() => pushHistorySnapshot(editedEmail), delay);
+    return () => { if (historyDebounceRef.current) clearTimeout(historyDebounceRef.current); };
+  }, [editedEmail, pushHistorySnapshot]);
+
+  const undo = useCallback(() => {
+    const { stack, index } = historyStateRef.current;
+    if (index <= 0) return;
+    const newIndex = index - 1;
+    applyingHistoryRef.current = true;
+    setEditedEmail(stack[newIndex]);
+    setIsDirty(true);
+    setHistoryState({ stack, index: newIndex });
+  }, []);
+
+  const redo = useCallback(() => {
+    const { stack, index } = historyStateRef.current;
+    if (index >= stack.length - 1) return;
+    const newIndex = index + 1;
+    applyingHistoryRef.current = true;
+    setEditedEmail(stack[newIndex]);
+    setIsDirty(true);
+    setHistoryState({ stack, index: newIndex });
+  }, []);
+
+  // Global Ctrl/Cmd+Z / Ctrl/Cmd+Shift+Z — skipped while focus is inside a
+  // text input/textarea so the browser's native per-character undo in that
+  // field still works as expected; the toolbar buttons remain the reliable
+  // way to undo/redo regardless of focus.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key.toLowerCase() !== 'z' || !(e.metaKey || e.ctrlKey)) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) return;
+      e.preventDefault();
+      if (e.shiftKey) redo(); else undo();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [undo, redo]);
 
   // Debounced live preview: re-render on every edit with 700ms debounce
   useEffect(() => {
@@ -370,6 +468,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   }, []);
 
   const deleteSection = useCallback((index: number) => {
+    forceImmediateHistoryRef.current = true;
     setEditedEmail(prev => {
       if (!prev) return prev;
       return { ...prev, sections: prev.sections.filter((_, i) => i !== index) };
@@ -388,6 +487,28 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     setIsDirty(true);
   }, []);
 
+  const duplicateSection = useCallback((index: number) => {
+    forceImmediateHistoryRef.current = true;
+    setEditedEmail(prev => {
+      if (!prev) return prev;
+      const sections = [...prev.sections];
+      sections.splice(index + 1, 0, structuredClone(sections[index]));
+      return { ...prev, sections };
+    });
+    // Existing collapsed/selected/AI-open state below the insertion point needs
+    // to shift down by one, same reasoning as deleteSection/reorderSections —
+    // otherwise it ends up pointing at whatever slid into its old index.
+    setCollapsedSections(prev => {
+      const next = new Set<number>();
+      prev.forEach(i => next.add(i > index ? i + 1 : i));
+      return next;
+    });
+    const shiftForInsert = (i: number | null) => i === null ? null : i > index ? i + 1 : i;
+    setSelectedSection(shiftForInsert);
+    setAiOpenSection(shiftForInsert);
+    setIsDirty(true);
+  }, []);
+
   const toggleCollapse = useCallback((index: number) => {
     setCollapsedSections(prev => {
       const next = new Set(prev);
@@ -397,6 +518,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   }, []);
 
   const reorderSections = useCallback((oldIndex: number, newIndex: number) => {
+    forceImmediateHistoryRef.current = true;
     setEditedEmail(prev => {
       if (!prev) return prev;
       return { ...prev, sections: arrayMove(prev.sections, oldIndex, newIndex) };
@@ -425,6 +547,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   }, []);
 
   const addSection = useCallback((type: EmailSection['type']) => {
+    forceImmediateHistoryRef.current = true;
     const newSection: EmailSection = { type, ...DEFAULT_SECTION[type] } as EmailSection;
     setEditedEmail(prev => {
       if (!prev) return prev;
@@ -436,13 +559,18 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
   const handleCancelChanges = useCallback(() => {
     if (!email) return;
-    setEditedEmail(JSON.parse(JSON.stringify(email.content_json)) as GeneratedEmail);
+    const reverted = JSON.parse(JSON.stringify(email.content_json)) as GeneratedEmail;
+    applyingHistoryRef.current = true;
+    setEditedEmail(reverted);
     setIsDirty(false);
     // Any selection/AI-panel state may reference sections that no longer
     // exist (or moved) once the array reverts to the last-saved shape.
     setSelectedSection(null);
     setAiOpenSection(null);
     setCollapsedSections(new Set());
+    // Reverting to the saved state discards whatever was undoable before it —
+    // it becomes the new baseline, same as a fresh load.
+    setHistoryState({ stack: [reverted], index: 0 });
   }, [email]);
 
   const handleSave = async (): Promise<boolean> => {
@@ -463,6 +591,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       setEmail(data.generation);
       setPreviewKey(k => k + 1);
       setIsDirty(false);
+      setLastSavedAt(new Date());
       return true;
     } catch (err) {
       console.error('Save error:', err);
@@ -715,6 +844,33 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
             </div>
 
             <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 mr-1">
+                <button
+                  onClick={undo}
+                  disabled={historyState.index <= 0}
+                  title="Undo (Ctrl+Z)"
+                  className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 15L4 10m0 0l5-5m-5 5h11a4 4 0 010 8h-1" />
+                  </svg>
+                </button>
+                <button
+                  onClick={redo}
+                  disabled={historyState.index >= historyState.stack.length - 1}
+                  title="Redo (Ctrl+Shift+Z)"
+                  className="p-2 rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition-all disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l5-5m0 0l-5-5m5 5H9a4 4 0 000 8h1" />
+                  </svg>
+                </button>
+              </div>
+              {!isDirty && lastSavedAt && !saveError && (
+                <span className="text-white/30 text-xs whitespace-nowrap">
+                  Saved at {lastSavedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                </span>
+              )}
               {saveError && (
                 <span className="text-red-400 text-xs">{saveError}</span>
               )}
@@ -784,7 +940,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   setSendToEmail('');
                   setShowSendModal(true);
                 }}
-                disabled={!email.html_code || testSendLocked}
+                disabled={!email.html_code}
                 title={testSendLocked ? "You've used your free test send — upgrade to Professional for unlimited use." : undefined}
                 className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-40"
               >
@@ -1056,6 +1212,15 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 </div>
                               )}
                               <button
+                                onClick={() => duplicateSection(index)}
+                                className="p-1.5 rounded text-white/20 hover:text-[#00ffff] hover:bg-[#00ffff]/10 transition-all opacity-0 group-hover:opacity-100"
+                                title="Duplicate section"
+                              >
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                              </button>
+                              <button
                                 onClick={() => { if (window.confirm('Delete this section?')) deleteSection(index); }}
                                 className="p-1.5 rounded text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all opacity-0 group-hover:opacity-100"
                                 title="Delete section"
@@ -1209,7 +1374,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Opening statement or key summary…" />
                                 </div>
                               )}
-                              {section.text !== undefined && !['footer', 'divider', 'social-links'].includes(section.type) && (
+                              {section.text !== undefined && !['footer', 'divider', 'social-links', 'hero', 'testimonial', 'testimonials', 'feature-list', 'pricing-table', 'stats', 'gallery', 'image-block', 'header', 'columns'].includes(section.type) && (
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Content</label>
                                   <textarea value={section.text || ''} onChange={e => updateSection(index, { text: e.target.value })} rows={3}
@@ -1227,6 +1392,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Button URL</label>
                                     <input type="text" value={section.buttonUrl || ''} onChange={e => updateSection(index, { buttonUrl: e.target.value })}
                                       className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                    <UrlWarning url={section.buttonUrl} />
                                   </div>
                                 </div>
                               )}
@@ -1241,6 +1407,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Secondary URL</label>
                                     <input type="text" value={section.secondaryButtonUrl || ''} onChange={e => updateSection(index, { secondaryButtonUrl: e.target.value })}
                                       className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                    <UrlWarning url={section.secondaryButtonUrl} />
                                   </div>
                                 </div>
                               )}
@@ -1382,11 +1549,14 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                             next[ni] = { ...next[ni], heading: e.target.value };
                                             updateSection(index, { columns: next });
                                           }} className="w-24 flex-shrink-0 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Label" />
-                                          <input type="text" value={nav.buttonUrl || ''} onChange={e => {
-                                            const next = [...(section.columns || [])];
-                                            next[ni] = { ...next[ni], buttonUrl: e.target.value };
-                                            updateSection(index, { columns: next });
-                                          }} className="flex-1 min-w-0 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                          <div className="flex-1 min-w-0">
+                                            <input type="text" value={nav.buttonUrl || ''} onChange={e => {
+                                              const next = [...(section.columns || [])];
+                                              next[ni] = { ...next[ni], buttonUrl: e.target.value };
+                                              updateSection(index, { columns: next });
+                                            }} className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                            <UrlWarning url={nav.buttonUrl} />
+                                          </div>
                                           <button onClick={() => updateSection(index, { columns: (section.columns || []).filter((_, i) => i !== ni) })} className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                           </button>
@@ -1717,8 +1887,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       <div className="grid grid-cols-2 gap-2">
                                         <input type="text" value={plan.buttonText || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, buttonText: e.target.value } : x); updateSection(index, { plans: p }); }}
                                           className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button text" />
-                                        <input type="text" value={plan.buttonUrl || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, buttonUrl: e.target.value } : x); updateSection(index, { plans: p }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button URL" />
+                                        <div>
+                                          <input type="text" value={plan.buttonUrl || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, buttonUrl: e.target.value } : x); updateSection(index, { plans: p }); }}
+                                            className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button URL" />
+                                          <UrlWarning url={plan.buttonUrl} />
+                                        </div>
                                       </div>
                                       <div className="space-y-1">
                                         <div className="flex items-center justify-between">
@@ -1783,8 +1956,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       <div className="grid grid-cols-2 gap-2">
                                         <input type="text" value={col.buttonText || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, buttonText: e.target.value } : x); updateSection(index, { columns: c }); }}
                                           className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button text" />
-                                        <input type="text" value={col.buttonUrl || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, buttonUrl: e.target.value } : x); updateSection(index, { columns: c }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                        <div>
+                                          <input type="text" value={col.buttonUrl || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, buttonUrl: e.target.value } : x); updateSection(index, { columns: c }); }}
+                                            className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                          <UrlWarning url={col.buttonUrl} />
+                                        </div>
                                       </div>
                                     </div>
                                   ))}
@@ -1807,8 +1983,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       <div className="flex gap-2 items-center">
                                         <input type="text" value={link.platform} onChange={e => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, platform: e.target.value } : x); updateSection(index, { socialLinks: sl }); }}
                                           className="w-1/3 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Twitter" />
-                                        <input type="text" value={link.url} onChange={e => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, url: e.target.value } : x); updateSection(index, { socialLinks: sl }); }}
-                                          className="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                        <div className="flex-1">
+                                          <input type="text" value={link.url} onChange={e => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, url: e.target.value } : x); updateSection(index, { socialLinks: sl }); }}
+                                            className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                          <UrlWarning url={link.url} />
+                                        </div>
                                         <button onClick={() => updateSection(index, { socialLinks: (section.socialLinks || []).filter((_, i) => i !== li) })}
                                           className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
                                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1876,6 +2055,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Unsubscribe URL</label>
                                     <input type="text" value={section.unsubscribeUrl || ''} onChange={e => updateSection(index, { unsubscribeUrl: e.target.value })}
                                       className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://yourapp.com/unsubscribe" />
+                                    <UrlWarning url={section.unsubscribeUrl} />
                                     <p className="text-[11px] text-white/25 mt-1">Leave blank to use your ESP's merge tag</p>
                                   </div>
                                 </>
@@ -1927,6 +2107,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                             />
                                           ))}
                                         </div>
+                                        <input
+                                          type="text"
+                                          value={section.backgroundGradient || ''}
+                                          onChange={e => updateSection(index, { backgroundGradient: e.target.value || undefined })}
+                                          className="mt-1.5 w-full px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
+                                          placeholder="custom CSS, e.g. linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)"
+                                        />
                                       </div>
                                     </div>
                                     <div>
