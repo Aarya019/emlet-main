@@ -933,6 +933,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
   // Side-by-side layout: circular avatar on the left, quote + author on the right
   if (section.authorImage) {
     return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) } },
+      section.eyebrow ? renderEyebrow(section.eyebrow, btn, config, preview, si) : null,
       React.createElement('div', { style: { ...config.cardStyle } },
         React.createElement(Row, null,
           React.createElement(Column, { style: { width: '76px', verticalAlign: 'top' } },
@@ -992,6 +993,9 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
     className: 'em-section',
     style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
+    section.eyebrow
+      ? React.createElement('div', { style: { textAlign: 'center' as const } }, renderEyebrow(section.eyebrow, btn, config, preview, si))
+      : null,
     React.createElement('div', {
       style: {
         ...config.cardStyle,
@@ -1060,6 +1064,12 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
   const isGrid = section.layout === 'grid';
   const isNumbered = !!section.numbered;
 
+  const eyebrowEl = section.eyebrow
+    ? React.createElement('div', { style: { textAlign: (isGrid ? 'center' : 'left') as any } },
+        renderEyebrow(section.eyebrow, btn, config, false, 0)
+      )
+    : null;
+
   const headingEl = section.heading
     ? React.createElement(Heading, {
         as: 'h2',
@@ -1079,6 +1089,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
     const pairs: typeof features[] = [];
     for (let i = 0; i < features.length; i += 2) pairs.push(features.slice(i, i + 2));
     return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) } },
+      eyebrowEl,
       headingEl,
       ...pairs.map((pair, rowIdx) =>
         React.createElement(Section, { key: rowIdx, style: { marginBottom: '16px' } },
@@ -1122,6 +1133,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
 
   // Default vertical list (numbered badges or icon bullets)
   return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) } },
+    eyebrowEl,
     headingEl,
     ...features.map((feature, i) =>
       React.createElement(Section, { key: i, style: {
@@ -1560,6 +1572,9 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
         textAlign: 'center' as const,
       }
     },
+      section.eyebrow
+        ? renderEyebrow(section.eyebrow, accent, config, preview, si)
+        : null,
       section.heading
         ? React.createElement(Heading, {
             ...pv(preview, si, 'heading'),
@@ -1572,6 +1587,19 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
               margin: '0 0 12px 0',
             }
           }, section.heading)
+        : null,
+      section.intro
+        ? React.createElement(Text, {
+            ...pv(preview, si, 'intro'),
+            style: {
+              fontFamily: config.fontFamily,
+              fontSize: '17px',
+              fontWeight: '600',
+              color: fg,
+              lineHeight: '1.6',
+              margin: '0 0 10px 0',
+            }
+          }, section.intro)
         : null,
       section.text
         ? React.createElement(Text, {
@@ -1601,6 +1629,20 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
               boxShadow: config.buttonShadow,
             }
           }, section.buttonText)
+        : null,
+      section.secondaryButtonText
+        ? React.createElement(Text, { style: { margin: '14px 0 0 0' } },
+            React.createElement(Link, {
+              href: section.secondaryButtonUrl || '#',
+              style: {
+                fontFamily: config.fontFamily,
+                fontSize: '14px',
+                color: accent,
+                textDecoration: 'underline',
+                fontWeight: '600',
+              }
+            }, section.secondaryButtonText)
+          )
         : null
     )
   );
@@ -1639,6 +1681,9 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
 
   return React.createElement(Section, { style: { ...sectionBgStyle, borderRadius: config.sectionBorderRadius, ...(hasBgImage ? { overflow: 'hidden' as const } : {}) } },
     React.createElement('div', { className: 'em-section', style: innerStyle },
+      section.eyebrow
+        ? renderEyebrow(section.eyebrow, hasBgImage ? 'rgba(255,255,255,0.75)' : btn, config, preview, si)
+        : null,
       section.heading
         ? React.createElement(Heading, {
             ...pv(preview, si, 'heading'),
@@ -1652,6 +1697,19 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
               margin: '0 0 12px 0',
             }
           }, section.heading)
+        : null,
+      section.intro
+        ? React.createElement(Text, {
+            ...pv(preview, si, 'intro'),
+            style: {
+              fontFamily: config.fontFamily,
+              fontSize: '18px',
+              fontWeight: '600',
+              color: fg,
+              lineHeight: '1.6',
+              margin: '0 0 12px 0',
+            }
+          }, section.intro)
         : null,
       section.text
         ? React.createElement(Text, {
@@ -2186,6 +2244,7 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
         margin: '0',
       }
     },
+      section.eyebrow ? renderEyebrow(section.eyebrow, btn, config, preview, si) : null,
       section.text
         ? React.createElement(Text, {
             ...pv(preview, si, 'text'),
