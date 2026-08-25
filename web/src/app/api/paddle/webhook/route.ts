@@ -143,6 +143,43 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         break;
       }
 
+      // ── Refund approved ─────────────────────────────────────────────────────
+      // Adjustments cover refunds, credits, and chargebacks — we only care about
+      // a fully-approved refund here. Partial refunds/credits/chargeback-review
+      // states don't mean "take pro access away." This only syncs our DB to
+      // match Paddle; it does NOT cancel the Paddle subscription itself, so a
+      // refund alone won't stop the next billing cycle — cancel separately in
+      // Paddle if that's also the intent.
+      case 'adjustment.created':
+      case 'adjustment.updated': {
+        const adj = event.data;
+        const action: string = adj.action;
+        const status: string = adj.status;
+        const adjustmentType: string = adj.type;
+        const subscriptionId: string | null = adj.subscriptionId ?? adj.subscription_id ?? null;
+        console.log('[paddle-webhook] adjustment - action:', action, 'status:', status, 'type:', adjustmentType, 'subscriptionId:', subscriptionId);
+
+        if (action !== 'refund' || status !== 'approved' || adjustmentType !== 'full') break;
+        if (!subscriptionId) { console.warn('[paddle-webhook] full refund with no subscriptionId, skipping:', adj.id); break; }
+
+        const { data: profile } = await db.from('profiles').select('id').eq('paddle_subscription_id', subscriptionId).single();
+        if (!profile) break;
+
+        console.log('[paddle-webhook] full refund approved - downgrading userId:', profile.id);
+        const { error } = await db.from('profiles').update({
+          plan_type: 'free',
+          credits_remaining: PLAN_CREDITS.free,
+          subscription_status: 'canceled',
+          cancel_at: null,
+          updated_at: new Date().toISOString(),
+        }).eq('id', profile.id);
+        if (error) {
+          console.error('DB update error (refund):', error);
+          throw error;
+        }
+        break;
+      }
+
       default:
         break;
     }
