@@ -784,7 +784,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   setSendToEmail('');
                   setShowSendModal(true);
                 }}
-                disabled={!email.html_code || testSendLocked}
+                disabled={!email.html_code}
                 title={testSendLocked ? "You've used your free test send — upgrade to Professional for unlimited use." : undefined}
                 className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-40"
               >
