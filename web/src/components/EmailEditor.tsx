@@ -10,6 +10,7 @@ import { runEmailChecklist } from '@/lib/email/checklist';
 import ImageUploadInput from '@/components/ImageUploadInput';
 import IconPicker from '@/components/IconPicker';
 import EmailVerifyModal from '@/components/EmailVerifyModal';
+import UpgradeModal from '@/components/UpgradeModal';
 import {
   DndContext,
   closestCenter,
@@ -78,6 +79,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [defaultColors, setDefaultColors] = useState<{ bodyBg: string; bodyColor: string; primaryColor: string; secondaryColor: string } | null>(null);
   const [regeneratingSection, setRegeneratingSection] = useState<number | null>(null);
   const [blockError, setBlockError] = useState<{ index: number; message: string; isUpgradeError?: boolean } | null>(null);
+  const [upgradeModalMessage, setUpgradeModalMessage] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
   const [aiOpenSection, setAiOpenSection] = useState<number | null>(null);
   const [headingFontDropdownOpen, setHeadingFontDropdownOpen] = useState(false);
@@ -491,6 +493,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
         if (res.status === 402) {
           setAiHistory(prev => [...prev, { role: 'ai', content: data.error || "You've used your free AI edit.", isUpgradeError: true }]);
           setTrialStatus(prev => prev ? { ...prev, aiEditUsed: true } : prev);
+          setUpgradeModalMessage(data.error || "You've used your free AI edit. Upgrade to Professional for unlimited edits.");
         } else {
           setAiHistory(prev => [...prev, { role: 'ai', content: `Sorry, something went wrong: ${data.error || 'Unknown error'}` }]);
         }
@@ -540,7 +543,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       const data = await res.json();
       if (!res.ok) {
         setSendResult({ success: false, message: data.error || 'Failed to send', isUpgradeError: res.status === 402 });
-        if (res.status === 402) setTrialStatus(prev => prev ? { ...prev, testEmailUsed: true } : prev);
+        if (res.status === 402) {
+          setTrialStatus(prev => prev ? { ...prev, testEmailUsed: true } : prev);
+          setUpgradeModalMessage(data.error || "You've used your free test send. Upgrade to Professional for unlimited test sends.");
+        }
       } else {
         setSendResult({ success: true, message: `Sent! Check your inbox at ${sendToEmail.trim()}` });
       }
@@ -1109,7 +1115,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         const data = await res.json();
                                         if (!res.ok) {
                                           setBlockError({ index, message: data.error || 'Failed to regenerate', isUpgradeError: res.status === 402 });
-                                          if (res.status === 402) setTrialStatus(prev => prev ? { ...prev, blockRegenerateUsed: true } : prev);
+                                          if (res.status === 402) {
+                                            setTrialStatus(prev => prev ? { ...prev, blockRegenerateUsed: true } : prev);
+                                            setUpgradeModalMessage(data.error || "You've used your free block regeneration. Upgrade to Professional for unlimited regenerations.");
+                                          }
                                           return;
                                         }
                                         updateSection(index, data.section);
@@ -2161,6 +2170,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 htmlCode={email?.html_code ?? null}
                 onClose={() => setShowVerifyModal(false)}
               />
+            )}
+
+            {upgradeModalMessage && (
+              <UpgradeModal message={upgradeModalMessage} onClose={() => setUpgradeModalMessage(null)} />
             )}
 
             {/* AI Chat Panel - OVERLAY */}

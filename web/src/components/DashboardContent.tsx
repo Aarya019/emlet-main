@@ -5,6 +5,7 @@ import { signOut } from '@/app/actions/auth';
 import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle, PlanType } from '@/lib/db/types';
 import EmailGeneratingOverlay from '@/components/EmailGeneratingOverlay';
 import StarField from '@/components/StarField';
+import UpgradeModal from '@/components/UpgradeModal';
 
 /** Mirrors each design style's signature look (from renderer.tsx styleConfigs) for the picker swatches. */
 const STYLE_SWATCHES: Record<DesignStyle, { style: React.CSSProperties; dot?: string }> = {
@@ -122,6 +123,7 @@ export default function DashboardContent() {
   // Email generation state
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [upgradeModalMessage, setUpgradeModalMessage] = useState<string | null>(null);
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const [planType, setPlanType] = useState<PlanType>('free');
   const [trialFlags, setTrialFlags] = useState<{ brand: boolean; aiEdit: boolean; blockRegenerate: boolean; testEmail: boolean } | null>(null);
@@ -148,6 +150,12 @@ export default function DashboardContent() {
   // Email delete state
   const [emailToDelete, setEmailToDelete] = useState<EmailGeneration | null>(null);
   const [deletingEmailId, setDeletingEmailId] = useState<string | null>(null);
+
+  // Email history multi-select state
+  const [historySelectionMode, setHistorySelectionMode] = useState(false);
+  const [selectedEmailIds, setSelectedEmailIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Design style dropdown
   const [styleDropdownOpen, setStyleDropdownOpen] = useState(false);
@@ -280,6 +288,34 @@ export default function DashboardContent() {
     } finally {
       setDeletingEmailId(null);
       setEmailToDelete(null);
+    }
+  };
+
+  const toggleEmailSelected = (id: string) => {
+    setSelectedEmailIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkDeleteEmails = async () => {
+    setBulkDeleting(true);
+    try {
+      const ids = Array.from(selectedEmailIds);
+      const results = await Promise.all(
+        ids.map(id => fetch(`/api/email-generations/${id}`, { method: 'DELETE' }))
+      );
+      const deletedIds = new Set(ids.filter((_, i) => results[i].ok));
+      setEmailHistory(prev => prev.filter(e => !deletedIds.has(e.id)));
+      setSelectedEmailIds(new Set());
+      setHistorySelectionMode(false);
+    } catch (error) {
+      console.error('Error bulk deleting emails:', error);
+    } finally {
+      setBulkDeleting(false);
+      setBulkDeleteConfirmOpen(false);
     }
   };
 
@@ -528,7 +564,7 @@ export default function DashboardContent() {
     }
 
     if (planType !== 'pro' && creditsRemaining !== null && creditsRemaining < 1) {
-      setGenerationError("You've used your free email generation — upgrade to Professional for unlimited emails.");
+      setUpgradeModalMessage("You've used your free email generation. Upgrade to Professional for unlimited emails.");
       return;
     }
 
@@ -539,7 +575,7 @@ export default function DashboardContent() {
       const res = await fetch('/api/generate-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           prompt: emailInput.trim(),
           designStyle: designStyle,
           brandProfileId: generateBrandId
@@ -549,7 +585,11 @@ export default function DashboardContent() {
       const data = await res.json();
 
       if (!res.ok) {
-        setGenerationError(data.error || 'Failed to generate email');
+        if (res.status === 402) {
+          setUpgradeModalMessage(data.error || "You've used your free email generation. Upgrade to Professional for unlimited emails.");
+        } else {
+          setGenerationError(data.error || 'Failed to generate email');
+        }
         return;
       }
 
@@ -599,6 +639,12 @@ export default function DashboardContent() {
     if (historySearch.trim() && !(e.subject_line || '').toLowerCase().includes(historySearch.trim().toLowerCase())) return false;
     return true;
   });
+
+  // "Select all" reflects the current search/style filter, not the full unfiltered history.
+  const allFilteredSelected = filteredHistory.length > 0 && filteredHistory.every(e => selectedEmailIds.has(e.id));
+  const toggleSelectAllHistory = () => {
+    setSelectedEmailIds(allFilteredSelected ? new Set() : new Set(filteredHistory.map(e => e.id)));
+  };
 
   // Last-14-days activity, bucketed from the already-fetched history — no extra API call.
   const activityData = useMemo(() => {
@@ -710,6 +756,44 @@ export default function DashboardContent() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Bulk Email Delete Confirmation Modal */}
+      {bulkDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => !bulkDeleting && setBulkDeleteConfirmOpen(false)} />
+          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-black/60 max-w-md w-full p-8">
+            <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+              <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-black text-white mb-3 text-center">
+              Delete {selectedEmailIds.size} {selectedEmailIds.size === 1 ? 'Email' : 'Emails'}?
+            </h3>
+            <p className="text-red-400 text-sm text-center mb-8 font-semibold">This action cannot be undone!</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setBulkDeleteConfirmOpen(false)}
+                disabled={bulkDeleting}
+                className="flex-1 px-6 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white font-bold hover:bg-white/20 transition-all disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBulkDeleteEmails}
+                disabled={bulkDeleting}
+                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {bulkDeleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {upgradeModalMessage && (
+        <UpgradeModal message={upgradeModalMessage} onClose={() => setUpgradeModalMessage(null)} />
       )}
 
       {/* Cancel Subscription Confirmation Modal */}
@@ -1893,34 +1977,82 @@ export default function DashboardContent() {
               </div>
 
               {!historyLoading && emailHistory.length > 0 && (
-                /* Search + style filter */
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="relative flex-1">
-                    <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <input
-                      type="text"
-                      value={historySearch}
-                      onChange={(e) => setHistorySearch(e.target.value)}
-                      placeholder="Search by subject..."
-                      className="w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff]/50 focus:border-[#00ffff]/50"
-                    />
+                <div className="flex flex-col gap-3">
+                  {/* Selection toolbar */}
+                  <div className="flex items-center justify-between gap-3">
+                    {historySelectionMode ? (
+                      <>
+                        <div className="flex items-center gap-4">
+                          <button
+                            onClick={toggleSelectAllHistory}
+                            className="flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors"
+                          >
+                            <span className={`w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 ${allFilteredSelected ? 'bg-[#00ffff] border-[#00ffff]' : 'border-white/30'}`}>
+                              {allFilteredSelected && (
+                                <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </span>
+                            Select all
+                          </button>
+                          <span className="text-sm text-white/40">{selectedEmailIds.size} selected</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setBulkDeleteConfirmOpen(true)}
+                            disabled={selectedEmailIds.size === 0}
+                            className="px-4 py-2 rounded-lg bg-red-500/90 hover:bg-red-500 text-white text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            Delete Selected
+                          </button>
+                          <button
+                            onClick={() => { setHistorySelectionMode(false); setSelectedEmailIds(new Set()); }}
+                            className="px-4 py-2 rounded-lg border border-white/20 text-white/70 hover:bg-white/5 hover:text-white text-sm transition-all"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => setHistorySelectionMode(true)}
+                        className="ml-auto px-4 py-2 rounded-lg border border-white/20 text-white/70 hover:bg-white/5 hover:text-white text-sm transition-all"
+                      >
+                        Select
+                      </button>
+                    )}
                   </div>
-                  <select
-                    value={historyStyleFilter}
-                    onChange={(e) => setHistoryStyleFilter(e.target.value as DesignStyle | 'all')}
-                    className="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#00ffff]/50 focus:border-[#00ffff]/50"
-                  >
-                    <option value="all" className="bg-black">All styles</option>
-                    <option value="minimalist" className="bg-black">Minimalist</option>
-                    <option value="editorial" className="bg-black">Editorial</option>
-                    <option value="retro" className="bg-black">Retro</option>
-                    <option value="brutalist" className="bg-black">Brutalist</option>
-                    <option value="cyberpunk" className="bg-black">Cyberpunk</option>
-                    <option value="handwritten" className="bg-black">Handwritten</option>
-                    <option value="bauhaus" className="bg-black">Bauhaus</option>
-                  </select>
+
+                  {/* Search + style filter */}
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <input
+                        type="text"
+                        value={historySearch}
+                        onChange={(e) => setHistorySearch(e.target.value)}
+                        placeholder="Search by subject..."
+                        className="w-full rounded-lg border border-white/10 bg-white/5 pl-10 pr-4 py-2.5 text-sm text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff]/50 focus:border-[#00ffff]/50"
+                      />
+                    </div>
+                    <select
+                      value={historyStyleFilter}
+                      onChange={(e) => setHistoryStyleFilter(e.target.value as DesignStyle | 'all')}
+                      className="rounded-lg border border-white/10 bg-white/5 px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#00ffff]/50 focus:border-[#00ffff]/50"
+                    >
+                      <option value="all" className="bg-black">All styles</option>
+                      <option value="minimalist" className="bg-black">Minimalist</option>
+                      <option value="editorial" className="bg-black">Editorial</option>
+                      <option value="retro" className="bg-black">Retro</option>
+                      <option value="brutalist" className="bg-black">Brutalist</option>
+                      <option value="cyberpunk" className="bg-black">Cyberpunk</option>
+                      <option value="handwritten" className="bg-black">Handwritten</option>
+                      <option value="bauhaus" className="bg-black">Bauhaus</option>
+                    </select>
+                  </div>
                 </div>
               )}
 
@@ -1962,27 +2094,48 @@ export default function DashboardContent() {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                   {filteredHistory.map((email) => {
                     const isDeleting = deletingEmailId === email.id;
-                    
+                    const isSelected = selectedEmailIds.has(email.id);
+
                     return (
                       <div
                         key={email.id}
-                        className="group relative cursor-pointer rounded-xl border border-white/10 bg-white/5 overflow-hidden hover:border-[#00ffff]/50 hover:shadow-lg hover:shadow-[#00ffff]/20 transition-all"
-                        onClick={() => window.location.href = `/dashboard/email/${email.id}`}
+                        className={`group relative cursor-pointer rounded-xl border overflow-hidden transition-all ${
+                          isSelected
+                            ? 'border-[#00ffff] ring-2 ring-[#00ffff]/50 bg-white/5'
+                            : 'border-white/10 bg-white/5 hover:border-[#00ffff]/50 hover:shadow-lg hover:shadow-[#00ffff]/20'
+                        }`}
+                        onClick={() => historySelectionMode ? toggleEmailSelected(email.id) : (window.location.href = `/dashboard/email/${email.id}`)}
                       >
-                        {/* Delete button — top-left, stops propagation */}
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setEmailToDelete(email); }}
-                          className="absolute top-2 left-2 z-10 opacity-50 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-lg bg-red-500/80 hover:bg-red-500 flex items-center justify-center"
-                          title="Delete email"
-                        >
-                          {isDeleting ? (
-                            <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                          ) : (
-                            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          )}
-                        </button>
+                        {historySelectionMode ? (
+                          /* Selection checkbox — top-left, stops propagation (card click already toggles) */
+                          <div
+                            onClick={(e) => { e.stopPropagation(); toggleEmailSelected(email.id); }}
+                            className={`absolute top-2 left-2 z-10 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-colors ${
+                              isSelected ? 'bg-[#00ffff] border-[#00ffff]' : 'bg-black/60 border-white/30 hover:border-white/60'
+                            }`}
+                          >
+                            {isSelected && (
+                              <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        ) : (
+                          /* Delete button — top-left, stops propagation */
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEmailToDelete(email); }}
+                            className="absolute top-2 left-2 z-10 opacity-50 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-lg bg-red-500/80 hover:bg-red-500 flex items-center justify-center"
+                            title="Delete email"
+                          >
+                            {isDeleting ? (
+                              <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                            ) : (
+                              <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            )}
+                          </button>
+                        )}
 
                         {/* Status badge */}
                         <div className="absolute top-2 right-2 z-10">
