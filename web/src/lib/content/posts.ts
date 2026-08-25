@@ -50,4 +50,14 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: 'https://images.pexels.com/photos/256502/pexels-photo-256502.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=1600&h=800',
     imageAlt: 'Close-up of colorful code on a computer screen',
   },
+  {
+    slug: 'email-fonts-guide',
+    title: 'The Ultimate Guide to Email Fonts',
+    description: 'Everything you need to know about choosing, embedding, and fallback-stacking fonts in HTML email — client support matrix, recommended stacks, and sizing best practices.',
+    date: '2026-03-24',
+    readTime: '8 min read',
+    category: 'Design',
+    image: 'https://images.pexels.com/photos/4140925/pexels-photo-4140925.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=1600&h=800',
+    imageAlt: 'Vintage wooden letterpress type drawers in a printing house',
+  },
 ];

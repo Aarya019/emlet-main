@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { getPaddle } from '@/lib/paddle/client';
 import StarField from '@/components/StarField';
@@ -80,8 +81,9 @@ function CheckIcon({ className }: { className?: string }) {
 
 export default function Home() {
   const router = useRouter();
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });
+  const blob1Ref = useRef<HTMLDivElement>(null);
+  const blob2Ref = useRef<HTMLDivElement>(null);
+  const blob3Ref = useRef<HTMLDivElement>(null);
   const [streamingText, setStreamingText] = useState('');
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
   const [isUserTyping, setIsUserTyping] = useState(false);
@@ -108,22 +110,39 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    // Touch devices have no mouse to parallax against — skip attaching the
+    // listener entirely rather than paying for it and doing nothing useful.
+    // This was previously driven by React state (setMousePosition on every
+    // pixel of movement), which re-rendered this entire ~800-line component
+    // on every mousemove event and fought with the .animate-blob/.parallax-*
+    // CSS (both also targeting `transform` on these same elements) — a big
+    // contributor to forced reflows and non-composited animations on mobile.
+    // Writing directly to the DOM via refs, throttled to one update per
+    // animation frame, avoids all of that.
+    if (!window.matchMedia('(pointer: fine)').matches) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+    let rafId: number | null = null;
+    let pending: { x: number; y: number } | null = null;
+
+    const applyTransform = () => {
+      rafId = null;
+      if (!pending) return;
+      const dx = pending.x - window.innerWidth / 2;
+      const dy = pending.y - window.innerHeight / 2;
+      if (blob1Ref.current) blob1Ref.current.style.transform = `translate(${dx * 0.02}px, ${dy * 0.02}px)`;
+      if (blob2Ref.current) blob2Ref.current.style.transform = `translate(${dx * -0.015}px, ${dy * -0.015}px)`;
+      if (blob3Ref.current) blob3Ref.current.style.transform = `translate(${dx * 0.025}px, ${dy * 0.025}px)`;
     };
 
-    const handleResize = () => {
-      setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+    const handleMouseMove = (e: MouseEvent) => {
+      pending = { x: e.clientX, y: e.clientY };
+      if (rafId === null) rafId = requestAnimationFrame(applyTransform);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('resize', handleResize);
-    
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('resize', handleResize);
+      if (rafId !== null) cancelAnimationFrame(rafId);
     };
   }, []);
 
@@ -216,6 +235,26 @@ export default function Home() {
 
   return (
 <div className="landing-page relative min-h-screen bg-black text-zinc-50 font-sans overflow-x-hidden">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'SoftwareApplication',
+            name: 'Emlet',
+            url: 'https://emlet.app',
+            description: 'Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send.',
+            applicationCategory: 'BusinessApplication',
+            operatingSystem: 'Web',
+            offers: {
+              '@type': 'Offer',
+              price: '29',
+              priceCurrency: 'USD',
+              url: 'https://emlet.app/#pricing',
+            },
+          }),
+        }}
+      />
       <StarField />
       {/* ── Try for free announcement pill ──────────────────────────────────── */}
       <div className="relative z-50 flex items-center justify-center gap-3 bg-gradient-to-r from-[#00ffff]/10 via-[#00ff00]/10 to-[#ff00ff]/10 border-b border-white/5 px-4 py-2 text-center">
@@ -223,19 +262,19 @@ export default function Home() {
         <span className="text-xs text-white/60">Try for free, no credit card required.</span>
         <a href="/sign-up" className="text-xs font-semibold text-white underline underline-offset-2 hover:text-[#00ffff] transition-colors whitespace-nowrap">Start free →</a>
       </div>
-      {/* Animated gradient blobs with magnetic effect */}
+      {/* Animated gradient blobs with magnetic effect (desktop only — see effect above) */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <div
-          className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-br from-[#00ff00]/20 via-[#00ffff]/20 to-[#ff00ff]/20 rounded-full blur-3xl animate-blob parallax-slow transition-transform duration-1000 ease-out"
-          style={{ transform: windowSize.width ? `translate(${(mousePosition.x - windowSize.width / 2) * 0.02}px, ${(mousePosition.y - windowSize.height / 2) * 0.02}px)` : 'translate(0, 0)' }}
+          ref={blob1Ref}
+          className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-br from-[#00ff00]/20 via-[#00ffff]/20 to-[#ff00ff]/20 rounded-full blur-3xl"
         />
         <div
-          className="absolute top-1/2 -left-32 w-80 h-80 bg-gradient-to-br from-[#ff00ff]/20 via-[#00ffff]/20 to-[#00ff00]/20 rounded-full blur-3xl animate-blob animation-delay-2000 parallax-medium transition-transform duration-1000 ease-out"
-          style={{ transform: windowSize.width ? `translate(${(mousePosition.x - windowSize.width / 2) * -0.015}px, ${(mousePosition.y - windowSize.height / 2) * -0.015}px)` : 'translate(0, 0)' }}
+          ref={blob2Ref}
+          className="absolute top-1/2 -left-32 w-80 h-80 bg-gradient-to-br from-[#ff00ff]/20 via-[#00ffff]/20 to-[#00ff00]/20 rounded-full blur-3xl"
         />
         <div
-          className="absolute -bottom-32 right-1/3 w-96 h-96 bg-gradient-to-br from-[#00ffff]/20 via-[#ff00ff]/20 to-[#00ff00]/20 rounded-full blur-3xl animate-blob animation-delay-4000 parallax-fast transition-transform duration-1000 ease-out"
-          style={{ transform: windowSize.width ? `translate(${(mousePosition.x - windowSize.width / 2) * 0.025}px, ${(mousePosition.y - windowSize.height / 2) * 0.025}px)` : 'translate(0, 0)' }}
+          ref={blob3Ref}
+          className="absolute -bottom-32 right-1/3 w-96 h-96 bg-gradient-to-br from-[#00ffff]/20 via-[#ff00ff]/20 to-[#00ff00]/20 rounded-full blur-3xl"
         />
       </div>
 
@@ -243,7 +282,7 @@ export default function Home() {
       <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5">
         <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-3 md:px-6 md:py-4">
           <a href="/" className="flex items-center gap-2 group">
-            <img src="/logo.png" alt="Emlet" className="h-7 w-auto md:h-8" />
+            <Image src="/logo.png" alt="Emlet" width={532} height={532} priority className="h-7 w-auto md:h-8" />
           </a>
           <nav className="hidden items-center justify-center gap-8 text-sm text-white/70 md:flex">
             <a href="#how-it-works" className="transition-colors hover:text-white">How it works</a>
@@ -347,6 +386,7 @@ export default function Home() {
         )}
       </header>
 
+      <main>
       {/* ── Hero / Generator ───────────────────────────────────────────────── */}
       <section className="relative z-10 mx-auto flex h-[calc(100vh-var(--hero-offset,88px))] max-w-4xl items-center justify-center px-4 sm:px-6 overflow-hidden">
         <div className="w-full space-y-5 text-center">
@@ -378,6 +418,7 @@ export default function Home() {
             <div className="absolute -inset-0.5 bg-gradient-to-r from-[#00ff00] via-[#00ffff] to-[#ff00ff] rounded-2xl opacity-70 group-hover:opacity-100 blur transition duration-500 animate-gradient bg-[length:200%_auto]" />
             <div className="relative rounded-2xl border border-white/10 bg-black/90 p-1.5 shadow-2xl backdrop-blur-sm">
               <textarea
+                aria-label="Describe the email you want to create"
                 value={isUserTyping ? userInput : streamingText}
                 placeholder={isUserTyping ? 'Describe the email you want to create...' : ''}
                 onFocus={() => { setIsUserTyping(true); setStreamingText(''); }}
@@ -385,12 +426,12 @@ export default function Home() {
                 className="w-full resize-none rounded-xl border-0 bg-black/60 px-5 py-3 text-base text-white/60 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:text-white min-h-[100px] max-h-[120px]"
               />
               <div className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
-                <div className="flex items-center gap-2 text-xs text-white/40">
+                <div className="flex items-center gap-2 text-xs text-white/60">
                   <svg className="h-3.5 w-3.5 flex-shrink-0 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                   <span className="text-[#00ffff]">AI-powered</span>
-                  <span className="hidden sm:inline text-white/20">·</span>
+                  <span className="hidden sm:inline text-white/60">·</span>
                   <span className="hidden sm:inline">HTML & TSX export</span>
                 </div>
                 <button
@@ -405,7 +446,7 @@ export default function Home() {
 
           {/* Quick prompts */}
           <div className="flex flex-wrap items-center gap-2 justify-center">
-            <span className="text-xs text-white/30">Try:</span>
+            <span className="text-xs text-white/60">Try:</span>
             {['Product launch + 40% off', 'Customer win-back', 'Holiday promotion', 'Welcome newsletter'].map((prompt, i) => (
               <button
                 key={prompt}
@@ -418,7 +459,7 @@ export default function Home() {
             ))}
           </div>
 
-          <p className="text-xs text-white/25">
+          <p className="text-xs text-white/60">
             No credit card required · one free email to try it · cancel anytime after
           </p>
         </div>
@@ -431,10 +472,12 @@ export default function Home() {
           <div className="absolute -inset-1 bg-gradient-to-r from-[#00ffff]/20 via-[#00ff00]/10 to-[#ff00ff]/20 blur-2xl pointer-events-none" />
           <div className="relative aspect-[16/9] w-full bg-white/5 flex items-center justify-center">
             {/* ↓ Replace src with your actual screenshot/GIF */}
-            <img
+            <Image
               src="/images/editor-screenshot.png"
               alt="Emlet AI email editor: drag-and-drop blocks, live preview, one-click HTML export"
-              className="w-full h-full object-cover object-top"
+              fill
+              sizes="(max-width: 1152px) 100vw, 1152px"
+              className="object-cover object-top"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
                 (e.target as HTMLImageElement).parentElement!.querySelector('.placeholder')!.classList.remove('hidden');
@@ -449,7 +492,7 @@ export default function Home() {
           </div>
         </div>
         {/* Caption */}
-        <p className="mt-4 text-center text-xs text-white/30">
+        <p className="mt-4 text-center text-xs text-white/60">
           The Emlet email editor: write once, deploy anywhere
         </p>
       </section>
@@ -483,13 +526,13 @@ export default function Home() {
               <div className="flex-1 w-full">
                 <div className="relative rounded-xl overflow-hidden border border-white/10 shadow-xl bg-black aspect-video">
                   {step.videoId === 'PLACEHOLDER_VIDEO_ID_1' || step.videoId === 'PLACEHOLDER_VIDEO_ID_2' || step.videoId === 'PLACEHOLDER_VIDEO_ID_3' ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/20 bg-white/[0.02]">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/60 bg-white/[0.02]">
                       <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <p className="text-xs text-center px-6">
-                        Replace <code className="text-white/40">PLACEHOLDER_VIDEO_ID_{i + 1}</code> in STEPS with your YouTube video ID
+                        Replace <code className="text-white/80">PLACEHOLDER_VIDEO_ID_{i + 1}</code> in STEPS with your YouTube video ID
                       </p>
                     </div>
                   ) : (
@@ -552,9 +595,9 @@ export default function Home() {
               <p className="text-white/50 text-sm font-semibold uppercase tracking-widest mb-2">Free Trial</p>
               <div className="flex items-end gap-1 mb-1">
                 <span className="text-3xl font-black text-white">$0</span>
-                <span className="text-white/40 mb-0.5 text-sm">one-time, no card</span>
+                <span className="text-white/60 mb-0.5 text-sm">one-time, no card</span>
               </div>
-              <p className="text-white/40 text-sm">Try the real product before you pay.</p>
+              <p className="text-white/60 text-sm">Try the real product before you pay.</p>
             </div>
 
             <ul className="flex flex-col gap-3.5 flex-1">
@@ -563,7 +606,7 @@ export default function Home() {
                   <CheckIcon className="w-4 h-4 mt-0.5 shrink-0 text-white/40" />
                   <div>
                     <p className="text-sm text-white/85 font-medium leading-tight">{item.label}</p>
-                    <p className="text-xs text-white/40 leading-snug mt-0.5">{item.desc}</p>
+                    <p className="text-xs text-white/60 leading-snug mt-0.5">{item.desc}</p>
                   </div>
                 </li>
               ))}
@@ -590,9 +633,9 @@ export default function Home() {
               <p className="text-white/50 text-sm font-semibold uppercase tracking-widest mb-2">Professional</p>
               <div className="flex items-end gap-1 mb-1">
                 <span className="text-4xl font-black text-white">$29</span>
-                <span className="text-white/40 mb-1">/mo</span>
+                <span className="text-white/60 mb-1">/mo</span>
               </div>
-              <p className="text-white/40 text-sm">No limits, no per-email cost. Cancel anytime.</p>
+              <p className="text-white/60 text-sm">No limits, no per-email cost. Cancel anytime.</p>
             </div>
 
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 flex-1">
@@ -605,7 +648,7 @@ export default function Home() {
             </ul>
 
             {isPaidUser ? (
-              <div className="w-full py-2.5 rounded-xl border border-white/10 text-white/30 text-sm font-bold text-center">
+              <div className="w-full py-2.5 rounded-xl border border-white/10 text-white/60 text-sm font-bold text-center">
                 Current plan
               </div>
             ) : (
@@ -621,7 +664,7 @@ export default function Home() {
         </div>
 
         {isPaidUser && (
-          <p className="text-center mt-6 text-white/40 text-sm">
+          <p className="text-center mt-6 text-white/60 text-sm">
             Need to cancel or update your payment method?{' '}
             <button onClick={handleManageBilling} disabled={portalLoading} className="text-white/70 underline hover:text-white transition-colors disabled:opacity-50">
               {portalLoading ? 'Loading…' : 'Manage billing'}
@@ -720,6 +763,8 @@ export default function Home() {
         </div>
       </section>
 
+      </main>
+
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
       <footer className="relative z-10 border-t border-white/8 bg-black/80 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
@@ -727,16 +772,16 @@ export default function Home() {
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <a href="/" className="flex items-center gap-2 mb-4 w-fit">
-                <img src="/logo.png" alt="Emlet" className="h-8 w-auto" />
+                <Image src="/logo.png" alt="Emlet" width={532} height={532} className="h-8 w-auto" />
               </a>
-              <p className="text-sm text-white/40 leading-relaxed">
+              <p className="text-sm text-white/60 leading-relaxed">
                 Generate high-converting marketing emails in seconds.<br />Idea to inbox, instantly.
               </p>
             </div>
 
             {/* Product */}
             <div>
-              <h4 className="text-xs font-semibold tracking-widest text-white/30 uppercase mb-4">Product</h4>
+              <h3 className="text-xs font-semibold tracking-widest text-white/60 uppercase mb-4">Product</h3>
               <ul className="space-y-3 text-sm text-white/50">
                 <li><a href="#how-it-works" className="hover:text-white transition-colors">How it works</a></li>
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
@@ -749,7 +794,7 @@ export default function Home() {
 
             {/* Account */}
             <div>
-              <h4 className="text-xs font-semibold tracking-widest text-white/30 uppercase mb-4">Account</h4>
+              <h3 className="text-xs font-semibold tracking-widest text-white/60 uppercase mb-4">Account</h3>
               <ul className="space-y-3 text-sm text-white/50">
                 <li><a href="/sign-in" className="hover:text-white transition-colors">Sign in</a></li>
                 <li><a href="/sign-up" className="hover:text-white transition-colors">Sign up</a></li>
@@ -758,7 +803,7 @@ export default function Home() {
 
             {/* Legal */}
             <div>
-              <h4 className="text-xs font-semibold tracking-widest text-white/30 uppercase mb-4">Legal</h4>
+              <h3 className="text-xs font-semibold tracking-widest text-white/60 uppercase mb-4">Legal</h3>
               <ul className="space-y-3 text-sm text-white/50">
                 <li><a href="/terms" className="hover:text-white transition-colors">Terms of Service</a></li>
                 <li><a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
@@ -767,7 +812,7 @@ export default function Home() {
           </div>
 
           <div className="border-t border-white/8 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-            <p className="text-xs text-white/25">
+            <p className="text-xs text-white/60">
               © {new Date().getFullYear()} Emlet. All rights reserved.
             </p>
             <div className="flex items-center gap-4">

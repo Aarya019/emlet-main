@@ -32,7 +32,7 @@ function generateStars(count: number): Star[] {
  * Fixed, viewport-anchored twinkling starfield. Renders behind page content —
  * generated client-side only (avoids an SSR/hydration mismatch from Math.random()).
  */
-export default function StarField({ count = 150 }: { count?: number }) {
+export default function StarField({ count = 60 }: { count?: number }) {
   const [stars, setStars] = useState<Star[]>([]);
 
   useEffect(() => {

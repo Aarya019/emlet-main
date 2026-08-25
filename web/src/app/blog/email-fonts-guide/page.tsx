@@ -124,9 +124,30 @@ const TOC = [
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: 'The Ultimate Guide to Email Fonts',
+  description:
+    'Everything you need to know about choosing, embedding, and fallback-stacking fonts in HTML email — client support matrix, recommended stacks, and sizing best practices.',
+  image: 'https://images.pexels.com/photos/4140925/pexels-photo-4140925.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=1600&h=800',
+  datePublished: '2026-03-24',
+  author: { '@type': 'Person', name: 'Aarya', url: 'https://emlet.app' },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Emlet',
+    logo: { '@type': 'ImageObject', url: 'https://emlet.app/icon.png' },
+  },
+  mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://emlet.app/blog/email-fonts-guide' },
+};
+
 export default function EmailFontsGuide() {
   return (
     <div className="min-h-screen bg-black text-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
 
       {/* Header */}
       <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5">
@@ -151,7 +172,7 @@ export default function EmailFontsGuide() {
       </header>
 
       {/* Article layout */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 lg:grid lg:grid-cols-[220px_1fr] lg:gap-12 lg:items-start">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-12 lg:grid lg:grid-cols-[220px_1fr] lg:gap-12 lg:items-start">
 
         {/* Sidebar TOC — left column on desktop */}
         <TocSidebar toc={TOC} />
@@ -813,7 +834,7 @@ export default function EmailFontsGuide() {
 
 
 
-      </div>
+      </main>
 
       {/* Footer */}
       <footer className="border-t border-white/5 mt-8 py-10">

@@ -1,0 +1,30 @@
+# Emlet
+
+> Emlet is an AI email generator: describe a marketing campaign in plain English and get a fully designed, brand-matched, production-ready HTML email in seconds — no design or coding skills required.
+
+Emlet writes the copy, builds the layout, and applies your brand colors, voice, and logo automatically. Every email is editable in a visual block-based editor and exports as clean HTML or React (TSX) for any ESP (Mailchimp, SendGrid, Resend, and others).
+
+## Product
+
+- [Homepage](https://emlet.app/): Product overview, live demo generator, and pricing.
+- [Pricing](https://emlet.app/#pricing): Free trial and Professional plan ($29/mo) details.
+
+## Blog
+
+- [Blog index](https://emlet.app/blog): All articles.
+- [How to Design a Marketing Email When You're Not a Designer](https://emlet.app/blog/email-design-without-a-designer)
+- [Why Your Marketing Emails Look Broken in Gmail and Outlook](https://emlet.app/blog/why-your-emails-look-broken-in-gmail-outlook)
+- [13 Email Marketing Statistics Worth Knowing in 2026](https://emlet.app/blog/email-marketing-statistics-2026)
+- [How to Send HTML Emails From a React App Without Losing Your Mind](https://emlet.app/blog/send-html-emails-from-react-app)
+- [The Ultimate Guide to Email Fonts](https://emlet.app/blog/email-fonts-guide)
+
+## Comparisons
+
+- [Emlet vs Canva](https://emlet.app/alternatives/canva)
+- [Emlet vs ChatGPT](https://emlet.app/alternatives/chatgpt)
+- [Emlet vs Mailchimp](https://emlet.app/alternatives/mailchimp)
+
+## Legal
+
+- [Terms of Service](https://emlet.app/terms)
+- [Privacy Policy](https://emlet.app/privacy)

@@ -21,9 +21,23 @@ export const metadata: Metadata = {
   },
 };
 
+const breadcrumbJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://emlet.app/' },
+    { '@type': 'ListItem', position: 2, name: 'Alternatives', item: 'https://emlet.app/alternatives' },
+    { '@type': 'ListItem', position: 3, name: alt.title, item: `https://emlet.app/alternatives/${alt.slug}` },
+  ],
+};
+
 export default function MailchimpAlternativePage() {
   return (
     <MarketingLayout>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <Link href="/alternatives" className="text-sm text-white/40 hover:text-white transition-colors mb-8 inline-block">
         ← Back to comparisons
       </Link>
