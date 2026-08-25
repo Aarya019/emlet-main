@@ -60,6 +60,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/api/') &&
     request.nextUrl.pathname !== '/sitemap.xml' &&
     request.nextUrl.pathname !== '/robots.txt' &&
+    request.nextUrl.pathname !== '/llms.txt' &&
     request.nextUrl.pathname !== '/'
   ) {
     // no user, potentially respond by redirecting the user to the login page

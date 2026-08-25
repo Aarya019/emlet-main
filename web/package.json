@@ -8,6 +8,11 @@
     "start": "next start",
     "lint": "eslint"
   },
+  "browserslist": [
+    "> 0.5%",
+    "last 2 years",
+    "not dead"
+  ],
   "dependencies": {
     "@anthropic-ai/sdk": "^0.111.0",
     "@dnd-kit/core": "^6.3.1",

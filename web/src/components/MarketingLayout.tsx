@@ -22,12 +22,12 @@ export default function MarketingLayout({
         </div>
       </div>
 
-      <div className={`${contentClassName} mx-auto px-6 py-16`}>
+      <main className={`${contentClassName} mx-auto px-6 py-16`}>
         {children}
-      </div>
+      </main>
 
       <footer className="border-t border-white/10 px-6 py-8 mt-8">
-        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/30">
+        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/60">
           <span>© {new Date().getFullYear()} Emlet. All rights reserved.</span>
           <div className="flex items-center gap-6">
             <Link href="/blog" className="hover:text-white/60 transition-colors">Blog</Link>

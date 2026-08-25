@@ -159,7 +159,7 @@ export default function ConnectEspGuide() {
       </header>
 
       {/* Article layout */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-12 lg:grid lg:grid-cols-[220px_1fr] lg:gap-12 lg:items-start">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-12 lg:grid lg:grid-cols-[220px_1fr] lg:gap-12 lg:items-start">
 
         <TocSidebar toc={TOC} />
 
@@ -529,7 +529,7 @@ export default function ConnectEspGuide() {
           </div>
 
         </article>
-      </div>
+      </main>
     </div>
   );
 }

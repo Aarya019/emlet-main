@@ -23,9 +23,29 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
+const articleJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline: post.title,
+  description: post.description,
+  image: post.image,
+  datePublished: post.date,
+  author: { '@type': 'Person', name: 'Aarya', url: 'https://emlet.app' },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Emlet',
+    logo: { '@type': 'ImageObject', url: 'https://emlet.app/icon.png' },
+  },
+  mainEntityOfPage: { '@type': 'WebPage', '@id': `https://emlet.app/blog/${post.slug}` },
+};
+
 export default function Post() {
   return (
     <MarketingLayout>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
       <Link href="/blog" className="text-sm text-white/40 hover:text-white transition-colors mb-8 inline-block">
         ← Back to blog
       </Link>
