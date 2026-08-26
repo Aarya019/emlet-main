@@ -44,8 +44,8 @@ const FAQS = [
   { q: 'How does Emlet generate emails?', a: "You describe your campaign in plain English. Emlet's AI writes the copy, selects a layout, applies your brand colors, and outputs production-ready HTML and TSX, all in seconds." },
   { q: 'What email platforms does Emlet work with?', a: 'Any platform that accepts HTML. Export your email and drop it straight into Mailchimp, SendGrid, Resend, ConvertKit, HubSpot, or any other ESP.' },
   { q: 'Do I need design or coding skills?', a: 'Not at all. Type what you want and Emlet handles the design and code. Every block is also editable in the visual editor. No code required.' },
-  { q: 'What do I get for free?', a: 'No credit card required: 3 AI-generated emails every month, plus a one-time trial of one brand profile and one each of AI edit, block regeneration, and test send. Upgrade to Professional ($29/mo) any time for unlimited use of all of it.' },
-  { q: 'Do unused trial actions roll over or reset?', a: "Email generations reset to 3 at the start of each month — unused ones don't roll over. The brand profile, AI edit, block regeneration, and test send are one-time per account and don't renew on a schedule. Upgrading is what unlocks unlimited use of everything." },
+  { q: 'What do I get for free?', a: "No credit card required: 5 AI actions every month — generate, AI-edit, or regenerate a block, split however you like — plus 3 test sends every month and 1 active brand profile. Upgrade to Professional ($29/mo) any time for unlimited use of all of it." },
+  { q: 'Do unused trial actions roll over or reset?', a: "AI actions and test sends reset to their full amount at the start of each month — unused ones don't roll over. Your brand profile slot is a capacity of 1, not a one-time trial: delete your current one and you can immediately create another. Upgrading is what unlocks unlimited use of everything." },
   { q: 'Can I use my own brand colors and logo?', a: 'Yes. Create a Brand Profile with your colors, typography, and logo. Every email you generate automatically stays on-brand.' },
   { q: 'Will my emails look right in every inbox?', a: 'Yes. Every email Emlet generates is production-ready HTML tested to render correctly in Gmail, Outlook, Apple Mail, and every major inbox.' },
   { q: 'Can I cancel anytime?', a: 'Yes. Manage or cancel your Professional subscription anytime from the billing portal. No long-term contract, no cancellation fee.' },
@@ -62,11 +62,9 @@ const PROFESSIONAL_FEATURES = [
 ];
 
 const TRIAL_ITEMS = [
-  { label: 'Brand profile', desc: 'Set your colors, voice & logo once' },
-  { label: 'Email generation', desc: '3 AI-generated emails every month' },
-  { label: 'AI edit', desc: 'One "Edit with AI" pass' },
-  { label: 'Block regeneration', desc: 'One single-block AI rewrite' },
-  { label: 'Test send', desc: 'One test email to your own inbox' },
+  { label: 'Brand profile', desc: 'Keep 1 active — swap it anytime' },
+  { label: 'AI actions', desc: '5/month — generate, edit & regenerate, your call' },
+  { label: 'Test send', desc: '3 test emails to your own inbox every month' },
 ];
 
 const PROFESSIONAL_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRO_PRICE_ID ?? null;
@@ -186,6 +184,20 @@ export default function Home() {
         setCurrentPlan((data?.plan_type as PlanType) ?? 'free');
       }
     });
+  }, []);
+
+  // Native browser anchor-scroll-on-load is unreliable on this page — the
+  // hero, StarField, and hero screenshot all mount/settle after first paint,
+  // shifting page height out from under whatever scroll position the browser
+  // picked before that happened. Re-run the scroll ourselves once things have
+  // settled, so links to e.g. "/#pricing" from other pages land correctly.
+  useEffect(() => {
+    if (!window.location.hash) return;
+    const target = window.location.hash;
+    const timer = setTimeout(() => {
+      document.querySelector(target)?.scrollIntoView({ behavior: 'auto', block: 'start' });
+    }, 150);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleGenerateEmail = () => {
@@ -396,13 +408,6 @@ export default function Home() {
       <section className="relative z-10 mx-auto flex h-[calc(100vh-var(--hero-offset,88px))] max-w-4xl items-center justify-center px-4 sm:px-6 overflow-hidden">
         <div className="w-full space-y-5 text-center">
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#00ffff]/30 bg-[#00ffff]/5 px-4 py-1.5 text-xs font-medium text-[#00ffff]">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ffff] opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00ffff]" />
-              </span>
-              AI-powered · results in seconds
-            </div>
             <h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl leading-[1.05]">
               Generate high-converting
               <br />
@@ -437,7 +442,7 @@ export default function Home() {
                   </svg>
                   <span className="text-[#00ffff]">AI-powered</span>
                   <span className="hidden sm:inline text-white/60">·</span>
-                  <span className="hidden sm:inline">HTML & TSX export</span>
+                  <span className="hidden sm:inline">HTML export</span>
                 </div>
                 <button
                   onClick={handleGenerateEmail}
@@ -465,7 +470,7 @@ export default function Home() {
           </div>
 
           <p className="text-xs text-white/60">
-            No credit card required · 3 free emails every month · upgrade anytime
+            No credit card required · 5 free AI actions every month · upgrade anytime
           </p>
         </div>
       </section>
@@ -580,7 +585,7 @@ export default function Home() {
       </section>
 
       {/* ── Pricing ─────────────────────────────────────────────────────────── */}
-      <section id="pricing" className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-20 md:py-28 scroll-mt-24">
+      <section id="pricing" className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-20 md:py-28 scroll-mt-36">
         <div className="text-center mb-14">
           <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Pricing</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
@@ -631,7 +636,7 @@ export default function Home() {
           {/* Professional card — the centerpiece */}
           <div className="relative rounded-2xl border border-[#00ffff]/40 bg-gradient-to-b from-[#00ffff]/[0.07] to-transparent shadow-lg shadow-[#00ffff]/10 p-7 sm:p-8 flex flex-col gap-6">
             <div className="absolute -top-3 left-7 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-xs font-black uppercase tracking-wide">
-              {isPaidUser ? 'Your plan' : BETA_DISCOUNT_CODE ? 'Beta pricing — locked in forever' : 'Unlock everything'}
+              {isPaidUser ? 'Your plan' : BETA_DISCOUNT_CODE ? 'Beta pricing - locked in forever' : 'Unlock everything'}
             </div>
 
             <div>
@@ -762,7 +767,7 @@ export default function Home() {
             <span className="bg-gradient-to-r from-[#00ffff] to-[#00ff00] bg-clip-text text-transparent">marketing emails today</span>
           </h2>
           <p className="relative text-base text-white/50 mb-8 max-w-lg mx-auto">
-            Try it free — 3 emails every month, no credit card. Get your first high-converting email in under 60 seconds.
+            Try it free - 5 AI actions every month, no credit card. Get your first high-converting email in under 60 seconds.
           </p>
           <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4">
             <a href="/sign-up" className="rounded-full bg-white px-8 py-3 text-base font-bold text-black transition-all hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5">

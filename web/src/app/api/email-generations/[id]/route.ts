@@ -41,9 +41,8 @@ export async function GET(
   const profile = await getOrCreateProfile(user.id);
   const trialStatus = profile ? {
     planType: profile.plan_type,
-    aiEditUsed: profile.free_ai_edit_used,
-    blockRegenerateUsed: profile.free_block_regenerate_used,
-    testEmailUsed: profile.free_test_email_used,
+    creditsRemaining: profile.credits_remaining,
+    testSendCreditsRemaining: profile.test_send_credits_remaining,
   } : null;
 
   return NextResponse.json({ generation, defaultColors, trialStatus });

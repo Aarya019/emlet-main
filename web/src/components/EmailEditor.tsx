@@ -78,7 +78,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [aiMessage, setAiMessage] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiHistory, setAiHistory] = useState<Array<{ role: 'user' | 'ai'; content: string; isUpgradeError?: boolean }>>([]);
-  const [trialStatus, setTrialStatus] = useState<{ planType: string; aiEditUsed: boolean; blockRegenerateUsed: boolean; testEmailUsed: boolean } | null>(null);
+  const [trialStatus, setTrialStatus] = useState<{ planType: string; creditsRemaining: number; testSendCreditsRemaining: number } | null>(null);
   const aiInputRef = useRef<HTMLInputElement | null>(null);
   const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
 
@@ -620,9 +620,9 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
       if (!res.ok) {
         if (res.status === 402) {
-          setAiHistory(prev => [...prev, { role: 'ai', content: data.error || "You've used your free AI edit.", isUpgradeError: true }]);
-          setTrialStatus(prev => prev ? { ...prev, aiEditUsed: true } : prev);
-          setUpgradeModalMessage(data.error || "You've used your free AI edit. Upgrade to Professional for unlimited edits.");
+          setAiHistory(prev => [...prev, { role: 'ai', content: data.error || "You've used all your free AI actions this month.", isUpgradeError: true }]);
+          setTrialStatus(prev => prev ? { ...prev, creditsRemaining: 0 } : prev);
+          setUpgradeModalMessage(data.error || "You've used all your free AI actions this month. Upgrade to Professional for unlimited use.");
         } else {
           setAiHistory(prev => [...prev, { role: 'ai', content: `Sorry, something went wrong: ${data.error || 'Unknown error'}` }]);
         }
@@ -636,9 +636,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       // not stale DB content — see currentContent above), so there's nothing
       // left unsaved; showing "Save Changes" here would just be a no-op save.
       setIsDirty(false);
-      // This request just consumed the free-plan user's one AI edit — reflect
-      // that immediately instead of waiting for a second attempt to 402.
-      setTrialStatus(prev => prev ? { ...prev, aiEditUsed: true } : prev);
+      // This request just consumed one unit from the pooled free-plan AI
+      // actions allowance (shared with generation and block regeneration) —
+      // reflect that immediately instead of waiting for a second attempt to 402.
+      setTrialStatus(prev => prev ? { ...prev, creditsRemaining: Math.max(0, prev.creditsRemaining - 1) } : prev);
       setAiHistory(prev => [...prev, { role: 'ai', content: 'Done! The email has been updated. You can keep refining or close this panel.' }]);
     } catch {
       setAiHistory(prev => [...prev, { role: 'ai', content: 'Network error. Please try again.' }]);
@@ -654,7 +655,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     setSendResult(null);
     // Test sends always email out the last-saved html_code — with unsaved edits
     // sitting in editedEmail, the recipient would silently get a stale version
-    // (and, for a free-plan user, that could burn their one free test send on it).
+    // (and, for a free-plan user, that could burn one of their monthly test sends on it).
     if (isDirty) {
       const saved = await handleSave();
       if (!saved) {
@@ -673,11 +674,15 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       if (!res.ok) {
         setSendResult({ success: false, message: data.error || 'Failed to send', isUpgradeError: res.status === 402 });
         if (res.status === 402) {
-          setTrialStatus(prev => prev ? { ...prev, testEmailUsed: true } : prev);
-          setUpgradeModalMessage(data.error || "You've used your free test send. Upgrade to Professional for unlimited test sends.");
+          setTrialStatus(prev => prev ? { ...prev, testSendCreditsRemaining: 0 } : prev);
+          setUpgradeModalMessage(data.error || "You've used all 3 of your free test sends this month. Upgrade to Professional for unlimited test sends.");
         }
       } else {
         setSendResult({ success: true, message: `Sent! Check your inbox at ${sendToEmail.trim()}` });
+        // This request just consumed one unit from the separate test-send
+        // allowance — reflect that immediately instead of waiting for a
+        // second attempt to 402.
+        setTrialStatus(prev => prev ? { ...prev, testSendCreditsRemaining: Math.max(0, prev.testSendCreditsRemaining - 1) } : prev);
       }
     } catch {
       setSendResult({ success: false, message: 'Network error. Please try again.' });
@@ -743,9 +748,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   }, [editedEmail, defaultColors, email?.html_code]);
 
   const isFreePlan = trialStatus !== null && trialStatus.planType !== 'pro';
-  const aiEditLocked = isFreePlan && trialStatus!.aiEditUsed;
-  const regenerateLocked = isFreePlan && trialStatus!.blockRegenerateUsed;
-  const testSendLocked = isFreePlan && trialStatus!.testEmailUsed;
+  // AI edit and block regeneration draw from the same pooled monthly
+  // allowance as email generation (see credits_remaining), not separate
+  // one-time grants.
+  const aiEditLocked = isFreePlan && trialStatus!.creditsRemaining < 1;
+  const regenerateLocked = isFreePlan && trialStatus!.creditsRemaining < 1;
+  const testSendLocked = isFreePlan && trialStatus!.testSendCreditsRemaining < 1;
 
   // Block type → accent color for left border
   const BLOCK_COLORS: Record<string, string> = {
@@ -941,7 +949,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   setShowSendModal(true);
                 }}
                 disabled={!email.html_code}
-                title={testSendLocked ? "You've used your free test send — upgrade to Professional for unlimited use." : undefined}
+                title={testSendLocked ? "You've used all 3 of your free test sends this month — upgrade to Professional for unlimited use." : undefined}
                 className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-40"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1267,7 +1275,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <button
                                     data-ai-run
                                     disabled={regeneratingSection !== null || regenerateLocked}
-                                    title={regenerateLocked ? "You've used your free block regeneration — upgrade to Professional for unlimited use." : undefined}
+                                    title={regenerateLocked ? "You've used all your free AI actions this month — upgrade to Professional for unlimited use." : undefined}
                                     onClick={async () => {
                                       if (!email || regeneratingSection !== null || regenerateLocked) return;
                                       setBlockError(null);
@@ -1287,8 +1295,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         if (!res.ok) {
                                           setBlockError({ index, message: data.error || 'Failed to regenerate', isUpgradeError: res.status === 402 });
                                           if (res.status === 402) {
-                                            setTrialStatus(prev => prev ? { ...prev, blockRegenerateUsed: true } : prev);
-                                            setUpgradeModalMessage(data.error || "You've used your free block regeneration. Upgrade to Professional for unlimited regenerations.");
+                                            setTrialStatus(prev => prev ? { ...prev, creditsRemaining: 0 } : prev);
+                                            setUpgradeModalMessage(data.error || "You've used all your free AI actions this month. Upgrade to Professional for unlimited use.");
                                           }
                                           return;
                                         }
@@ -1297,10 +1305,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         // edits), but the server already persisted this exact merged
                                         // result (see currentContent above) — override back to clean.
                                         setIsDirty(false);
-                                        // This request just consumed the free-plan user's one block
-                                        // regeneration — reflect that immediately instead of waiting
-                                        // for a second attempt to 402.
-                                        setTrialStatus(prev => prev ? { ...prev, blockRegenerateUsed: true } : prev);
+                                        // This request just consumed one unit from the pooled free-plan
+                                        // AI actions allowance (shared with generation and AI edit) —
+                                        // reflect that immediately instead of waiting for a second
+                                        // attempt to 402.
+                                        setTrialStatus(prev => prev ? { ...prev, creditsRemaining: Math.max(0, prev.creditsRemaining - 1) } : prev);
                                         if (data.html_code) {
                                           setLivePreviewHtml(data.html_code);
                                           setPreviewKey(k => k + 1);
@@ -1340,7 +1349,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                               )}
                               {!blockError && regenerateLocked && (
                                 <p className="mt-1.5 text-[11px] text-white/30">
-                                  Free plan: block regeneration already used —{' '}
+                                  Free plan: out of AI actions this month —{' '}
                                   <Link href="/#pricing" className="underline hover:text-white/60 transition-colors">upgrade</Link> for unlimited.
                                 </p>
                               )}
@@ -2509,11 +2518,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     <div className="p-4 border-t border-white/10">
                       {aiEditLocked ? (
                         <div className="px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/30 text-sm text-red-300">
-                          You've used your free AI edit —{' '}
+                          You've used all your free AI actions this month —{' '}
                           <Link href="/#pricing" className="underline font-semibold text-red-200 hover:text-white transition-colors">
                             upgrade to Professional
                           </Link>{' '}
-                          for unlimited edits.
+                          for unlimited use.
                         </div>
                       ) : (
                         <div className="flex gap-2">

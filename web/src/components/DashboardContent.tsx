@@ -124,9 +124,12 @@ export default function DashboardContent() {
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [upgradeModalMessage, setUpgradeModalMessage] = useState<string | null>(null);
+  // Pooled AI-actions allowance (generation + AI edit + block regeneration).
   const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
+  // Separate allowance — test sends have no AI cost, not pooled with the above.
+  const [testSendCreditsRemaining, setTestSendCreditsRemaining] = useState<number | null>(null);
   const [planType, setPlanType] = useState<PlanType>('free');
-  const [trialFlags, setTrialFlags] = useState<{ brand: boolean; aiEdit: boolean; blockRegenerate: boolean; testEmail: boolean } | null>(null);
+  const [trialFlags, setTrialFlags] = useState<{ brand: boolean } | null>(null);
   const [cancelAt, setCancelAt] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
   const [memberSince, setMemberSince] = useState<string>('');
@@ -225,13 +228,9 @@ export default function DashboardContent() {
       if (res.ok) {
         const data = await res.json();
         setCreditsRemaining(data.credits_remaining);
+        setTestSendCreditsRemaining(data.test_send_credits_remaining);
         setPlanType(data.plan_type ?? 'free');
-        setTrialFlags({
-          brand: !!data.free_brand_used,
-          aiEdit: !!data.free_ai_edit_used,
-          blockRegenerate: !!data.free_block_regenerate_used,
-          testEmail: !!data.free_test_email_used,
-        });
+        setTrialFlags({ brand: !!data.free_brand_used });
         setCancelAt(data.cancel_at ?? null);
         if (data.email) setUserEmail(data.email);
         if (data.member_since) setMemberSince(data.member_since);
@@ -564,7 +563,7 @@ export default function DashboardContent() {
     }
 
     if (planType !== 'pro' && creditsRemaining !== null && creditsRemaining < 1) {
-      setUpgradeModalMessage("You've used all 3 of your free generations this month. Upgrade to Professional for unlimited emails.");
+      setUpgradeModalMessage("You've used all your free AI actions this month. Upgrade to Professional for unlimited emails.");
       return;
     }
 
@@ -586,7 +585,7 @@ export default function DashboardContent() {
 
       if (!res.ok) {
         if (res.status === 402) {
-          setUpgradeModalMessage(data.error || "You've used all 3 of your free generations this month. Upgrade to Professional for unlimited emails.");
+          setUpgradeModalMessage(data.error || "You've used all your free AI actions this month. Upgrade to Professional for unlimited emails.");
         } else {
           setGenerationError(data.error || 'Failed to generate email');
         }
@@ -1270,37 +1269,6 @@ export default function DashboardContent() {
                     {generationError}
                   </div>
                 )}
-
-                <div className="flex flex-wrap items-center gap-2 justify-center mt-6">
-                  <span className="text-xs sm:text-sm text-white/60 w-full sm:w-auto text-center">Try:</span>
-                  {[
-                    {
-                      label: 'Product launch announcement',
-                      prompt: 'Announce the launch of our new productivity app to existing customers. Highlight three features: AI-powered task sorting, cross-device sync, and a distraction-free focus mode. Offer 20% off the first year for anyone who upgrades this week. End with a clear "Upgrade Now" call to action.',
-                    },
-                    {
-                      label: 'Customer follow-up',
-                      prompt: "Write a friendly follow-up email to customers who purchased in the last 30 days but haven't used the product yet. Remind them of the key benefit, share one quick tip to get started, and offer to help if they're stuck. Keep the tone warm and low-pressure, not salesy.",
-                    },
-                    {
-                      label: 'Holiday promotion',
-                      prompt: 'Create a Black Friday email announcing 30% off site-wide for 48 hours only. Build urgency around the limited time window, highlight our three best-selling products, and include a bold call-to-action button. Keep the tone exciting and festive.',
-                    },
-                    {
-                      label: 'Newsletter welcome',
-                      prompt: 'Write a warm welcome email for new newsletter subscribers. Thank them for signing up, briefly explain what they can expect (weekly tips, product updates, exclusive offers), and include links to our three most popular blog posts. End with an invitation to reply with questions.',
-                    },
-                  ].map((item, i) => (
-                    <button
-                      key={item.label}
-                      onClick={() => setEmailInput(item.prompt)}
-                      className="rounded-full border border-white/20 bg-black/60 px-3 sm:px-4 py-1.5 text-xs sm:text-sm text-white/70 transition-all duration-300 hover:border-[#00ffff] hover:bg-black/80 hover:text-white hover:-translate-y-0.5 hover:shadow-lg hover:shadow-[#00ffff]/40"
-                      style={{ animationDelay: `${i * 100}ms` }}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Stats */}
@@ -2224,8 +2192,8 @@ export default function DashboardContent() {
                 {[
                   { label: 'Total Emails', value: totalEmails },
                   { label: 'This Month', value: thisMonthEmails },
-                  // Free plan gets 3 generations/month (see PLAN_CREDITS.free in lib/paddle/server.ts)
-                  { label: 'Credits Used', value: creditsRemaining !== null && planType !== 'pro' ? 3 - creditsRemaining : '∞' },
+                  // Free plan gets a pooled 5 AI actions/month (see PLAN_CREDITS.free in lib/paddle/server.ts)
+                  { label: 'Credits Used', value: creditsRemaining !== null && planType !== 'pro' ? 5 - creditsRemaining : '∞' },
                 ].map(stat => (
                   <div key={stat.label} className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
                     <p className="text-2xl font-bold text-white">{stat.value}</p>
@@ -2268,29 +2236,31 @@ export default function DashboardContent() {
                       <div className="flex items-center justify-between text-sm">
                         <span className="flex items-center gap-2 text-white/70">
                           <span className={`w-1.5 h-1.5 rounded-full ${creditsRemaining !== null && creditsRemaining < 1 ? 'bg-white/30' : 'bg-[#00ff80]'}`} />
-                          Email generation
+                          AI actions
                         </span>
                         <span className={creditsRemaining !== null && creditsRemaining < 1 ? 'text-white/40' : 'text-[#00ff80]'}>
-                          {creditsRemaining !== null ? `${creditsRemaining}/3 this month` : '—'}
+                          {creditsRemaining !== null ? `${creditsRemaining}/5 this month` : '—'}
                         </span>
                       </div>
-                      {[
-                        { label: 'Brand profile', used: trialFlags?.brand },
-                        { label: 'AI edit', used: trialFlags?.aiEdit },
-                        { label: 'Block regenerate', used: trialFlags?.blockRegenerate },
-                        { label: 'Test send', used: trialFlags?.testEmail },
-                      ].map((row) => (
-                        <div key={row.label} className="flex items-center justify-between text-sm">
-                          <span className="flex items-center gap-2 text-white/70">
-                            <span className={`w-1.5 h-1.5 rounded-full ${row.used ? 'bg-white/30' : 'bg-[#00ff80]'}`} />
-                            {row.label}
-                          </span>
-                          <span className={row.used ? 'text-white/40' : 'text-[#00ff80]'}>
-                            {row.used === undefined ? '—' : row.used ? 'Used' : 'Available'}
-                          </span>
-                        </div>
-                      ))}
-                      <p className="text-xs text-white/30 pt-1">Email generations reset monthly — other items are one-time. Upgrade for unlimited use.</p>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-2 text-white/70">
+                          <span className={`w-1.5 h-1.5 rounded-full ${testSendCreditsRemaining !== null && testSendCreditsRemaining < 1 ? 'bg-white/30' : 'bg-[#00ff80]'}`} />
+                          Test send
+                        </span>
+                        <span className={testSendCreditsRemaining !== null && testSendCreditsRemaining < 1 ? 'text-white/40' : 'text-[#00ff80]'}>
+                          {testSendCreditsRemaining !== null ? `${testSendCreditsRemaining}/3 this month` : '—'}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-2 text-white/70">
+                          <span className={`w-1.5 h-1.5 rounded-full ${trialFlags?.brand ? 'bg-white/30' : 'bg-[#00ff80]'}`} />
+                          Brand profile
+                        </span>
+                        <span className={trialFlags?.brand ? 'text-white/40' : 'text-[#00ff80]'}>
+                          {trialFlags?.brand === undefined ? '—' : trialFlags.brand ? 'In use' : 'Available'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-white/30 pt-1">AI actions (generate, AI edit, regenerate) and test sends reset monthly — upgrade for unlimited use.</p>
                     </>
                   )}
                 </div>

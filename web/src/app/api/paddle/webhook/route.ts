@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { paddle, PLAN_CREDITS } from '@/lib/paddle/server';
+import { paddle, PLAN_CREDITS, FREE_TEST_SEND_LIMIT } from '@/lib/paddle/server';
 import { createAdminClient } from '@/lib/supabase/server';
 
 function planFromPriceId(priceId: string): 'pro' | null {
@@ -133,6 +133,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           plan_type: 'free',
           credits_remaining: PLAN_CREDITS.free,
           credits_reset_at: new Date().toISOString(),
+          test_send_credits_remaining: FREE_TEST_SEND_LIMIT,
+          test_send_reset_at: new Date().toISOString(),
           subscription_status: 'canceled',
           cancel_at: null,
           updated_at: new Date().toISOString(),
@@ -171,6 +173,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           plan_type: 'free',
           credits_remaining: PLAN_CREDITS.free,
           credits_reset_at: new Date().toISOString(),
+          test_send_credits_remaining: FREE_TEST_SEND_LIMIT,
+          test_send_reset_at: new Date().toISOString(),
           subscription_status: 'canceled',
           cancel_at: null,
           updated_at: new Date().toISOString(),

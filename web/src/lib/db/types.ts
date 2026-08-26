@@ -12,20 +12,25 @@ export interface Profile {
   full_name: string | null;
   avatar_url: string | null;
   plan_type: PlanType;
+  /** Pooled free-plan AI-actions allowance (email generation + AI edit + block regeneration) — 5/month, see refresh_monthly_credits() in the DB. Unlimited for pro/enterprise. */
   credits_remaining: number;
-  /** Free-plan credits refill to 3 whenever this crosses into a new calendar month — see refresh_monthly_credits() in the DB. Null/pro/enterprise: not used for gating. */
+  /** Free-plan credits_remaining refills whenever this crosses into a new calendar month — see refresh_monthly_credits() in the DB. Null/pro/enterprise: not used for gating. */
   credits_reset_at: string | null;
+  /** Separate free-plan test-send allowance — 3/month, not pooled with credits_remaining since test sends have no AI cost. See refresh_monthly_test_sends() in the DB. */
+  test_send_credits_remaining: number;
+  /** Free-plan test_send_credits_remaining refills whenever this crosses into a new calendar month. Null/pro/enterprise: not used for gating. */
+  test_send_reset_at: string | null;
   total_credits_used: number;
   paddle_customer_id: string | null;
   paddle_subscription_id: string | null;
   subscription_status: 'active' | 'canceled' | 'past_due' | 'paused' | 'trialing' | null;
-  /** Free-plan users get exactly one brand profile, ever — not reset by deleting it. */
+  /** Free-plan users get at most one brand profile at a time — deleting one frees the slot back up (see DELETE /api/brand-profiles/[id]). */
   free_brand_used: boolean;
-  /** Free-plan users get exactly one "Edit with AI" action, ever. */
+  /** No longer read by the app — AI edit is gated by credits_remaining instead (pooled with generation/regeneration). Left in place as a harmless historical column. */
   free_ai_edit_used: boolean;
-  /** Free-plan users get exactly one per-block regenerate action, ever. */
+  /** No longer read by the app — block regeneration is gated by credits_remaining instead (pooled with generation/AI edit). Left in place as a harmless historical column. */
   free_block_regenerate_used: boolean;
-  /** Free-plan users get exactly one "Send Test Email" action, ever. */
+  /** No longer read by the app — test send is gated by test_send_credits_remaining instead. Left in place as a harmless historical column. */
   free_test_email_used: boolean;
   /** Set when a subscription is scheduled to cancel at period end; cleared on renewal/reactivation. */
   cancel_at: string | null;
@@ -33,7 +38,7 @@ export interface Profile {
   updated_at: string;
 }
 
-export type FreeActionFlag = 'free_brand_used' | 'free_ai_edit_used' | 'free_block_regenerate_used' | 'free_test_email_used';
+export type FreeActionFlag = 'free_brand_used';
 
 export interface BrandProfile {
   id: string;
@@ -83,12 +88,12 @@ export interface UsageLog {
 export interface UserStats {
   total_emails: number;
   emails_this_month: number;
+  /** Pooled AI-actions allowance remaining (generation + AI edit + block regeneration). */
   credits_remaining: number;
+  /** Separate test-send allowance remaining. */
+  test_send_credits_remaining: number;
   plan_type: PlanType;
   free_brand_used: boolean;
-  free_ai_edit_used: boolean;
-  free_block_regenerate_used: boolean;
-  free_test_email_used: boolean;
   cancel_at: string | null;
 }
 

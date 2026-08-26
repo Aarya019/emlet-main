@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { regenerateSingleSection } from '@/lib/ai/claude';
-import { getEmailGeneration, getBrandProfile, updateEmailGeneration, claimFreeAction, releaseFreeAction } from '@/lib/db/queries';
+import { getEmailGeneration, getBrandProfile, updateEmailGeneration, getOrCreateProfile, deductCredits } from '@/lib/db/queries';
 import { generateEmailHtml } from '@/lib/email/renderer';
 import { batchFetchPexelsImages, styleImageConfig } from '@/lib/images/pexels';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
     return rateLimitResponse();
   }
 
-  let claimed = false;
   try {
     const body = await request.json();
     const { emailGenerationId, sectionIndex, designStyle, currentContent } = body;
@@ -33,14 +32,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'sectionIndex is required' }, { status: 400 });
     }
 
-    const { allowed } = await claimFreeAction(user.id, 'free_block_regenerate_used');
-    if (!allowed) {
+    // Block regeneration draws from the same pooled monthly allowance as
+    // email generation and AI edit (see credits_remaining) — checked up
+    // front, deducted only once the regeneration actually succeeds.
+    const profile = await getOrCreateProfile(user.id);
+    const isPro = profile?.plan_type === 'pro';
+    if (!isPro && (!profile || profile.credits_remaining < 1)) {
       return NextResponse.json(
-        { error: "You've used your free block regeneration — upgrade to Professional for unlimited regenerations." },
+        { error: "You've used all your free AI actions this month — upgrade to Professional for unlimited use." },
         { status: 402 }
       );
     }
-    claimed = true;
 
     // Fetch the email generation record
     const generation = await getEmailGeneration(emailGenerationId, user.id);
@@ -140,6 +142,10 @@ export async function POST(request: NextRequest) {
       react_code: reactCode,
     });
 
+    // Deduct only on success — a failed regeneration shouldn't burn the
+    // user's allowance, so there's nothing to claim/release around the work above.
+    if (!isPro) await deductCredits(user.id, 1);
+
     return NextResponse.json({
       success: true,
       section: updatedSection,
@@ -147,7 +153,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    if (claimed) await releaseFreeAction(user.id, 'free_block_regenerate_used');
     console.error('Regenerate block error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to regenerate block' },

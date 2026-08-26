@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
           const newSection = {
             type: 'image-text' as const,
             heading: 'Built for people like you',
-            text: "We're glad you're here — here's a closer look at what makes this worth your time.",
+            text: "We're glad you're here - here's a closer look at what makes this worth your time.",
             imageKeyword: secondaryKeyword,
             imagePosition: 'left' as const,
           };

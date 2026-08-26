@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { getEmailGeneration, claimFreeAction, releaseFreeAction } from '@/lib/db/queries';
+import { getEmailGeneration, getOrCreateProfile, deductTestSendCredit } from '@/lib/db/queries';
 import { checkRateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import { Resend } from 'resend';
 
@@ -40,10 +40,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Email has no HTML to send' }, { status: 400 });
   }
 
-  const { allowed } = await claimFreeAction(user.id, 'free_test_email_used');
-  if (!allowed) {
+  // Test send has its own separate monthly allowance (no AI cost, so it's
+  // not part of the pooled generation/edit/regenerate credits). Checked up
+  // front, deducted only once the send actually succeeds.
+  const profile = await getOrCreateProfile(user.id);
+  const isPro = profile?.plan_type === 'pro';
+  if (!isPro && (!profile || profile.test_send_credits_remaining < 1)) {
     return NextResponse.json(
-      { error: "You've used your free test send — upgrade to Professional for unlimited test sends." },
+      { error: "You've used all 3 of your free test sends this month — upgrade to Professional for unlimited test sends." },
       { status: 402 }
     );
   }
@@ -75,13 +79,14 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Resend error:', error);
-      await releaseFreeAction(user.id, 'free_test_email_used');
       return NextResponse.json({ error: 'Failed to send email. Check your Resend API key.' }, { status: 500 });
     }
 
+    // Deduct only on success — a failed send shouldn't burn the user's allowance.
+    if (!isPro) await deductTestSendCredit(user.id);
+
     return NextResponse.json({ success: true, messageId: data?.id });
   } catch (error) {
-    await releaseFreeAction(user.id, 'free_test_email_used');
     console.error('Send test email error:', error);
     return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
   }
