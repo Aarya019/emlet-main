@@ -1397,11 +1397,29 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
   );
 }
 
+/**
+ * A single shared font-size for every stat value in a row, sized down for
+ * narrower columns (more stats) and for longer values (the longest one in
+ * the row sets the size for all of them, so numbers in the same row stay
+ * visually consistent instead of each rendering at its own size). Needed
+ * because fixedRow() now holds every column to a strict equal width — a
+ * fixed 42px value like "48hrs" or "4.9/5" no longer has room to grow its
+ * cell and instead overflowed into the neighboring stat's column.
+ */
+function statValueFontSize(stats: Array<{ value?: string }>): number {
+  const count = stats.length || 1;
+  const base = count <= 2 ? 42 : count === 3 ? 38 : 30;
+  const maxLen = Math.max(1, ...stats.map(s => (s.value || '').length));
+  const shrink = Math.max(0, maxLen - 3) * (count >= 4 ? 3 : 2.5);
+  return Math.max(20, Math.round(base - shrink));
+}
+
 function renderStats(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   const cFg = cardTextColor(config.cardStyle.backgroundColor as string | undefined);
   const stats = section.stats || [];
+  const valueFontSize = statValueFontSize(stats);
   return React.createElement(Section, {
     className: 'em-section',
     style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) }
@@ -1462,12 +1480,17 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
               className: 'em-stat-value',
               style: {
                 fontFamily: config.fontFamily,
-                fontSize: '42px',
+                fontSize: `${valueFontSize}px`,
                 fontWeight: '800',
                 color: btn,
                 margin: '0 0 6px 0',
-                lineHeight: '1.1',
+                lineHeight: '1.15',
                 letterSpacing: '-0.02em',
+                // Safety net for an unexpectedly long value the size formula
+                // didn't fully account for — wraps to a second line instead
+                // of overflowing the fixed-width card into its neighbor.
+                overflowWrap: 'break-word' as const,
+                wordBreak: 'break-word' as const,
               }
             }, stat.value),
             React.createElement(Text, {
