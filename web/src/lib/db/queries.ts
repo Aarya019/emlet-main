@@ -45,11 +45,16 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 export async function getOrCreateProfile(userId: string): Promise<Profile | null> {
   const supabase = await createClient();
 
-  // Free-plan credits refill monthly (3/month) rather than being a one-time
-  // grant — this brings credits_remaining up to date before it's read, so
-  // callers (the generation gate, the dashboard stats display) never see a
-  // stale count left over from a prior month.
-  await supabase.rpc('refresh_monthly_credits', { user_uuid: userId });
+  // Free-plan credits refill monthly rather than being a one-time grant —
+  // credits_remaining (5/month) pools generation + AI edit + block
+  // regeneration, and test_send_credits_remaining (3/month) is separate.
+  // Refreshing both before reading brings the row up to date so callers (the
+  // action gates, the dashboard stats display) never see a stale count left
+  // over from a prior month.
+  await Promise.all([
+    supabase.rpc('refresh_monthly_credits', { user_uuid: userId }),
+    supabase.rpc('refresh_monthly_test_sends', { user_uuid: userId }),
+  ]);
 
   const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
   if (data) return data;
@@ -103,11 +108,9 @@ export async function getUserStats(userId: string): Promise<UserStats | null> {
       total_emails: 0,
       emails_this_month: 0,
       credits_remaining: 0,
+      test_send_credits_remaining: 0,
       plan_type: 'free',
       free_brand_used: false,
-      free_ai_edit_used: false,
-      free_block_regenerate_used: false,
-      free_test_email_used: false,
       cancel_at: null,
     };
   }
@@ -125,11 +128,9 @@ export async function getUserStats(userId: string): Promise<UserStats | null> {
     total_emails: totalEmails || 0,
     emails_this_month: emailsThisMonth || 0,
     credits_remaining: profile.credits_remaining || 0,
+    test_send_credits_remaining: profile.test_send_credits_remaining || 0,
     plan_type: profile.plan_type || 'free',
     free_brand_used: profile.free_brand_used,
-    free_ai_edit_used: profile.free_ai_edit_used,
-    free_block_regenerate_used: profile.free_block_regenerate_used,
-    free_test_email_used: profile.free_test_email_used,
     cancel_at: profile.cancel_at,
   };
 }
@@ -401,6 +402,20 @@ export async function deductCredits(userId: string, credits: number): Promise<bo
 
   if (error || !data) {
     console.error('Error deducting credits:', error);
+    return false;
+  }
+
+  return data;
+}
+
+/** Test sends draw from their own separate monthly pool — no AI cost, so not part of the credits_remaining pool. */
+export async function deductTestSendCredit(userId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc('deduct_test_send_credit', { user_uuid: userId });
+
+  if (error || !data) {
+    console.error('Error deducting test-send credit:', error);
     return false;
   }
 

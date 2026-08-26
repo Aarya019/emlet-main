@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const { allowed } = await claimFreeAction(user.id, 'free_brand_used');
     if (!allowed) {
       return NextResponse.json(
-        { error: "You've used your free brand profile — upgrade to Professional for unlimited brands." },
+        { error: "You've used your free brand profile - upgrade to Professional for unlimited brands." },
         { status: 402 }
       );
     }

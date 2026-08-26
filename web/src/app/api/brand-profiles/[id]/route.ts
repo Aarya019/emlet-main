@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { 
-  getBrandProfile, 
-  updateBrandProfile, 
-  deleteBrandProfile 
+import {
+  getBrandProfile,
+  updateBrandProfile,
+  deleteBrandProfile,
+  getBrandProfiles,
+  releaseFreeAction,
 } from '@/lib/db/queries';
 import type { BrandProfileUpdate } from '@/lib/db/types';
 
@@ -117,12 +119,22 @@ export async function DELETE(
 
   const { id } = await params;
   const success = await deleteBrandProfile(id, user.id);
-  
+
   if (!success) {
     return NextResponse.json(
-      { error: 'Failed to delete brand profile' }, 
+      { error: 'Failed to delete brand profile' },
       { status: 500 }
     );
+  }
+
+  // Free plan's "1 brand profile" limit is a capacity, not a one-time-ever
+  // trial — deleting a profile should free up the slot to create another.
+  // Re-check the actual remaining count (rather than unconditionally
+  // releasing) so a downgraded former-Pro user who still has other brand
+  // profiles left doesn't get an extra slot they shouldn't have.
+  const remaining = await getBrandProfiles(user.id);
+  if (remaining.length === 0) {
+    await releaseFreeAction(user.id, 'free_brand_used');
   }
 
   return NextResponse.json({ success: true });
