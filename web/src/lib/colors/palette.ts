@@ -30,12 +30,22 @@ export interface EmailColorPalette {
   /**
    * A second, distinct hue for small pops of visual interest (badges, icon
    * accents, dividers, highlight borders) — brand secondary_color when
-   * provided, otherwise a complementary hue derived from primary. Never used
-   * as a large surface — see the 60-30-10 usage rule in the AI prompt.
+   * provided, otherwise a split-complementary hue derived from primary (150°
+   * offset, not a flat 180°) for a livelier, more art-directed pairing than a
+   * textbook complement. Never used as a large surface — see the 60-30-10
+   * usage rule in the AI prompt.
    */
   accent: string;
   /** Text / button colour on accent-coloured backgrounds — contrast-checked */
   onAccent: string;
+  /**
+   * Accent hue locked to the same near-black lightness as primaryDark —
+   * exists purely so two-tone "duotone" gradients (hero fallback, photo
+   * overlays) can blend primaryDark + accentDark and stay uniformly dark
+   * end-to-end, guaranteeing light text stays legible across the whole
+   * gradient instead of only at one end.
+   */
+  accentDark: string;
   /** Default body text */
   bodyText: string;
 }
@@ -125,20 +135,34 @@ export function buildEmailPalette(
   const surface = isValidHex(backgroundColor) ? backgroundColor : '#ffffff';
 
   // surfaceAlt: sameH, desaturated to a whisper, very high lightness
-  const surfaceAlt = hslToHex(h, Math.min(s * 0.25, 18), 97);
+  const surfaceAlt = hslToHex(h, Math.min(s * 0.3, 22), 97);
 
   // accentLight: visible but soft — for feature cards and highlight rows
-  const accentLight = hslToHex(h, Math.min(s * 0.35, 28), 93);
+  const accentLight = hslToHex(h, Math.min(s * 0.4, 34), 92);
 
   // primaryDark: deep brand-hued dark — feels intentional, not generic charcoal
   const primaryDark = hslToHex(h, Math.min(s * 0.55, 42), 11);
 
-  // accent: brand secondary colour when given (kept exactly, it's a deliberate
-  // brand choice); otherwise a complementary hue derived from primary so there's
-  // always a genuine second colour for small highlights, not just a tint of one hue
+  // accent hue/saturation: brand secondary colour's own hue when given, otherwise
+  // a split-complementary hue (150° offset rather than a flat 180°) — research on
+  // 2026 palette trends favours split-complementary over pure-complement for a
+  // pairing that reads as art-directed rather than mechanically "opposite", plus
+  // a higher, more saturated floor for the bold/electric look Gen Z palettes lean
+  // into (vs. the muted 45-70% range this used to clamp to).
+  const [accentH, accentS] = isValidHex(secondaryColor)
+    ? hexToHsl(secondaryColor)
+    : [(h + 150) % 360, Math.min(Math.max(s, 55), 85)];
+
+  // accent: brand secondary colour kept exactly (it's a deliberate brand choice)
+  // when given, otherwise built from the derived split-complementary hue/sat above
   const accent = isValidHex(secondaryColor)
     ? secondaryColor
-    : hslToHex((h + 180) % 360, Math.min(Math.max(s, 45), 70), 50);
+    : hslToHex(accentH, accentS, 50);
+
+  // accentDark: same hue as accent, pinned to primaryDark's near-black lightness —
+  // lets duotone gradients blend primaryDark + accentDark while staying uniformly
+  // dark, so light (ON_DARK) text stays legible across the entire gradient.
+  const accentDark = hslToHex(accentH, Math.min(accentS * 0.6, 40), 13);
 
   return {
     surface,
@@ -150,6 +174,7 @@ export function buildEmailPalette(
     onDark: readableTextOn(primaryDark),
     accent,
     onAccent: readableTextOn(accent),
+    accentDark,
     bodyText: '#1a1a1a',
   };
 }

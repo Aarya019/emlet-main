@@ -793,13 +793,17 @@ function bgFillStyle(section: EmailSection, borderRadius?: string): React.CSSPro
   return {};
 }
 
-function renderHero(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
+function renderHero(section: EmailSection, config: StyleConfig, primaryColor: string, palette: EmailColorPalette, si = 0, preview = false): React.ReactElement {
   const hasBgImage = !!section.backgroundImageUrl;
-  // When a background image is present, always force white text for readability
-  const fg  = section.textColor || (hasBgImage ? '#ffffff' : config.bodyColor);
+  // True when nothing at all was set — the structural fallback path, which now
+  // renders a dark duotone gradient (see sectionBgStyle below) rather than a
+  // near-white wash, so it needs the same light-text treatment as a photo hero.
+  const noExplicitBg = !hasBgImage && !section.backgroundGradient && !section.backgroundColor;
+  const needsLightTreatment = hasBgImage || noExplicitBg;
+  const fg  = section.textColor || (needsLightTreatment ? '#ffffff' : config.bodyColor);
   const btn = section.buttonColor || primaryColor;
 
-  // Section-level background: photo → gradient → solid color → faint brand tint
+  // Section-level background: photo → gradient → solid color → brand duotone gradient
   const sectionBgStyle: React.CSSProperties = hasBgImage
     ? {
         backgroundImage: `url(${section.backgroundImageUrl})`,
@@ -813,13 +817,13 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
     ? { background: section.backgroundGradient }
     : section.backgroundColor
     ? { backgroundColor: section.backgroundColor }
-    : { background: `linear-gradient(150deg, ${primaryColor}22 0%, ${primaryColor}08 100%)` };
+    : { background: `linear-gradient(135deg, ${palette.primaryDark} 0%, ${palette.accentDark} 100%)` };
 
   // Inner wrapper: overlay gradient + padding (replaces Section padding)
   const innerStyle: React.CSSProperties = hasBgImage
     ? {
         background: section.backgroundImageOverlay ||
-          'linear-gradient(to bottom, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.62) 100%)',
+          `linear-gradient(to bottom, ${palette.primaryDark}1a 0%, ${palette.accentDark}e6 100%)`,
         padding: '80px 48px',
         textAlign: config.heroAlign,
       }
@@ -828,12 +832,12 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
         textAlign: config.heroAlign,
       };
 
-  const eyebrowColor = hasBgImage ? 'rgba(255,255,255,0.75)' : btn;
-  const subColor     = hasBgImage ? 'rgba(255,255,255,0.82)' : fg + '99';
-  const btnBg        = hasBgImage ? '#ffffff' : btn;
-  const btnFg        = hasBgImage ? primaryColor : '#ffffff';
-  const btnShadow    = hasBgImage ? '0 4px 24px rgba(0,0,0,0.35)' : `0 4px 20px ${btn}55`;
-  const linkColor    = hasBgImage ? 'rgba(255,255,255,0.88)' : btn;
+  const eyebrowColor = needsLightTreatment ? 'rgba(255,255,255,0.75)' : btn;
+  const subColor     = needsLightTreatment ? 'rgba(255,255,255,0.82)' : fg + '99';
+  const btnBg        = needsLightTreatment ? '#ffffff' : btn;
+  const btnFg        = needsLightTreatment ? primaryColor : '#ffffff';
+  const btnShadow    = needsLightTreatment ? '0 4px 24px rgba(0,0,0,0.35)' : `0 4px 20px ${btn}55`;
+  const linkColor    = needsLightTreatment ? 'rgba(255,255,255,0.88)' : btn;
 
   return React.createElement(Section, { style: { ...sectionBgStyle, borderRadius: config.sectionBorderRadius, ...(hasBgImage ? { overflow: 'hidden' as const } : {}) } },
     React.createElement('div', { className: 'em-section', style: innerStyle },
@@ -1713,7 +1717,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
   );
 }
 
-function renderCta(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
+function renderCta(section: EmailSection, config: StyleConfig, primaryColor: string, palette: EmailColorPalette, si = 0, preview = false): React.ReactElement {
   const hasBgImage = !!section.backgroundImageUrl;
   // CTA defaults to brand primary background for maximum visual impact
   const sectionBgStyle: React.CSSProperties = hasBgImage
@@ -1728,14 +1732,17 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
     ? { background: section.backgroundGradient }
     : { backgroundColor: section.backgroundColor || primaryColor };
 
-  const fg  = section.textColor || '#ffffff';
-  const btn = section.buttonColor || '#ffffff';
+  // Contrast-checked against the actual primary bg (was a blind '#ffffff',
+  // which reads invisible on a light/pastel primary) — palette.onPrimary
+  // picks whichever of white/near-black actually clears contrast.
+  const fg  = section.textColor || palette.onPrimary;
+  const btn = section.buttonColor || palette.onPrimary;
 
   // Inner overlay + padding wrapper
   const innerStyle: React.CSSProperties = hasBgImage
     ? {
         background: section.backgroundImageOverlay ||
-          'linear-gradient(to bottom, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.65) 100%)',
+          `linear-gradient(to bottom, ${palette.primaryDark}40 0%, ${palette.accentDark}f0 100%)`,
         padding: config.sectionPadding,
         textAlign: 'center' as const,
       }
@@ -1795,7 +1802,10 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
             style: {
               padding: config.buttonPadding,
               backgroundColor: btn,
-              color: btn === '#ffffff' ? primaryColor : '#ffffff',
+              // Light pill bg (the common case) gets brand-colored text for a
+              // proper "inverted" CTA look; a dark pill (only when the brand's
+              // own primary is very pale) falls back to white text on it.
+              color: cardTextColor(btn) === '#1a1a1a' ? primaryColor : '#ffffff',
               fontFamily: config.fontFamily,
               fontWeight: '700',
               fontSize: '16px',
@@ -2542,11 +2552,12 @@ function renderSection(
   config: StyleConfig,
   primaryColor: string,
   secondaryColor: string,
+  palette: EmailColorPalette,
   preview = false,
 ): React.ReactElement | null {
   switch (section.type) {
     case 'header':        return renderHeader(section, config, primaryColor, secondaryColor, si, preview);
-    case 'hero':          return renderHero(section, config, primaryColor, si, preview);
+    case 'hero':          return renderHero(section, config, primaryColor, palette, si, preview);
     case 'content':       return renderContent(section, config, primaryColor, si, preview);
     case 'testimonial':   return renderTestimonial(section, config, primaryColor, secondaryColor, si, preview);
     case 'testimonials':  return renderTestimonials(section, config, primaryColor, si, preview);
@@ -2563,7 +2574,7 @@ function renderSection(
     case 'divider':       return renderDivider(section, config);
     case 'quote':         return renderQuote(section, config, primaryColor, si, preview);
     case 'code-block':    return renderCodeBlock(section, config, primaryColor);
-    case 'cta':           return renderCta(section, config, primaryColor, si, preview);
+    case 'cta':           return renderCta(section, config, primaryColor, palette, si, preview);
     case 'footer':        return renderFooter(section, config, secondaryColor, si, preview);
     default:              return null;
   }
@@ -2644,7 +2655,7 @@ export async function generateEmailHtml(
 
   // Build section elements
   const sectionElements = processedSections
-    .map((s, i) => renderSection(s, i, config, primaryColor, secondaryColor, preview))
+    .map((s, i) => renderSection(s, i, config, primaryColor, secondaryColor, palette, preview))
     .filter((el): el is React.ReactElement => el !== null);
 
   // Fetch @font-face declarations from Google Fonts on the server using a real browser
