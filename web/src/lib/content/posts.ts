@@ -60,4 +60,14 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     image: 'https://images.pexels.com/photos/4140925/pexels-photo-4140925.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=1600&h=800',
     imageAlt: 'Vintage wooden letterpress type drawers in a printing house',
   },
+  {
+    slug: 'avoid-gmail-promotions-tab',
+    title: "Why Your Emails Land in Gmail's Promotions Tab (And What Actually Fixes It)",
+    description: "Most advice treats this as one problem. It's actually two, one you can fix from inside your email and one you can't, and almost nobody separates them.",
+    date: '2026-08-26',
+    readTime: '8 min read',
+    category: 'Deliverability',
+    image: 'https://images.pexels.com/photos/4980430/pexels-photo-4980430.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=1600&h=800',
+    imageAlt: 'A hand holding a phone showing a lock screen stacked with app notifications',
+  },
 ];

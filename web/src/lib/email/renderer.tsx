@@ -70,6 +70,20 @@ function pv(preview: boolean, si: number, field: string, ti?: number): Record<st
   return a;
 }
 
+/**
+ * Row wrapped with table-layout:fixed. @react-email's Row renders a plain
+ * <table> with no table-layout set, so explicit percentage widths on its
+ * Columns (e.g. "width: 33%" for a 3-up grid) are only a hint under the
+ * browser's default auto layout — a column with longer content (a longer
+ * stat value, a longer feature title) can still claim extra width beyond
+ * its share, so equal-width grids render visibly uneven on wide/desktop
+ * viewports. Forcing fixed layout makes the browser honor the percentages
+ * exactly, so every column in a row is genuinely equal width.
+ */
+function fixedRow(...children: React.ReactNode[]): React.ReactElement {
+  return React.createElement(Row, { style: { tableLayout: 'fixed' as const }, children });
+}
+
 // ─────────────────────────────────────────────
 // Font registry — all supported fonts
 // css      : exact CSS font-family value (with quotes if needed)
@@ -1004,7 +1018,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
     return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) } },
       section.eyebrow ? renderEyebrow(section.eyebrow, btn, config, preview, si) : null,
       React.createElement('div', { style: { ...config.cardStyle } },
-        React.createElement(Row, null,
+        fixedRow(
           React.createElement(Column, { style: { width: '76px', verticalAlign: 'top' } },
             React.createElement(Img, {
               src: section.authorImage,
@@ -1162,7 +1176,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
       headingEl,
       ...pairs.map((pair, rowIdx) =>
         React.createElement(Section, { key: rowIdx, style: { marginBottom: '16px' } },
-          React.createElement(Row, null,
+          fixedRow(
             ...pair.map((feature, i) =>
             React.createElement(Column, {
               key: i,
@@ -1213,7 +1227,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
           : 'none',
         display: 'table', width: '100%',
       } },
-        React.createElement(Row, null,
+        fixedRow(
           React.createElement(Column, { style: { width: '40px', verticalAlign: 'top' } },
             isNumbered
               ? React.createElement('div', {
@@ -1282,7 +1296,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
           }
         }, section.heading)
       : null,
-    React.createElement(Row, null,
+    fixedRow(
       ...plans.map((plan, i) =>
         React.createElement(Column, {
           key: i,
@@ -1405,7 +1419,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
           }
         }, section.heading)
       : null,
-    React.createElement(Row, null,
+    fixedRow(
       ...stats.map((stat, i) =>
         React.createElement(Column, {
           key: i,
@@ -1501,7 +1515,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
       : null,
     ...rows.map((rowImages, rowIdx) =>
       React.createElement(Section, { key: rowIdx, style: { marginBottom: rowIdx < rows.length - 1 ? '8px' : '0' } },
-        React.createElement(Row, null,
+        fixedRow(
           ...rowImages.map((img, i) =>
             React.createElement(Column, {
             key: i,
@@ -1601,7 +1615,7 @@ function renderImageBlock(section: EmailSection, config: StyleConfig): React.Rea
   },
     ...rows.map((rowImages, rowIdx) =>
       React.createElement(Section, { key: rowIdx },
-        React.createElement(Row, null,
+        fixedRow(
           ...rowImages.map((img, i) =>
             React.createElement(Column, {
               key: i,
@@ -1900,7 +1914,7 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
   return React.createElement(Section, {
     style: { padding: '20px 0', borderBottom: borderVal, marginBottom: '8px', ...bgFillStyle(section, config.sectionBorderRadius) }
   },
-    React.createElement(Row, null,
+    fixedRow(
       React.createElement(Column, { style: { verticalAlign: 'middle' } },
         section.logoUrl
           ? React.createElement(Img, {
@@ -1939,7 +1953,7 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
     ),
     // Optional nav links row — supply section.columns: [{heading:'About', buttonUrl:'/about'}, ...]
     section.columns?.length
-      ? React.createElement(Row, null,
+      ? fixedRow(
           React.createElement(Column, { style: { textAlign: 'center' as const, paddingTop: '12px' } },
             ...(section.columns).map((nav, i) =>
               React.createElement(Link, {
@@ -2055,7 +2069,7 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
     style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     hasImage
-      ? React.createElement(Row, null,
+      ? fixedRow(
           ...(isLeft ? [imageCol, textCol] : [textCol, imageCol])
         )
       : textCol
@@ -2233,7 +2247,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
           }
         }, section.heading)
       : null,
-    React.createElement(Row, null,
+    fixedRow(
       ...colItems.map((col, i) =>
         React.createElement(Column, {
           key: i,
@@ -2467,7 +2481,7 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
     subheadingEl,
     ...pairs.map((pair, rowIdx) =>
       React.createElement(Section, { key: rowIdx, style: { marginBottom: '16px' } },
-        React.createElement(Row, null,
+        fixedRow(
           ...pair.map((item, i) => {
             const filled = Math.min(5, Math.max(1, Math.round(item.rating ?? 5)));
             const stars = '\u2605'.repeat(filled) + '\u2606'.repeat(5 - filled);
@@ -2499,7 +2513,7 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
                   }
                 }, `\u201C${item.quote}\u201D`),
                 // Author: avatar + name/title
-                React.createElement(Row, null,
+                fixedRow(
                   item.authorImage
                     ? React.createElement(Column, { style: { width: '44px', verticalAlign: 'middle' } },
                         React.createElement(Img, {
