@@ -13,6 +13,8 @@ export interface Profile {
   avatar_url: string | null;
   plan_type: PlanType;
   credits_remaining: number;
+  /** Free-plan credits refill to 3 whenever this crosses into a new calendar month — see refresh_monthly_credits() in the DB. Null/pro/enterprise: not used for gating. */
+  credits_reset_at: string | null;
   total_credits_used: number;
   paddle_customer_id: string | null;
   paddle_subscription_id: string | null;

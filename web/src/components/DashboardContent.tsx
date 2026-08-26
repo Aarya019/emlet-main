@@ -564,7 +564,7 @@ export default function DashboardContent() {
     }
 
     if (planType !== 'pro' && creditsRemaining !== null && creditsRemaining < 1) {
-      setUpgradeModalMessage("You've used your free email generation. Upgrade to Professional for unlimited emails.");
+      setUpgradeModalMessage("You've used all 3 of your free generations this month. Upgrade to Professional for unlimited emails.");
       return;
     }
 
@@ -586,7 +586,7 @@ export default function DashboardContent() {
 
       if (!res.ok) {
         if (res.status === 402) {
-          setUpgradeModalMessage(data.error || "You've used your free email generation. Upgrade to Professional for unlimited emails.");
+          setUpgradeModalMessage(data.error || "You've used all 3 of your free generations this month. Upgrade to Professional for unlimited emails.");
         } else {
           setGenerationError(data.error || 'Failed to generate email');
         }
@@ -2224,7 +2224,8 @@ export default function DashboardContent() {
                 {[
                   { label: 'Total Emails', value: totalEmails },
                   { label: 'This Month', value: thisMonthEmails },
-                  { label: 'Credits Used', value: creditsRemaining !== null && planType !== 'pro' ? 1 - creditsRemaining : '∞' },
+                  // Free plan gets 3 generations/month (see PLAN_CREDITS.free in lib/paddle/server.ts)
+                  { label: 'Credits Used', value: creditsRemaining !== null && planType !== 'pro' ? 3 - creditsRemaining : '∞' },
                 ].map(stat => (
                   <div key={stat.label} className="rounded-xl border border-white/10 bg-white/5 p-4 text-center">
                     <p className="text-2xl font-bold text-white">{stat.value}</p>
@@ -2263,10 +2264,18 @@ export default function DashboardContent() {
                     </>
                   ) : (
                     <>
-                      <p className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-1.5">One-time free trial</p>
+                      <p className="text-xs font-semibold text-white/40 uppercase tracking-wide mb-1.5">Free plan usage</p>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="flex items-center gap-2 text-white/70">
+                          <span className={`w-1.5 h-1.5 rounded-full ${creditsRemaining !== null && creditsRemaining < 1 ? 'bg-white/30' : 'bg-[#00ff80]'}`} />
+                          Email generation
+                        </span>
+                        <span className={creditsRemaining !== null && creditsRemaining < 1 ? 'text-white/40' : 'text-[#00ff80]'}>
+                          {creditsRemaining !== null ? `${creditsRemaining}/3 this month` : '—'}
+                        </span>
+                      </div>
                       {[
                         { label: 'Brand profile', used: trialFlags?.brand },
-                        { label: 'Email generation', used: creditsRemaining !== null ? creditsRemaining < 1 : undefined },
                         { label: 'AI edit', used: trialFlags?.aiEdit },
                         { label: 'Block regenerate', used: trialFlags?.blockRegenerate },
                         { label: 'Test send', used: trialFlags?.testEmail },
@@ -2281,7 +2290,7 @@ export default function DashboardContent() {
                           </span>
                         </div>
                       ))}
-                      <p className="text-xs text-white/30 pt-1">Doesn't renew — upgrade for unlimited use</p>
+                      <p className="text-xs text-white/30 pt-1">Email generations reset monthly — other items are one-time. Upgrade for unlimited use.</p>
                     </>
                   )}
                 </div>

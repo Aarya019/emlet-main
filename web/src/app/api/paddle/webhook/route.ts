@@ -132,6 +132,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const { error } = await db.from('profiles').update({
           plan_type: 'free',
           credits_remaining: PLAN_CREDITS.free,
+          credits_reset_at: new Date().toISOString(),
           subscription_status: 'canceled',
           cancel_at: null,
           updated_at: new Date().toISOString(),
@@ -169,6 +170,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const { error } = await db.from('profiles').update({
           plan_type: 'free',
           credits_remaining: PLAN_CREDITS.free,
+          credits_reset_at: new Date().toISOString(),
           subscription_status: 'canceled',
           cancel_at: null,
           updated_at: new Date().toISOString(),

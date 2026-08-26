@@ -1229,12 +1229,18 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                 </svg>
                               </button>
-                              <svg
-                                className={`w-3.5 h-3.5 text-white/30 ml-1 transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                              <button
+                                onClick={() => { toggleCollapse(index); setSelectedSection(index); }}
+                                className="p-1.5 rounded text-white/30 hover:text-white hover:bg-white/10 transition-all ml-1"
+                                title={isCollapsed ? 'Expand section' : 'Collapse section'}
                               >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                              </svg>
+                                <svg
+                                  className={`w-3.5 h-3.5 transition-transform ${isCollapsed ? '' : 'rotate-180'}`}
+                                  fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
                             </div>
                           </div>
 

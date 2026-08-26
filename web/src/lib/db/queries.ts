@@ -45,6 +45,12 @@ export async function getProfile(userId: string): Promise<Profile | null> {
 export async function getOrCreateProfile(userId: string): Promise<Profile | null> {
   const supabase = await createClient();
 
+  // Free-plan credits refill monthly (3/month) rather than being a one-time
+  // grant — this brings credits_remaining up to date before it's read, so
+  // callers (the generation gate, the dashboard stats display) never see a
+  // stale count left over from a prior month.
+  await supabase.rpc('refresh_monthly_credits', { user_uuid: userId });
+
   const { data } = await supabase.from('profiles').select('*').eq('id', userId).single();
   if (data) return data;
 
