@@ -68,6 +68,41 @@ function UrlWarning({ url }: { url: string | undefined }) {
   );
 }
 
+/** Swaps the item at `index` with its neighbor in `direction` — a no-op past either end. */
+function moveArrayItem<T>(arr: T[], index: number, direction: -1 | 1): T[] {
+  const target = index + direction;
+  if (target < 0 || target >= arr.length) return arr;
+  const next = [...arr];
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
+}
+
+/** Small up/down pair for reordering one item within an array field — pairs with the existing delete button on each array-item row. */
+function ReorderButtons({ index, count, onMove }: { index: number; count: number; onMove: (direction: -1 | 1) => void }) {
+  return (
+    <div className="flex items-center flex-shrink-0">
+      <button
+        type="button"
+        onClick={() => onMove(-1)}
+        disabled={index === 0}
+        title="Move up"
+        className="p-1 rounded text-white/30 hover:text-white transition-colors disabled:opacity-20 disabled:hover:text-white/30"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+      </button>
+      <button
+        type="button"
+        onClick={() => onMove(1)}
+        disabled={index === count - 1}
+        title="Move down"
+        className="p-1 rounded text-white/30 hover:text-white transition-colors disabled:opacity-20 disabled:hover:text-white/30"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+      </button>
+    </div>
+  );
+}
+
 export default function EmailEditor({ emailId }: EmailEditorProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -1035,6 +1070,20 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     />
                   </div>
 
+                  {/* Email Type */}
+                  <div className="p-4 rounded-lg border border-white/10 bg-white/5 hover:border-white/20 transition-colors">
+                    <label className="block text-xs font-medium text-white/40 mb-2 uppercase tracking-wider">Email Type</label>
+                    <select
+                      value={editedEmail.emailType || 'other'}
+                      onChange={e => updateEmailField('emailType', e.target.value)}
+                      className="w-full px-0 py-1 bg-transparent border-0 text-white focus:outline-none focus:ring-0"
+                    >
+                      {['promotional', 'newsletter', 'educational', 'transactional', 'other'].map(t => (
+                        <option key={t} value={t} className="bg-[#0a0a0a] capitalize">{t}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   {/* Font Picker */}
                   {(() => {
                     const fontNames = Object.keys(FONT_REGISTRY);
@@ -1572,6 +1621,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                             }} className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
                                             <UrlWarning url={nav.buttonUrl} />
                                           </div>
+                                          <ReorderButtons index={ni} count={(section.columns || []).length} onMove={d => updateSection(index, { columns: moveArrayItem(section.columns || [], ni, d) })} />
                                           <button onClick={() => updateSection(index, { columns: (section.columns || []).filter((_, i) => i !== ni) })} className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
                                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                           </button>
@@ -1631,10 +1681,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <div key={ti} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1.5">
                                       <div className="flex items-center justify-between">
                                         <span className="text-[10px] text-white/30 uppercase tracking-wider">{ti + 1}</span>
-                                        <button onClick={() => updateSection(index, { testimonials: (section.testimonials || []).filter((_, i) => i !== ti) })}
-                                          className="text-white/30 hover:text-red-400 transition-colors">
-                                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                        </button>
+                                        <div className="flex items-center gap-1">
+                                          <ReorderButtons index={ti} count={(section.testimonials || []).length} onMove={d => updateSection(index, { testimonials: moveArrayItem(section.testimonials || [], ti, d) })} />
+                                          <button onClick={() => updateSection(index, { testimonials: (section.testimonials || []).filter((_, i) => i !== ti) })}
+                                            className="text-white/30 hover:text-red-400 transition-colors">
+                                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                                          </button>
+                                        </div>
                                       </div>
                                       <textarea value={t.quote} onChange={e => { const arr = (section.testimonials || []).map((x, i) => i === ti ? { ...x, quote: e.target.value } : x); updateSection(index, { testimonials: arr }); }} rows={2}
                                         className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Quote…" />
@@ -1714,6 +1767,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         className="w-1/4 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="99%" />
                                       <input type="text" value={stat.label} onChange={e => { const s = (section.stats || []).map((x, i) => i === si ? { ...x, label: e.target.value } : x); updateSection(index, { stats: s }); }}
                                         className="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Label" />
+                                      <ReorderButtons index={si} count={(section.stats || []).length} onMove={d => updateSection(index, { stats: moveArrayItem(section.stats || [], si, d) })} />
                                       <button onClick={() => updateSection(index, { stats: (section.stats || []).filter((_, i) => i !== si) })}
                                         className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1770,6 +1824,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         />
                                         <input type="text" value={feat.title} onChange={e => { const f = (section.features || []).map((x, i) => i === fi ? { ...x, title: e.target.value } : x); updateSection(index, { features: f }); }}
                                           className="flex-1 px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Feature title" />
+                                        <ReorderButtons index={fi} count={(section.features || []).length} onMove={d => updateSection(index, { features: moveArrayItem(section.features || [], fi, d) })} />
                                         <button onClick={() => updateSection(index, { features: (section.features || []).filter((_, i) => i !== fi) })}
                                           className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
                                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1797,6 +1852,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <div key={ii} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1.5">
                                       <div className="flex gap-2 items-center">
                                         <span className="text-[10px] text-white/30 uppercase tracking-wider w-5 flex-shrink-0">{ii + 1}</span>
+                                        <ReorderButtons index={ii} count={(section.images || []).length} onMove={d => updateSection(index, { images: moveArrayItem(section.images || [], ii, d) })} />
                                         <button onClick={() => updateSection(index, { images: (section.images || []).filter((_, i) => i !== ii) })}
                                           className="ml-auto text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
                                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1840,6 +1896,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <div key={ii} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1.5">
                                       <div className="flex gap-2 items-center">
                                         <span className="text-[10px] text-white/30 uppercase tracking-wider w-5 flex-shrink-0">{ii + 1}</span>
+                                        <ReorderButtons index={ii} count={(section.images || []).length} onMove={d => updateSection(index, { images: moveArrayItem(section.images || [], ii, d) })} />
                                         <button onClick={() => updateSection(index, { images: (section.images || []).filter((_, i) => i !== ii) })}
                                           className="ml-auto text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
                                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1885,6 +1942,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                             <input type="checkbox" checked={plan.highlighted || false} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, highlighted: e.target.checked } : x); updateSection(index, { plans: p }); }} className="accent-[#00ffff]" />
                                             Highlighted
                                           </label>
+                                          <ReorderButtons index={pi} count={(section.plans || []).length} onMove={d => updateSection(index, { plans: moveArrayItem(section.plans || [], pi, d) })} />
                                           <button onClick={() => updateSection(index, { plans: (section.plans || []).filter((_, i) => i !== pi) })}
                                             className="text-white/30 hover:text-red-400 transition-colors">
                                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -1945,10 +2003,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <div key={ci} className="p-2 rounded-lg bg-white/5 border border-white/10 space-y-1.5">
                                       <div className="flex items-center justify-between">
                                         <span className="text-[11px] text-white/30">Col {ci + 1}</span>
-                                        <button onClick={() => updateSection(index, { columns: (section.columns || []).filter((_, i) => i !== ci) })}
+                                        <div className="flex items-center gap-1">
+                                          <ReorderButtons index={ci} count={(section.columns || []).length} onMove={d => updateSection(index, { columns: moveArrayItem(section.columns || [], ci, d) })} />
+                                          <button onClick={() => updateSection(index, { columns: (section.columns || []).filter((_, i) => i !== ci) })}
                                           className="text-white/30 hover:text-red-400 transition-colors">
                                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                                        </button>
+                                          </button>
+                                        </div>
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <IconPicker
@@ -2003,6 +2064,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                             className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
                                           <UrlWarning url={link.url} />
                                         </div>
+                                        <ReorderButtons index={li} count={(section.socialLinks || []).length} onMove={d => updateSection(index, { socialLinks: moveArrayItem(section.socialLinks || [], li, d) })} />
                                         <button onClick={() => updateSection(index, { socialLinks: (section.socialLinks || []).filter((_, i) => i !== li) })}
                                           className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
                                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>

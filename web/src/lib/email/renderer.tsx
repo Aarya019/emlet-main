@@ -21,6 +21,7 @@ import {
 } from '@react-email/components';
 import type { GeneratedEmail, EmailSection } from '@/lib/ai/claude';
 import type { BrandProfile } from '@/lib/db/types';
+import { buildEmailPalette, type EmailColorPalette } from '@/lib/colors/palette';
 
 // ─────────────────────────────────────────────
 // Font resolver — fetches Google Fonts CSS on the server with a real browser
@@ -369,6 +370,70 @@ export const styleConfigs: Record<string, StyleConfig> = {
     buttonShadow: '',
   },
 };
+
+/**
+ * Re-derives each style's card/icon/divider colors from the brand's palette
+ * instead of the fixed neutrals in styleConfigs above — cards, icon boxes,
+ * and accent borders (retro's gold, cyberpunk's cyan, bauhaus's red rule,
+ * handwritten's tan) previously never varied by brand at all, regardless of
+ * how bold or distinctive the brand's own colors were.
+ *
+ * Brutalist's and bauhaus's black borders/shadows are deliberately left
+ * alone: that stark black-on-white grid is the recognizable visual grammar
+ * of those two styles specifically, not a customizable "color slot" the way
+ * a neutral card fill or a gold/cyan accent is — swapping it for a brand hue
+ * would just make the style look broken rather than on-brand. Bauhaus's rule
+ * color is the exception: the movement itself is defined by bold primary-
+ * color accents against a black grid, so that becomes the brand's own color.
+ * 'simple' has no visible card/icon chrome by design, so there's nothing to tint.
+ */
+function applyBrandPalette(designStyle: string, base: StyleConfig, palette: EmailColorPalette): StyleConfig {
+  const config: StyleConfig = { ...base };
+  switch (designStyle) {
+    case 'minimalist':
+      config.cardStyle = { ...base.cardStyle, backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.primary}1a` };
+      config.iconBoxStyle = { ...base.iconBoxStyle, backgroundColor: palette.accentLight, border: `1px solid ${palette.primary}33` };
+      break;
+    case 'editorial':
+      config.cardStyle = { ...base.cardStyle, backgroundColor: palette.surfaceAlt, borderLeft: `3px solid ${palette.primaryDark}` };
+      config.iconBoxStyle = { ...base.iconBoxStyle, backgroundColor: palette.surfaceAlt, border: `1px solid ${palette.primaryDark}` };
+      config.hrStyle = { ...base.hrStyle, borderColor: palette.primaryDark };
+      config.sectionBorderStyle = { ...base.sectionBorderStyle, borderLeft: `4px solid ${palette.primaryDark}` };
+      break;
+    case 'retro':
+      config.cardStyle = { ...base.cardStyle, backgroundColor: palette.accentLight, border: `2px solid ${palette.accent}` };
+      config.iconBoxStyle = { ...base.iconBoxStyle, backgroundColor: palette.accentLight, border: `2px solid ${palette.accent}`, boxShadow: `0 2px 6px ${palette.accent}55` };
+      config.hrStyle = { ...base.hrStyle, borderColor: palette.accent };
+      config.containerBorder = `2px solid ${palette.accent}`;
+      config.buttonShadow = `0 3px 10px ${palette.accent}55`;
+      break;
+    case 'brutalist':
+      config.cardStyle = { ...base.cardStyle, backgroundColor: palette.surfaceAlt };
+      config.iconBoxStyle = { ...base.iconBoxStyle, backgroundColor: palette.surfaceAlt };
+      break;
+    case 'cyberpunk':
+      config.cardStyle = { ...base.cardStyle, backgroundColor: palette.primaryDark, border: `1px solid ${palette.accent}` };
+      config.iconBoxStyle = { ...base.iconBoxStyle, backgroundColor: palette.primaryDark, border: `1px solid ${palette.accent}`, boxShadow: `0 0 12px ${palette.accent}59` };
+      config.hrStyle = { ...base.hrStyle, borderColor: palette.accent };
+      config.sectionBorderStyle = { ...base.sectionBorderStyle, borderLeft: `3px solid ${palette.accent}` };
+      config.containerBorder = `1px solid ${palette.accent}`;
+      config.buttonShadow = `0 0 16px ${palette.accent}59`;
+      break;
+    case 'handwritten':
+      config.cardStyle = { ...base.cardStyle, backgroundColor: palette.surfaceAlt, border: `1px dashed ${palette.accent}` };
+      config.iconBoxStyle = { ...base.iconBoxStyle, backgroundColor: palette.surfaceAlt, border: `1px dashed ${palette.accent}` };
+      config.hrStyle = { ...base.hrStyle, borderColor: palette.accent };
+      config.containerBorder = `2px solid ${palette.accent}`;
+      break;
+    case 'bauhaus':
+      config.cardStyle = { ...base.cardStyle, backgroundColor: palette.surfaceAlt };
+      config.hrStyle = { ...base.hrStyle, borderColor: palette.primary };
+      break;
+    default:
+      break;
+  }
+  return config;
+}
 
 // ─────────────────────────────────────────────
 // Font variant map — curated heading + body pairs per design style
@@ -2526,8 +2591,16 @@ export async function generateEmailHtml(
     config.googleFontsUrl    = chosenVariant.googleFontsUrl;
   }
   const primaryColor    = brandProfile?.primary_color    || '#5c5cf0';
-  const secondaryColor  = brandProfile?.secondary_color  || primaryColor;
   const backgroundColor = brandProfile?.background_color || null;
+  // Same HSL-derived palette used to instruct the AI's color choices (see
+  // lib/colors/palette.ts) — reused here so the renderer's own structural
+  // colors (cards, icon boxes, accent borders) are actually brand-derived
+  // too, instead of the fixed neutrals in styleConfigs. This also gives a
+  // real complementary accent hue when the brand has no secondary color set,
+  // rather than just reusing primaryColor twice.
+  const palette = buildEmailPalette(primaryColor, backgroundColor, brandProfile?.secondary_color || null);
+  const secondaryColor = palette.accent;
+  Object.assign(config, applyBrandPalette(designStyle, config, palette));
   const logoUrl         = brandProfile?.logo_url         || null;
   const websiteUrl      = brandProfile?.website_url      || null;
   const brandName       = brandProfile?.brand_name       || 'Company';
