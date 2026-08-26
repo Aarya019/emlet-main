@@ -484,7 +484,7 @@ VARIETY GUIDELINES (CRITICAL - Make each email unique):
 ICONS: For every feature in feature-list, every stat in stats, and every column in columns, set BOTH fields:
 - "icon": an emoji fallback (renders in basic clients)
 - "iconName": a Phosphor Icons name (renders as a crisp SVG in modern clients)
-Valid Phosphor icon names are lowercase kebab-case, e.g.: rocket, check-circle, lightning, chart-bar, users, shield-check, clock, star, arrow-right, code, globe, lock, chat-circle, gear, trophy, chart-line-up, currency-dollar, envelope, bell, image-square, device-mobile, hand-heart, leaf, magnifying-glass, paint-brush, person, planet, plug, question, sparkle, tag, target, thumbs-up, timer, translate, vault, warning, wifi, wrench
+Valid Phosphor icon names are lowercase kebab-case, e.g.: rocket, check-circle, lightning, chart-bar, users, shield-check, clock, star, arrow-right, code, globe, lock, chat-circle, gear, trophy, chart-line-up, currency-dollar, envelope, bell, image-square, device-mobile, hand-heart, leaf, magnifying-glass, paint-brush, person, planet, plug, question, sparkle, tag, target, thumbs-up, timer, translate, vault, warning, wifi-high, wrench
 Full icon set: https://phosphoricons.com (use the base name without weight suffix, lowercase kebab-case)
 
 IMAGE KEYWORD RULES (non-negotiable):

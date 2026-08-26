@@ -44,7 +44,7 @@ const ICON_OPTIONS: Array<{ name: string; emoji: string }> = [
   { name: 'translate', emoji: '🌍' },
   { name: 'vault', emoji: '🔐' },
   { name: 'warning', emoji: '⚠️' },
-  { name: 'wifi', emoji: '📶' },
+  { name: 'wifi-high', emoji: '📶' },
   { name: 'wrench', emoji: '🔧' },
 ];
 
