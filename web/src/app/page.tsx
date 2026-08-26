@@ -44,8 +44,8 @@ const FAQS = [
   { q: 'How does Emlet generate emails?', a: "You describe your campaign in plain English. Emlet's AI writes the copy, selects a layout, applies your brand colors, and outputs production-ready HTML and TSX, all in seconds." },
   { q: 'What email platforms does Emlet work with?', a: 'Any platform that accepts HTML. Export your email and drop it straight into Mailchimp, SendGrid, Resend, ConvertKit, HubSpot, or any other ESP.' },
   { q: 'Do I need design or coding skills?', a: 'Not at all. Type what you want and Emlet handles the design and code. Every block is also editable in the visual editor. No code required.' },
-  { q: 'What do I get for free?', a: 'A one-time trial with no credit card: one brand profile, one full email generation, and one each of AI edit, block regeneration, and test send. Upgrade to Professional ($29/mo) any time for unlimited use of all of it.' },
-  { q: 'Do unused trial actions roll over or reset?', a: "No. The trial is one-time per account and doesn't renew on a schedule. Upgrading is what unlocks unlimited use." },
+  { q: 'What do I get for free?', a: 'No credit card required: 3 AI-generated emails every month, plus a one-time trial of one brand profile and one each of AI edit, block regeneration, and test send. Upgrade to Professional ($29/mo) any time for unlimited use of all of it.' },
+  { q: 'Do unused trial actions roll over or reset?', a: "Email generations reset to 3 at the start of each month — unused ones don't roll over. The brand profile, AI edit, block regeneration, and test send are one-time per account and don't renew on a schedule. Upgrading is what unlocks unlimited use of everything." },
   { q: 'Can I use my own brand colors and logo?', a: 'Yes. Create a Brand Profile with your colors, typography, and logo. Every email you generate automatically stays on-brand.' },
   { q: 'Will my emails look right in every inbox?', a: 'Yes. Every email Emlet generates is production-ready HTML tested to render correctly in Gmail, Outlook, Apple Mail, and every major inbox.' },
   { q: 'Can I cancel anytime?', a: 'Yes. Manage or cancel your Professional subscription anytime from the billing portal. No long-term contract, no cancellation fee.' },
@@ -63,13 +63,17 @@ const PROFESSIONAL_FEATURES = [
 
 const TRIAL_ITEMS = [
   { label: 'Brand profile', desc: 'Set your colors, voice & logo once' },
-  { label: 'Email generation', desc: 'One full AI-generated email' },
+  { label: 'Email generation', desc: '3 AI-generated emails every month' },
   { label: 'AI edit', desc: 'One "Edit with AI" pass' },
   { label: 'Block regeneration', desc: 'One single-block AI rewrite' },
   { label: 'Test send', desc: 'One test email to your own inbox' },
 ];
 
 const PROFESSIONAL_PRICE_ID = process.env.NEXT_PUBLIC_PADDLE_PRO_PRICE_ID ?? null;
+// Beta launch pricing — set in Paddle as a $10-off-forever recurring discount.
+// Unset this env var (Vercel) once the beta window ends to revert every new
+// checkout to the standard $29 price, with no further code changes needed.
+const BETA_DISCOUNT_CODE = process.env.NEXT_PUBLIC_PADDLE_BETA_DISCOUNT_CODE || null;
 
 function CheckIcon({ className }: { className?: string }) {
   return (
@@ -208,6 +212,7 @@ export default function Home() {
         items: [{ priceId: PROFESSIONAL_PRICE_ID, quantity: 1 }],
         customer: { email: user.email ?? '' },
         customData: { userId: user.id },
+        ...(BETA_DISCOUNT_CODE ? { discountCode: BETA_DISCOUNT_CODE } : {}),
         settings: {
           successUrl: `${window.location.origin}/dashboard?upgraded=true`,
         },
@@ -248,7 +253,7 @@ export default function Home() {
             operatingSystem: 'Web',
             offers: {
               '@type': 'Offer',
-              price: '29',
+              price: BETA_DISCOUNT_CODE ? '19' : '29',
               priceCurrency: 'USD',
               url: 'https://emlet.app/#pricing',
             },
@@ -460,7 +465,7 @@ export default function Home() {
           </div>
 
           <p className="text-xs text-white/60">
-            No credit card required · one free email to try it · cancel anytime after
+            No credit card required · 3 free emails every month · upgrade anytime
           </p>
         </div>
       </section>
@@ -626,16 +631,23 @@ export default function Home() {
           {/* Professional card — the centerpiece */}
           <div className="relative rounded-2xl border border-[#00ffff]/40 bg-gradient-to-b from-[#00ffff]/[0.07] to-transparent shadow-lg shadow-[#00ffff]/10 p-7 sm:p-8 flex flex-col gap-6">
             <div className="absolute -top-3 left-7 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-xs font-black uppercase tracking-wide">
-              {isPaidUser ? 'Your plan' : 'Unlock everything'}
+              {isPaidUser ? 'Your plan' : BETA_DISCOUNT_CODE ? 'Beta pricing — locked in forever' : 'Unlock everything'}
             </div>
 
             <div>
               <p className="text-white/50 text-sm font-semibold uppercase tracking-widest mb-2">Professional</p>
-              <div className="flex items-end gap-1 mb-1">
-                <span className="text-4xl font-black text-white">$29</span>
+              <div className="flex items-end gap-2 mb-1">
+                {BETA_DISCOUNT_CODE && (
+                  <span className="text-xl text-white/30 line-through mb-1.5">$29</span>
+                )}
+                <span className="text-4xl font-black text-white">{BETA_DISCOUNT_CODE ? '$19' : '$29'}</span>
                 <span className="text-white/60 mb-1">/mo</span>
               </div>
-              <p className="text-white/60 text-sm">No limits, no per-email cost. Cancel anytime.</p>
+              <p className="text-white/60 text-sm">
+                {BETA_DISCOUNT_CODE
+                  ? 'Beta price, locked in for as long as you stay subscribed.'
+                  : 'No limits, no per-email cost. Cancel anytime.'}
+              </p>
             </div>
 
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 flex-1">
@@ -750,7 +762,7 @@ export default function Home() {
             <span className="bg-gradient-to-r from-[#00ffff] to-[#00ff00] bg-clip-text text-transparent">marketing emails today</span>
           </h2>
           <p className="relative text-base text-white/50 mb-8 max-w-lg mx-auto">
-            Try your first email free. No credit card. Get your first high-converting email in under 60 seconds.
+            Try it free — 3 emails every month, no credit card. Get your first high-converting email in under 60 seconds.
           </p>
           <div className="relative flex flex-col sm:flex-row items-center justify-center gap-4">
             <a href="/sign-up" className="rounded-full bg-white px-8 py-3 text-base font-bold text-black transition-all hover:shadow-2xl hover:shadow-white/20 hover:-translate-y-0.5">

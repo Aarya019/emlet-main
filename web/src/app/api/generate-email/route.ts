@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     if (!isPro && (!profile || profile.credits_remaining < 1)) {
       return NextResponse.json(
-        { error: "You've used your free email generation — upgrade to Professional for unlimited emails." },
+        { error: "You've used all 3 of your free generations this month — upgrade to Professional for unlimited emails." },
         { status: 402 }
       );
     }
