@@ -67,15 +67,15 @@ export const body: ContentBlock[] = [
     type: 'ul',
     items: [
       {
-        bold: 'Email 1 — welcome and set expectations.',
+        bold: 'Email 1: welcome and set expectations.',
         text: "Say thanks, say what they'll actually get from you and how often (weekly tips, occasional sales, whatever's true), and give one low-commitment action, reply to this email, follow on social, check out a specific page. Not a sale. This one email gets the highest open rate you'll ever see from this person, so the job here is trust, not revenue.",
       },
       {
-        bold: 'Email 2 — the story, not the pitch.',
+        bold: 'Email 2: the story, not the pitch.',
         text: 'Why you exist, what makes the product or the business different, maybe a customer story. This is the email that turns "I signed up for a discount" into "I actually want to hear from this brand," and it\'s the one most sequences skip entirely in a rush to get to the offer.',
       },
       {
-        bold: 'Email 3 — the actual offer.',
+        bold: 'Email 3: the actual offer.',
         text: "Save your strongest offer for here, not email 1. Leading with the discount code trains new subscribers to wait for a deal before they ever engage with anything else you send, and it skips the trust-building the first two emails were supposed to do.",
       },
     ],
