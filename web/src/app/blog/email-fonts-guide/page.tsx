@@ -5,12 +5,12 @@ import TocSidebar from './TocSidebar';
 export const metadata: Metadata = {
   title: 'The Ultimate Guide to Email Fonts | Emlet Blog',
   description:
-    'Everything you need to know about choosing, embedding, and fallback-stacking fonts in HTML email — client support matrix, recommended stacks, and sizing best practices.',
+    'Everything you need to know about choosing, embedding, and fallback-stacking fonts in HTML email: client support matrix, recommended stacks, and sizing best practices.',
   alternates: { canonical: 'https://emlet.app/blog/email-fonts-guide' },
   openGraph: {
     title: 'The Ultimate Guide to Email Fonts',
     description:
-      'Client support matrix, web-safe stacks, Google Fonts embedding, sizing guidelines, and the most common mistakes — all in one place.',
+      'Client support matrix, web-safe stacks, Google Fonts embedding, sizing guidelines, and the most common mistakes, all in one place.',
     type: 'article',
     publishedTime: '2026-03-24',
   },
@@ -129,7 +129,7 @@ const articleJsonLd = {
   '@type': 'Article',
   headline: 'The Ultimate Guide to Email Fonts',
   description:
-    'Everything you need to know about choosing, embedding, and fallback-stacking fonts in HTML email — client support matrix, recommended stacks, and sizing best practices.',
+    'Everything you need to know about choosing, embedding, and fallback-stacking fonts in HTML email: client support matrix, recommended stacks, and sizing best practices.',
   image: 'https://images.pexels.com/photos/4140925/pexels-photo-4140925.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=1600&h=800',
   datePublished: '2026-03-24',
   author: { '@type': 'Person', name: 'Aarya', url: 'https://emlet.app' },
@@ -196,7 +196,7 @@ export default function EmailFontsGuide() {
               The Ultimate Guide to Email Fonts
             </h1>
             <p className="text-white/50 text-lg sm:text-xl leading-relaxed max-w-2xl">
-              Everything you need to know about choosing, embedding, and fallback-stacking fonts in HTML email —
+              Everything you need to know about choosing, embedding, and fallback-stacking fonts in HTML email,
               from web-safe classics to Google Fonts, with a full client support matrix.
             </p>
             <div className="mt-6 flex items-center gap-4 text-sm text-white/30">
@@ -207,15 +207,15 @@ export default function EmailFontsGuide() {
           {/* Intro */}
           <P>
             Typography is one of the most powerful tools in an email designer&apos;s kit.
-            The right font makes copy feel trustworthy, premium, or playful — and{' '}
+            The right font makes copy feel trustworthy, premium, or playful, and{' '}
             <strong className="text-white/85">the wrong font choice</strong>, or a missing fallback, can
             turn a polished campaign into a wall of Times New Roman.
           </P>
           <P>
             The challenge? Email clients are not browsers. The same CSS rules that work perfectly
             on your website may be stripped, ignored, or overridden the moment your email hits a Gmail inbox.
-            Understanding how fonts work in email is one of the most important — and most frequently
-            misunderstood — skills in email development.
+            Understanding how fonts work in email is one of the most important, and most frequently
+            misunderstood, skills in email development.
           </P>
           <P>
             This guide covers everything: web-safe fonts, custom font embedding via{' '}
@@ -234,10 +234,10 @@ export default function EmailFontsGuide() {
 
           <ul className="space-y-3 mb-6 list-none">
             {[
-              { title: 'No live reload.', body: 'Once delivered, an email is static. If your font stack has no usable fallback, the recipient sees whatever the email client decides — often Times New Roman.' },
+              { title: 'No live reload.', body: 'Once delivered, an email is static. If your font stack has no usable fallback, the recipient sees whatever the email client decides, often Times New Roman.' },
               { title: 'Client rendering diversity.', body: 'Gmail strips most <style> blocks. Outlook for Windows uses Microsoft Word\'s layout engine, which ignores @font-face entirely. Apple Mail renders web fonts beautifully. These clients share the same inbox.' },
               { title: 'Deliverability side-effects.', body: 'Bloated font imports or inline styles add to message weight, which can tip you over limits on some ESPs or cause clipping in Gmail (which clips emails over ~102 KB).' },
-              { title: 'Brand perception.', body: 'Typography is a brand signal. A brand that uses Inter or DM Sans on its website but delivers Times New Roman emails signals inconsistency — even if subscribers can\'t articulate why.' },
+              { title: 'Brand perception.', body: 'Typography is a brand signal. A brand that uses Inter or DM Sans on its website but delivers Times New Roman emails signals inconsistency, even if subscribers can\'t articulate why.' },
             ].map(({ title, body }) => (
               <li key={title} className="flex gap-3">
                 <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
@@ -249,7 +249,7 @@ export default function EmailFontsGuide() {
           </ul>
 
           <P>
-            The good news: with the right font stack strategy, your email looks great on every client —
+            The good news: with the right font stack strategy, your email looks great on every client,
             custom font where supported, a well-chosen fallback everywhere else.
           </P>
 
@@ -257,7 +257,7 @@ export default function EmailFontsGuide() {
           <H2 id="web-safe-fonts">Web-safe fonts: the reliable foundation</H2>
 
           <P>
-            Web-safe fonts are typefaces that ship pre-installed on virtually every operating system —
+            Web-safe fonts are typefaces that ship pre-installed on virtually every operating system:
             Windows, macOS, Linux, iOS, and Android. Because they live on the device, no downloading is
             needed and they render identically across every email client.
           </P>
@@ -277,7 +277,7 @@ export default function EmailFontsGuide() {
                 <TableRow cells={['Verdana', 'Small body text, accessibility', 'Wider letter-spacing aids legibility at small sizes.']} />
                 <TableRow cells={['Trebuchet MS', 'Friendly, slightly quirky tone', 'More personality than Arial without being unusual.']} />
                 <TableRow cells={['Tahoma', 'Compact UIs, smaller text', 'Slightly narrower than Verdana; good for dense layouts.']} />
-                <TableRow cells={['Geneva', 'macOS/iOS only fallback', 'Only include after Verdana in stacks — rare on Windows.']} />
+                <TableRow cells={['Geneva', 'macOS/iOS only fallback', 'Only include after Verdana in stacks, rare on Windows.']} />
               </tbody>
             </table>
           </div>
@@ -291,7 +291,7 @@ export default function EmailFontsGuide() {
               <tbody>
                 <TableRow cells={['Georgia', 'Editorial, premium, storytelling', 'High readability on screens. The best web-safe serif by far.']} />
                 <TableRow cells={['Times New Roman', 'Avoid as a choice; accept as fallback', 'Email-client default if nothing else matches. Design for its appearance.']} />
-                <TableRow cells={['Palatino Linotype', 'Publishing, long-form newsletters', 'Elegant but rarer — use with Georgia as a prior fallback.']} />
+                <TableRow cells={['Palatino Linotype', 'Publishing, long-form newsletters', 'Elegant but rarer. Use with Georgia as a prior fallback.']} />
               </tbody>
             </table>
           </div>
@@ -318,7 +318,7 @@ export default function EmailFontsGuide() {
           <H2 id="custom-fonts">Custom & Google Fonts via @font-face</H2>
 
           <P>
-            Custom web fonts bring your brand typography into the inbox — but only where the email
+            Custom web fonts bring your brand typography into the inbox, but only where the email
             client allows it. The two common methods are:
           </P>
 
@@ -398,8 +398,8 @@ export default function EmailFontsGuide() {
           <H2 id="client-support">Client-by-client support matrix</H2>
 
           <P>
-            This is the data that saves campaigns. Knowing which clients render custom fonts — and
-            which silently fall back — determines how much you invest in custom font polish.
+            This is the data that saves campaigns. Knowing which clients render custom fonts, and
+            which silently fall back, determines how much you invest in custom font polish.
           </P>
 
           <div className="overflow-x-auto rounded-xl border border-white/10 mb-6">
@@ -420,7 +420,7 @@ export default function EmailFontsGuide() {
                   <td className="px-4 py-3 text-sm text-white/55">~28 %</td>
                   <td className="px-4 py-3"><SupportBadge level="full" /></td>
                   <td className="px-4 py-3"><SupportBadge level="full" /></td>
-                  <td className="px-4 py-3 text-sm text-white/45">Full support. The largest single client — worth investing in custom fonts.</td>
+                  <td className="px-4 py-3 text-sm text-white/45">Full support. The largest single client, worth investing in custom fonts.</td>
                 </tr>
                 <tr className="border-t border-white/8">
                   <td className="px-4 py-3 text-sm text-white/80 font-medium">Gmail (browser)</td>
@@ -434,7 +434,7 @@ export default function EmailFontsGuide() {
                   <td className="px-4 py-3 text-sm text-white/55">~9 %</td>
                   <td className="px-4 py-3"><SupportBadge level="none" /></td>
                   <td className="px-4 py-3"><SupportBadge level="none" /></td>
-                  <td className="px-4 py-3 text-sm text-white/45">Same as Gmail web — no custom font support.</td>
+                  <td className="px-4 py-3 text-sm text-white/45">Same as Gmail web. No custom font support.</td>
                 </tr>
                 <tr className="border-t border-white/8">
                   <td className="px-4 py-3 text-sm text-white/80 font-medium">Outlook 2016–2021 (Windows)</td>
@@ -448,7 +448,7 @@ export default function EmailFontsGuide() {
                   <td className="px-4 py-3 text-sm text-white/55">~4 %</td>
                   <td className="px-4 py-3"><SupportBadge level="partial" /></td>
                   <td className="px-4 py-3"><SupportBadge level="partial" /></td>
-                  <td className="px-4 py-3 text-sm text-white/45">Outlook 2019+ for Mac is WebKit-based — respects web fonts. 2011 does not.</td>
+                  <td className="px-4 py-3 text-sm text-white/45">Outlook 2019+ for Mac is WebKit-based, respects web fonts. 2011 does not.</td>
                 </tr>
                 <tr className="border-t border-white/8">
                   <td className="px-4 py-3 text-sm text-white/80 font-medium">Outlook.com (new)</td>
@@ -476,7 +476,7 @@ export default function EmailFontsGuide() {
                   <td className="px-4 py-3 text-sm text-white/55">&lt; 1 %</td>
                   <td className="px-4 py-3"><SupportBadge level="full" /></td>
                   <td className="px-4 py-3"><SupportBadge level="full" /></td>
-                  <td className="px-4 py-3 text-sm text-white/45">Full support — Gecko-based renderer.</td>
+                  <td className="px-4 py-3 text-sm text-white/45">Full support, Gecko-based renderer.</td>
                 </tr>
               </tbody>
             </table>
@@ -489,7 +489,7 @@ export default function EmailFontsGuide() {
           <Callout type="info">
             A rough rule of thumb: about <strong className="text-white/70">55–60 % of your recipients</strong> will
             see your custom font (Apple Mail + Samsung Mail + supported webmail clients).
-            The remaining ~40 % — mostly Gmail and Windows Outlook — will always see the fallback.
+            The remaining ~40% (mostly Gmail and Windows Outlook) will always see the fallback.
             Design your fallback stack to look intentional, not accidental.
           </Callout>
 
@@ -511,7 +511,7 @@ export default function EmailFontsGuide() {
             This stack shows <strong className="text-white/80">Inter</strong> on Apple Mail, iOS, and
             Outlook.com (all load the Google Font). On Gmail it falls back to
             <strong className="text-white/80"> Helvetica Neue</strong> (macOS/iOS) or
-            <strong className="text-white/80"> Arial</strong> (Windows/Android) — both clean, neutral
+            <strong className="text-white/80"> Arial</strong> (Windows/Android), both clean, neutral
             sans-serifs that barely break the design.
           </P>
 
@@ -521,7 +521,7 @@ export default function EmailFontsGuide() {
           </CodeBlock>
           <P>
             <strong className="text-white/80">Playfair Display</strong> on supporting clients.
-            Georgia on Gmail and Windows Outlook — a graceful serif that still looks intentional.
+            Georgia on Gmail and Windows Outlook, a graceful serif that still looks intentional.
             Never falls back to bare Times New Roman without a fight.
           </P>
 
@@ -542,7 +542,7 @@ export default function EmailFontsGuide() {
           </CodeBlock>
           <P>
             The system UI stack means subscribers always see the native default sans-serif
-            for their OS — SF Pro on Apple, Segoe UI on Windows, Roboto on Android.
+            for their OS: SF Pro on Apple, Segoe UI on Windows, Roboto on Android.
             Loads instantly, zero external dependency, always looks clean. A strong default
             choice when custom fonts are not a priority.
           </P>
@@ -558,7 +558,7 @@ export default function EmailFontsGuide() {
 
           <P>
             Sizing rules for email are stricter than for the web. Email is read on everything from
-            a 5-inch phone screen to a 32-inch monitor, often at arm&apos;s length — and you cannot
+            a 5-inch phone screen to a 32-inch monitor, often at arm&apos;s length, and you cannot
             rely on the reader zooming in.
           </P>
 
@@ -570,12 +570,12 @@ export default function EmailFontsGuide() {
               </thead>
               <tbody>
                 <TableRow cells={['Body / paragraph', '14 px', '15–16 px', 'Use 16 px to prevent iOS auto-zoom on form inputs.']} />
-                <TableRow cells={['Caption / legal text', '12 px', '13 px', 'Never go below 11 px — many clients will ignore smaller text.']} />
+                <TableRow cells={['Caption / legal text', '12 px', '13 px', 'Never go below 11 px. Many clients will ignore smaller text.']} />
                 <TableRow cells={['CTA button', '15 px', '16–18 px', 'Larger text improves tap target legibility on mobile.']} />
                 <TableRow cells={['H3 / sub-heading', '16 px', '18–20 px', 'Just enough to differentiate from body without dominating.']} />
                 <TableRow cells={['H2 / section heading', '20 px', '22–28 px', 'Should read clearly at a glance when scanning.']} />
                 <TableRow cells={['H1 / hero headline', '28 px', '32–48 px', 'Scale down on mobile (use max-width + fluid sizing).']} />
-                <TableRow cells={['Preheader text', '—', '0 px (hidden)', 'Hidden with font-size:0; line-height:0; max-height:0; overflow:hidden.']} />
+                <TableRow cells={['Preheader text', 'N/A', '0 px (hidden)', 'Hidden with font-size:0; line-height:0; max-height:0; overflow:hidden.']} />
               </tbody>
             </table>
           </div>
@@ -599,7 +599,7 @@ export default function EmailFontsGuide() {
               </thead>
               <tbody>
                 <TableRow cells={['Body text', '1.5–1.6', 'The sweet spot for comfortable reading across all screen sizes.']} />
-                <TableRow cells={['Headings (H1/H2)', '1.1–1.25', 'Tight but not cramped — keeps multi-line headlines visually tied.']} />
+                <TableRow cells={['Headings (H1/H2)', '1.1–1.25', 'Tight but not cramped, keeps multi-line headlines visually tied.']} />
                 <TableRow cells={['Sub-headings (H3)', '1.3–1.4', 'Slightly more breathing room than H1/H2.']} />
                 <TableRow cells={['CTA buttons', '1.2–1.4', 'Consistent with tap target height; don\'t let text wrap inside a button.']} />
                 <TableRow cells={['Legal / caption', '1.4–1.5', 'Small text needs generous spacing to stay readable.']} />
@@ -610,7 +610,7 @@ export default function EmailFontsGuide() {
           <Callout type="info">
             Outlook for Windows ignores unitless <Code>line-height</Code> values (like{' '}
             <Code>1.5</Code>). Always add a pixel value fallback:{' '}
-            <Code>line-height: 1.5; mso-line-height-rule: exactly;</Code> — the{' '}
+            <Code>line-height: 1.5; mso-line-height-rule: exactly;</Code>. The{' '}
             <Code>mso-line-height-rule</Code> property prevents Outlook from adding extra spacing
             between lines.
           </Callout>
@@ -633,7 +633,7 @@ export default function EmailFontsGuide() {
               <li key={label} className="flex gap-3">
                 <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
                 <span className="text-white/65 leading-relaxed">
-                  <Code>{label}</Code> — {note}
+                  <Code>{label}</Code>: {note}
                 </span>
               </li>
             ))}
@@ -644,7 +644,7 @@ export default function EmailFontsGuide() {
             Italic works reliably in most clients when using web-safe fonts. For custom fonts,
             load the italic variant explicitly via a separate <Code>@font-face</Code> rule with{' '}
             <Code>font-style: italic</Code>. If you don&apos;t, the browser will synthesise an
-            italic by slanting the regular variant — which often looks poor.
+            italic by slanting the regular variant, which often looks poor.
           </P>
 
           <H3>Letter-spacing</H3>
@@ -655,8 +655,8 @@ export default function EmailFontsGuide() {
           <ul className="space-y-3 mb-6 list-none">
             {[
               'Headings: 0.5–1 px (or -0.5 px to tighten large display text)',
-              'Small caps / labels: 1–2 px — greatly improves legibility of all-caps text',
-              'Body text: 0 px — extra tracking on small text reduces readability',
+              'Small caps / labels: 1–2 px, greatly improves legibility of all-caps text',
+              'Body text: 0 px, extra tracking on small text reduces readability',
               'Never use letter-spacing on preheader / hidden text (breaks reading order in some accessibility tools)',
             ].map((item) => (
               <li key={item} className="flex gap-3">
@@ -684,7 +684,7 @@ export default function EmailFontsGuide() {
           <ul className="space-y-3 mb-6 list-none">
             {[
               { label: 'Dark text on white: ', note: '#222 or #333 is safer than #999, which fails AA at any size.' },
-              { label: 'Light text on dark: ', note: 'White (#fff) on a mid-dark background (#444 or below) typically passes. Off-white (e.g. #e5e5e5) on pure black can feel harsh — try #d0d0d0 for a softer pairing.' },
+              { label: 'Light text on dark: ', note: 'White (#fff) on a mid-dark background (#444 or below) typically passes. Off-white (e.g. #e5e5e5) on pure black can feel harsh. Try #d0d0d0 for a softer pairing.' },
               { label: 'Coloured text: ', note: 'Brand colours often fail contrast checks when used for body text. Use them for headings or on appropriately dark/light backgrounds.' },
             ].map(({ label, note }) => (
               <li key={label} className="flex gap-3">
@@ -696,15 +696,15 @@ export default function EmailFontsGuide() {
 
           <H3>Don&apos;t rely on font style alone to convey meaning</H3>
           <P>
-            Screen readers do not announce bold or italic by default. If content is critical — an
-            expiry date, a warning — supplement font styling with explicit text (e.g. "Expires:
+            Screen readers do not announce bold or italic by default. If content is critical (an
+            expiry date, a warning), supplement font styling with explicit text (e.g. "Expires:
             March 31" rather than just bolding "March 31").
           </P>
 
           <H3>Minimum touch target size</H3>
           <P>
             Apple and Google recommend a minimum tap target of <strong className="text-white/85">44 × 44 px</strong>.
-            For text links inline in a paragraph, this cannot always be achieved — but CTA buttons
+            For text links inline in a paragraph, this cannot always be achieved, but CTA buttons
             should always meet this threshold, both in height (via <Code>padding</Code>) and in the
             font size used.
           </P>
@@ -732,7 +732,7 @@ export default function EmailFontsGuide() {
             {
               n: '03',
               title: 'Loading too many font weights',
-              body: 'Google Fonts URLs grow with each weight. &family=Inter:wght@100;200;300;400;500;600;700;800;900 loads nine weights and can add 150–200 KB to the email before the message even begins — triggering Gmail\'s clipping threshold.',
+              body: 'Google Fonts URLs grow with each weight. &family=Inter:wght@100;200;300;400;500;600;700;800;900 loads nine weights and can add 150–200 KB to the email before the message even begins, triggering Gmail\'s clipping threshold.',
             },
             {
               n: '04',
@@ -757,7 +757,7 @@ export default function EmailFontsGuide() {
             {
               n: '08',
               title: 'Never testing in Gmail',
-              body: 'Because Gmail strips all web fonts and all <style> blocks, it is the most important test environment. If your email looks polished in Gmail with the fallback font, it will look great everywhere. Test in Gmail — both browser and mobile app.',
+              body: 'Because Gmail strips all web fonts and all <style> blocks, it is the most important test environment. If your email looks polished in Gmail with the fallback font, it will look great everywhere. Test in Gmail: both browser and mobile app.',
             },
           ].map(({ n, title, body }) => (
             <div key={n} className="flex gap-5 mb-7">
@@ -791,7 +791,7 @@ export default function EmailFontsGuide() {
                 { label: 'Safest font weights', value: '400 and 700' },
                 { label: 'Max font families per email', value: '2' },
                 { label: 'Outlook line-height fix', value: 'mso-line-height-rule: exactly' },
-                { label: 'Gmail custom font support', value: 'None — always test the fallback' },
+                { label: 'Gmail custom font support', value: 'None, always test the fallback' },
                 { label: 'Best-supported custom font source', value: 'Google Fonts via <link> in <head>' },
                 { label: 'Gmail 102 KB clipping limit', value: 'Keep HTML under 96 KB to be safe' },
               ].map(({ label, value }) => (
@@ -807,11 +807,11 @@ export default function EmailFontsGuide() {
           <div className="rounded-2xl bg-gradient-to-br from-white/8 to-white/3 border border-white/10 p-8 text-center mt-12">
             <p className="text-xs font-bold uppercase tracking-widest text-[#00ffff]/60 mb-3">Put it into practice</p>
             <h2 className="text-2xl sm:text-3xl font-black mb-3">
-              Ship better-looking emails — starting now.
+              Ship better-looking emails. Starting now.
             </h2>
             <p className="text-white/50 mb-6 max-w-md mx-auto leading-relaxed">
               Emlet applies all of these font-stack best practices automatically. Every email it
-              generates uses proper fallback stacks, correct sizing, and tested line-heights — across
+              generates uses proper fallback stacks, correct sizing, and tested line-heights across
               Gmail, Outlook, and Apple Mail.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">

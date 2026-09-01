@@ -5,7 +5,7 @@ import TocSidebar from './TocSidebar';
 export const metadata: Metadata = {
   title: 'How to Connect Your Email Service Provider to Emlet | Emlet Blog',
   description:
-    'Step-by-step guide to connecting Mailchimp, Klaviyo, Brevo, and Mailerlite to Emlet — so you can push AI-generated emails directly into your ESP with one click.',
+    'Step-by-step guide to connecting Mailchimp, Klaviyo, Brevo, and Mailerlite to Emlet, so you can push AI-generated emails directly into your ESP with one click.',
   alternates: { canonical: 'https://emlet.app/blog/connect-esp-guide' },
   openGraph: {
     title: 'How to Connect Your ESP to Emlet',
@@ -182,7 +182,7 @@ export default function ConnectEspGuide() {
             </h1>
             <p className="text-white/50 text-lg sm:text-xl leading-relaxed max-w-2xl">
               Generate a beautiful email in Emlet, then push it straight into Mailchimp, Klaviyo, Brevo, or
-              Mailerlite — as a ready-to-send template or a campaign draft — in a single click.
+              Mailerlite, as a ready-to-send template or a campaign draft, in a single click.
             </p>
             <div className="mt-6 flex items-center gap-4 text-sm text-white/30">
               <span>March 25, 2026, by the Emlet Team</span>
@@ -195,7 +195,7 @@ export default function ConnectEspGuide() {
           <H2 id="overview">Overview</H2>
           <P>
             Emlet's ESP integrations let you go from brand inputs to a fully designed, deliverable HTML email
-            — and into your sending platform — without copying a single line of code. You connect your ESP once
+            and into your sending platform, without copying a single line of code. You connect your ESP once
             in <strong className="text-white/80">Settings → Integrations</strong>, and from then on a{' '}
             <strong className="text-white/80">Publish</strong> button appears inside every email you generate.
           </P>
@@ -221,11 +221,11 @@ export default function ConnectEspGuide() {
           <P>Once connected you can push any Emlet-generated email as:</P>
           <Ul>
             <Li>
-              <strong className="text-white/80">Template</strong> — saved to your ESP's template library, ready
+              <strong className="text-white/80">Template</strong>: saved to your ESP's template library, ready
               to use in any future campaign. Great for building a reusable library.
             </Li>
             <Li>
-              <strong className="text-white/80">Campaign Draft</strong> — a pre-built campaign that already has
+              <strong className="text-white/80">Campaign Draft</strong>: a pre-built campaign that already has
               your subject line, sender details, and audience list attached. You just review and hit send.
             </Li>
           </Ul>
@@ -239,7 +239,7 @@ export default function ConnectEspGuide() {
           <H2 id="connect">Connecting your ESP</H2>
           <P>
             All connections are managed from <strong className="text-white/80">Dashboard → Settings → Integrations</strong>.
-            The steps differ slightly per ESP — here's exactly what to do for each one.
+            The steps differ slightly per ESP. Here's exactly what to do for each one.
           </P>
 
           {/* Mailchimp */}
@@ -252,7 +252,7 @@ export default function ConnectEspGuide() {
             freeLabel="Free up to 500 contacts"
           >
             <p>
-              Mailchimp uses OAuth, so you never paste an API key — you just approve the connection in your browser.
+              Mailchimp uses OAuth, so you never paste an API key. You just approve the connection in your browser.
             </p>
           </EspCard>
           <Step n={1}>
@@ -293,14 +293,14 @@ export default function ConnectEspGuide() {
           <Step n={3}>
             Set the following scopes (at minimum):
             <Ul>
-              <Li><Code>Lists — Read/Write</Code> — to fetch your lists and create campaigns</Li>
-              <Li><Code>Templates — Read/Write</Code> — to create email templates</Li>
-              <Li><Code>Campaigns — Read/Write</Code> — to create campaign drafts</Li>
+              <Li><Code>Lists: Read/Write</Code>, to fetch your lists and create campaigns</Li>
+              <Li><Code>Templates: Read/Write</Code>, to create email templates</Li>
+              <Li><Code>Campaigns: Read/Write</Code>, to create campaign drafts</Li>
             </Ul>
           </Step>
           <Step n={4}>Copy the key and paste it into the <strong className="text-white/80">API Key</strong> field in Emlet's Integrations panel, then click <strong className="text-white/80">Save</strong>.</Step>
           <Callout type="tip">
-            Adding <Code>Accounts — Read</Code> scope is optional but lets Emlet show your real account/company name
+            Adding <Code>Accounts: Read</Code> scope is optional but lets Emlet show your real account/company name
             in the Integrations panel instead of the generic "Klaviyo Account" label.
           </Callout>
 
@@ -400,12 +400,12 @@ export default function ConnectEspGuide() {
               </thead>
               <tbody>
                 {[
-                  ['Saved to template library', '✓', '—'],
-                  ['Pre-attached to an audience list', '—', '✓'],
-                  ['Subject line pre-filled', '—', '✓'],
-                  ['Sender details pre-filled', '—', '✓'],
-                  ['Ready to schedule / send', '—', '✓'],
-                  ['Reusable for future campaigns', '✓', '—'],
+                  ['Saved to template library', '✓', '✗'],
+                  ['Pre-attached to an audience list', '✗', '✓'],
+                  ['Subject line pre-filled', '✗', '✓'],
+                  ['Sender details pre-filled', '✗', '✓'],
+                  ['Ready to schedule / send', '✗', '✓'],
+                  ['Reusable for future campaigns', '✓', '✗'],
                 ].map(([label, a, b], i) => (
                   <tr key={i} className="border-t border-white/8 hover:bg-white/3 transition-colors">
                     <td className="px-4 py-3 text-white/65">{label}</td>
@@ -430,12 +430,12 @@ export default function ConnectEspGuide() {
           <P>
             Brevo and Mailerlite both require that the <em>From</em> email address is verified in their respective
             dashboards before you can send or save templates. This is an anti-spam measure enforced at the API
-            level — Emlet cannot bypass it.
+            level. Emlet cannot bypass it.
           </P>
           <P>
             You enter your verified sender email once when you connect the ESP. It is stored securely with your
             connection and used automatically every time you push. You can override it per-push using the{' '}
-            <strong className="text-white/80">From Email</strong> field in the Publish modal — just make sure the
+            <strong className="text-white/80">From Email</strong> field in the Publish modal, just make sure the
             override address is also verified.
           </P>
           <P>Where to verify sender addresses:</P>
@@ -447,7 +447,7 @@ export default function ConnectEspGuide() {
           {/* ── Troubleshooting ── */}
           <H2 id="troubleshooting">Troubleshooting</H2>
 
-          <H3>403 — permission denied (Klaviyo)</H3>
+          <H3>403: permission denied (Klaviyo)</H3>
           <P>
             Your Klaviyo API key is missing one or more required scopes. Edit the key in{' '}
             <strong className="text-white/80">Klaviyo → Account → Settings → API Keys</strong> and ensure{' '}
@@ -455,7 +455,7 @@ export default function ConnectEspGuide() {
             <strong className="text-white/80">Read/Write</strong>.
           </P>
 
-          <H3>400 — Sender is invalid/inactive (Brevo or Mailerlite)</H3>
+          <H3>400: Sender is invalid/inactive (Brevo or Mailerlite)</H3>
           <P>
             The sender email stored with your connection, or the one you typed in the Publish modal, hasn't been
             verified in the ESP yet. Verify it first, then try again. If you need to update the stored sender email,
@@ -471,7 +471,7 @@ export default function ConnectEspGuide() {
 
           <H3>Push succeeds but I can't see the template/campaign</H3>
           <P>
-            The Publish modal returns a direct link — click it to open the asset in your ESP immediately. For
+            The Publish modal returns a direct link. Click it to open the asset in your ESP immediately. For
             campaigns, check the <strong className="text-white/80">Drafts</strong> folder; for templates look
             in <strong className="text-white/80">Templates → Saved templates</strong>.
           </P>
@@ -480,7 +480,7 @@ export default function ConnectEspGuide() {
           <H2 id="faq">FAQ</H2>
 
           <H3>Can I connect more than one ESP at the same time?</H3>
-          <P>Yes — you can have all four ESPs connected simultaneously. Each push lets you choose which one to send to.</P>
+          <P>Yes, you can have all four ESPs connected simultaneously. Each push lets you choose which one to send to.</P>
 
           <H3>Is my API key stored securely?</H3>
           <P>
@@ -490,7 +490,7 @@ export default function ConnectEspGuide() {
 
           <H3>What HTML does Emlet send to my ESP?</H3>
           <P>
-            Emlet renders the full inline-styled, table-based HTML that it generates for each email — the same
+            Emlet renders the full inline-styled, table-based HTML that it generates for each email, the same
             code you can download or preview. No transformation is applied before pushing.
           </P>
 
@@ -503,8 +503,8 @@ export default function ConnectEspGuide() {
 
           <H3>Will Emlet send emails on my behalf?</H3>
           <P>
-            No. Emlet only creates templates or campaign <em>drafts</em>. It never schedules or sends emails
-            — that action always stays with you inside your ESP.
+            No. Emlet only creates templates or campaign <em>drafts</em>. It never schedules or sends emails.
+            That action always stays with you inside your ESP.
           </P>
 
           <div className="mt-16 mb-10" />
