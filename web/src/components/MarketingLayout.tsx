@@ -40,7 +40,9 @@ export default function MarketingLayout({
           <span>© {new Date().getFullYear()} Emlet. All rights reserved.</span>
           <div className="flex items-center gap-6">
             <Link href="/blog" className="hover:text-white/60 transition-colors">Blog</Link>
-            <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy Policy</Link>
+            <Link href="/terms" className="hover:text-white/60 transition-colors">Terms</Link>
+            <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>
+            <Link href="/refunds" className="hover:text-white/60 transition-colors">Refunds</Link>
             <Link href="/#pricing" className="hover:text-white/60 transition-colors">Pricing</Link>
           </div>
         </div>

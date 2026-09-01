@@ -11,6 +11,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/alternatives`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${SITE_URL}/terms`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${SITE_URL}/refunds`, changeFrequency: 'yearly', priority: 0.3 },
   ];
 
   const allPosts = await getAllPostsMeta();
