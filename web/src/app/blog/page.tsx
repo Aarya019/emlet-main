@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import MarketingLayout from '@/components/MarketingLayout';
+import BlogSidebar from '@/components/BlogSidebar';
 import { getAllPostsMeta } from '@/lib/content/posts';
 
 export const metadata: Metadata = {
@@ -19,12 +20,19 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-export default async function BlogIndexPage() {
+export default async function BlogIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string }>;
+}) {
+  const { category } = await searchParams;
   const allPosts = await getAllPostsMeta();
-  const posts = [...allPosts].sort((a, b) => b.date.localeCompare(a.date));
+  const posts = [...allPosts]
+    .filter((post) => !category || post.category === category)
+    .sort((a, b) => b.date.localeCompare(a.date));
 
   return (
-    <MarketingLayout contentClassName="max-w-4xl">
+    <MarketingLayout sidebar={<BlogSidebar posts={allPosts} activeCategory={category} />}>
       <div className="mb-12">
         <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Blog</p>
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
@@ -35,37 +43,41 @@ export default async function BlogIndexPage() {
         </p>
       </div>
 
-      <div className="space-y-1">
-        {posts.map((post) => (
-          <Link
-            key={post.slug}
-            href={`/blog/${post.slug}`}
-            className="group flex flex-col sm:flex-row gap-5 py-6 border-t border-white/10 last:border-b hover:bg-white/[0.02] transition-colors -mx-4 px-4 rounded-lg"
-          >
-            <div className="w-full sm:w-48 flex-shrink-0 aspect-[16/10] rounded-xl overflow-hidden border border-white/10 bg-white/5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={post.image.replace('w=1600&h=800', 'w=480&h=300')}
-                alt={post.imageAlt}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-3 text-xs text-white/40 mb-2">
-                <span className="text-[#00ffff]/70 font-semibold uppercase tracking-wide">{post.category}</span>
-                <span>·</span>
-                <span>{formatDate(post.date)}</span>
-                <span>·</span>
-                <span>{post.readTime}</span>
+      {posts.length === 0 ? (
+        <p className="text-white/40 py-12">No posts in this category yet.</p>
+      ) : (
+        <div className="space-y-1">
+          {posts.map((post) => (
+            <Link
+              key={post.slug}
+              href={`/blog/${post.slug}`}
+              className="group flex flex-col sm:flex-row gap-5 py-6 border-t border-white/10 last:border-b hover:bg-white/[0.02] transition-colors -mx-4 px-4 rounded-lg"
+            >
+              <div className="w-full sm:w-48 flex-shrink-0 aspect-[16/10] rounded-xl overflow-hidden border border-white/10 bg-white/5">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={post.image.replace('w=1600&h=800', 'w=480&h=300')}
+                  alt={post.imageAlt}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-[#00ffff] transition-colors">
-                {post.title}
-              </h2>
-              <p className="text-white/50 leading-relaxed max-w-2xl">{post.description}</p>
-            </div>
-          </Link>
-        ))}
-      </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-3 text-xs text-white/40 mb-2">
+                  <span className="text-[#00ffff]/70 font-semibold uppercase tracking-wide">{post.category}</span>
+                  <span>·</span>
+                  <span>{formatDate(post.date)}</span>
+                  <span>·</span>
+                  <span>{post.readTime}</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-[#00ffff] transition-colors">
+                  {post.title}
+                </h2>
+                <p className="text-white/50 leading-relaxed max-w-2xl">{post.description}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
 
       <div className="mt-16 pt-8 border-t border-white/10">
         <p className="text-sm text-white/40">

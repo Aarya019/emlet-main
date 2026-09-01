@@ -306,6 +306,7 @@ export default function Home() {
             <a href="#features" className="transition-colors hover:text-white">Features</a>
             <a href="#pricing" className="transition-colors hover:text-white">Pricing</a>
             <a href="#faq" className="transition-colors hover:text-white">FAQ</a>
+            <a href="/blog" className="transition-colors hover:text-white">Blog</a>
           </nav>
           {/* Desktop auth buttons */}
           <div className="hidden items-center justify-end gap-3 md:flex">
@@ -372,6 +373,7 @@ export default function Home() {
                 { href: '#features', label: 'Features' },
                 { href: '#pricing', label: 'Pricing' },
                 { href: '#faq', label: 'FAQ' },
+                { href: '/blog', label: 'Blog' },
               ].map((link) => (
                 <a
                   key={link.href}
