@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import MarketingLayout from '@/components/MarketingLayout';
-import { BLOG_POSTS } from '@/lib/content/posts';
+import { getAllPostsMeta } from '@/lib/content/posts';
 
 export const metadata: Metadata = {
   title: 'Blog | Emlet',
@@ -19,8 +19,9 @@ function formatDate(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 }
 
-export default function BlogIndexPage() {
-  const posts = [...BLOG_POSTS].sort((a, b) => b.date.localeCompare(a.date));
+export default async function BlogIndexPage() {
+  const allPosts = await getAllPostsMeta();
+  const posts = [...allPosts].sort((a, b) => b.date.localeCompare(a.date));
 
   return (
     <MarketingLayout contentClassName="max-w-4xl">

@@ -9,6 +9,12 @@ export interface BlogPostMeta {
   imageAlt: string;
 }
 
+/**
+ * Legacy, hand-written posts only — each still has its own static
+ * `app/blog/<slug>/page.tsx`. Left exactly as-is; new posts going forward
+ * are registered by dropping a file in `src/content/blog/` instead (see
+ * `getAllPostsMeta` below), not by editing this array.
+ */
 export const BLOG_POSTS: BlogPostMeta[] = [
   {
     slug: 'email-design-without-a-designer',
@@ -71,3 +77,15 @@ export const BLOG_POSTS: BlogPostMeta[] = [
     imageAlt: 'A hand holding a phone showing a lock screen stacked with app notifications',
   },
 ];
+
+/**
+ * Full listing (legacy hand-written posts + everything registered under
+ * src/content/blog/) — what the blog index and sitemap actually iterate
+ * over, so a new post shows up in both automatically. Individual legacy
+ * post pages keep using `BLOG_POSTS` directly and don't need this.
+ */
+export async function getAllPostsMeta(): Promise<BlogPostMeta[]> {
+  const { getAllRegisteredPostsMeta } = await import('./blog-registry');
+  const registered = await getAllRegisteredPostsMeta();
+  return [...BLOG_POSTS, ...registered];
+}
