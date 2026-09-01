@@ -5,7 +5,9 @@ import MarketingLayout from '@/components/MarketingLayout';
 import BlogCTA from '@/components/BlogCTA';
 import BlogHeroImage from '@/components/BlogHeroImage';
 import BlogPostBody from '@/components/BlogPostBody';
+import BlogSidebar from '@/components/BlogSidebar';
 import { getRegisteredPost, getRegisteredSlugs } from '@/lib/content/blog-registry';
+import { getAllPostsMeta } from '@/lib/content/posts';
 
 export async function generateStaticParams() {
   const slugs = await getRegisteredSlugs();
@@ -38,6 +40,7 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
   const post = await getRegisteredPost(slug);
   if (!post) notFound();
   const { meta, body, cta } = post;
+  const allPosts = await getAllPostsMeta();
 
   const articleJsonLd = {
     '@context': 'https://schema.org',
@@ -56,7 +59,7 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
   };
 
   return (
-    <MarketingLayout>
+    <MarketingLayout sidebar={<BlogSidebar posts={allPosts} currentSlug={meta.slug} activeCategory={meta.category} />}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}

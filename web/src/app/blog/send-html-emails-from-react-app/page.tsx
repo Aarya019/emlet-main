@@ -3,7 +3,8 @@ import Link from 'next/link';
 import MarketingLayout from '@/components/MarketingLayout';
 import BlogCTA from '@/components/BlogCTA';
 import BlogHeroImage from '@/components/BlogHeroImage';
-import { BLOG_POSTS } from '@/lib/content/posts';
+import BlogSidebar from '@/components/BlogSidebar';
+import { BLOG_POSTS, getAllPostsMeta } from '@/lib/content/posts';
 
 const post = BLOG_POSTS.find((p) => p.slug === 'send-html-emails-from-react-app')!;
 
@@ -39,9 +40,10 @@ const articleJsonLd = {
   mainEntityOfPage: { '@type': 'WebPage', '@id': `https://emlet.app/blog/${post.slug}` },
 };
 
-export default function Post() {
+export default async function Post() {
+  const allPosts = await getAllPostsMeta();
   return (
-    <MarketingLayout>
+    <MarketingLayout sidebar={<BlogSidebar posts={allPosts} currentSlug={post.slug} activeCategory={post.category} />}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}

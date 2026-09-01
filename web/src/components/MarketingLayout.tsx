@@ -1,29 +1,38 @@
+import Image from 'next/image';
 import Link from 'next/link';
 
 export default function MarketingLayout({
   children,
+  sidebar,
   contentClassName = 'max-w-3xl',
 }: {
   children: React.ReactNode;
+  /** Optional right-hand rail (categories, recent posts, etc). When present, content renders in a 2-column layout instead of a single centered column. */
+  sidebar?: React.ReactNode;
   contentClassName?: string;
 }) {
   return (
     <div className="min-h-screen bg-black text-white">
-      <div className="border-b border-white/10 px-6 py-4 flex items-center justify-between">
-        <Link href="/" className="text-lg font-black tracking-tight">
-          <span className="bg-gradient-to-r from-[#00ffff] to-[#00ff00] bg-clip-text text-transparent">
-            emlet
-          </span>
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-xl px-6 py-4 flex items-center justify-between">
+        <Link href="/" className="flex items-center">
+          <Image src="/logo.png" alt="Emlet" width={532} height={532} className="h-7 w-auto" />
         </Link>
         <div className="flex items-center gap-4 sm:gap-6 text-sm text-white/60">
           <Link href="/blog" className="hidden sm:inline hover:text-white transition-colors">Blog</Link>
           <Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link>
           <Link href="/sign-in" className="hover:text-white transition-colors">Sign in</Link>
         </div>
-      </div>
+      </header>
 
-      <main className={`${contentClassName} mx-auto px-6 py-16`}>
-        {children}
+      <main className={`${sidebar ? 'max-w-6xl' : contentClassName} mx-auto px-6 py-16`}>
+        {sidebar ? (
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12 xl:gap-16 items-start">
+            <div className={`${contentClassName} min-w-0`}>{children}</div>
+            <aside className="lg:sticky lg:top-24">{sidebar}</aside>
+          </div>
+        ) : (
+          children
+        )}
       </main>
 
       <footer className="border-t border-white/10 px-6 py-8 mt-8">
