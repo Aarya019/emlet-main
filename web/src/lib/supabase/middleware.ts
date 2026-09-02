@@ -55,6 +55,7 @@ export async function updateSession(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/pricing') &&
     !request.nextUrl.pathname.startsWith('/terms') &&
     !request.nextUrl.pathname.startsWith('/privacy') &&
+    !request.nextUrl.pathname.startsWith('/refunds') &&
     !request.nextUrl.pathname.startsWith('/blog') &&
     !request.nextUrl.pathname.startsWith('/alternatives') &&
     !request.nextUrl.pathname.startsWith('/api/') &&
