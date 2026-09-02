@@ -13,7 +13,7 @@ marketing) rather than clustering on one theme for many posts in a row.
 - queued: Is there really a "best time to send" an email? (mythbusting)
 - queued: Preview text: the most neglected 100 characters in an email
 - queued: How to write a CTA button that isn't "Learn More"
-- queued: AIDA/PAS/BAB copywriting frameworks: do they actually help or are they crutches
+- published (copywriting-frameworks-aida-pas-bab): AIDA/PAS/BAB copywriting frameworks: do they actually help or are they crutches
 - queued: Writing for skimmers: how people actually read email (eye-tracking, F-pattern)
 - queued: How to write like a person, not a brand: voice and tone basics
 - published (email-accessibility-guide): Email accessibility: alt text, contrast, and screen readers
@@ -21,7 +21,7 @@ marketing) rather than clustering on one theme for many posts in a row.
 - queued: White space in email design: why more empty space usually converts better
 - queued: Marketing budget allocation for small businesses across channels
 - queued: Building an email list from zero: realistic tactics for a brand-new business
-- queued: Why open rate alone is a bad engagement metric, and what to track instead
+- published (open-rate-bad-metric-what-to-track-instead): Why open rate alone is a bad engagement metric, and what to track instead
 - queued: GDPR/CAN-SPAM basics for a small business sending its first campaign
 - queued: How often should you actually email your list? (a genuinely debated question)
 - queued: A/B testing with a small list: what to do when you don't have enough volume for significance
