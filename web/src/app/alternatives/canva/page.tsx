@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: alt.title,
     description: alt.description,
-    url: `https://emlet.app/alternatives/${alt.slug}`,
+    url: `https://www.emlet.app/alternatives/${alt.slug}`,
     siteName: 'Emlet',
     type: 'article',
   },
@@ -25,9 +25,9 @@ const breadcrumbJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'BreadcrumbList',
   itemListElement: [
-    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://emlet.app/' },
-    { '@type': 'ListItem', position: 2, name: 'Alternatives', item: 'https://emlet.app/alternatives' },
-    { '@type': 'ListItem', position: 3, name: alt.title, item: `https://emlet.app/alternatives/${alt.slug}` },
+    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.emlet.app/' },
+    { '@type': 'ListItem', position: 2, name: 'Alternatives', item: 'https://www.emlet.app/alternatives' },
+    { '@type': 'ListItem', position: 3, name: alt.title, item: `https://www.emlet.app/alternatives/${alt.slug}` },
   ],
 };
 

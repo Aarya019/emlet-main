@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { getAllPostsMeta } from '@/lib/content/posts';
 import { ALTERNATIVES } from '@/lib/content/alternatives';
 
-const SITE_URL = 'https://emlet.app';
+const SITE_URL = 'https://www.emlet.app';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [

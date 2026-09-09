@@ -17,22 +17,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://emlet.app'),
+  metadataBase: new URL('https://www.emlet.app'),
   title: "Emlet - Generate High Converting Marketing Emails in Seconds",
   description: "Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send. No design skills needed.",
   keywords: ["AI email generator", "high converting emails", "email marketing", "marketing email generator", "email template builder", "HTML email", "email campaigns"],
   alternates: {
-    canonical: 'https://emlet.app',
+    canonical: 'https://www.emlet.app',
   },
   openGraph: {
     title: "Emlet - Generate High Converting Marketing Emails in Seconds",
     description: "Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send.",
-    url: "https://emlet.app",
+    url: "https://www.emlet.app",
     siteName: "Emlet",
     type: "website",
     images: [
       {
-        url: "https://emlet.app/og-image.png",
+        url: "https://www.emlet.app/og-image.png",
         width: 1200,
         height: 630,
         alt: "Emlet - Generate High Converting Marketing Emails in Seconds",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Emlet - Generate High Converting Marketing Emails in Seconds",
     description: "Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send.",
-    images: ["https://emlet.app/og-image.png"],
+    images: ["https://www.emlet.app/og-image.png"],
   },
 };
 
@@ -51,8 +51,8 @@ const organizationJsonLd = {
   '@context': 'https://schema.org',
   '@type': 'Organization',
   name: 'Emlet',
-  url: 'https://emlet.app',
-  logo: 'https://emlet.app/icon.png',
+  url: 'https://www.emlet.app',
+  logo: 'https://www.emlet.app/icon.png',
 };
 
 export default function RootLayout({

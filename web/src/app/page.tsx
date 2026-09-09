@@ -26,17 +26,17 @@ const STEPS = [
   {
     number: '03',
     title: 'Edit, export & send',
-    description: 'Fine-tune every block in the visual editor. Export pixel-perfect HTML or TSX and drop it into Mailchimp, SendGrid, Resend, or any email provider.',
+    description: 'Fine-tune every block in the visual editor. Export pixel-perfect HTML and drop it into Mailchimp, SendGrid, Resend, or any email provider.',
     videoId: 'PLACEHOLDER_VIDEO_ID_3',
   },
 ];
 
 const FEATURES = [
   { title: 'Converts, not just looks good', desc: 'AI-written copy engineered to drive clicks, opens, and revenue. Not just pretty words.' },
-  { title: '10+ design styles', desc: 'Minimalist, editorial, retro, brutalist, cyberpunk and more, all optimised for inboxes.' },
+  { title: '8 design styles', desc: 'Minimalist, editorial, retro, brutalist, cyberpunk and more, all optimised for inboxes.' },
   { title: 'Block-based editor', desc: 'Hero, CTA, testimonial, stats: every block fully editable without touching code.' },
   { title: 'Inbox-perfect rendering', desc: 'Production HTML that renders perfectly in Gmail, Outlook, and Apple Mail.' },
-  { title: 'Export anywhere', desc: 'One-click HTML & TSX export for Mailchimp, SendGrid, Resend, or any ESP.' },
+  { title: 'Export anywhere', desc: 'One-click HTML export that works with Mailchimp, SendGrid, Resend, or any ESP.' },
   { title: 'Brand profiles', desc: 'Save your colors, voice & logo. Every email stays on-brand, every time.' },
 ];
 
@@ -259,7 +259,7 @@ export default function Home() {
             '@context': 'https://schema.org',
             '@type': 'SoftwareApplication',
             name: 'Emlet',
-            url: 'https://emlet.app',
+            url: 'https://www.emlet.app',
             description: 'Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send.',
             applicationCategory: 'BusinessApplication',
             operatingSystem: 'Web',
@@ -267,7 +267,7 @@ export default function Home() {
               '@type': 'Offer',
               price: BETA_DISCOUNT_CODE ? '19' : '29',
               priceCurrency: 'USD',
-              url: 'https://emlet.app/#pricing',
+              url: 'https://www.emlet.app/#pricing',
             },
           }),
         }}
@@ -544,7 +544,7 @@ export default function Home() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       <p className="text-xs text-center px-6">
-                        Replace <code className="text-white/80">PLACEHOLDER_VIDEO_ID_{i + 1}</code> in STEPS with your YouTube video ID
+                        Demo video coming soon
                       </p>
                     </div>
                   ) : (
