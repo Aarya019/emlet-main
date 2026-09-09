@@ -47,24 +47,14 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/sign-in') &&
-    !request.nextUrl.pathname.startsWith('/sign-up') &&
-    !request.nextUrl.pathname.startsWith('/auth') &&
-    !request.nextUrl.pathname.startsWith('/pricing') &&
-    !request.nextUrl.pathname.startsWith('/terms') &&
-    !request.nextUrl.pathname.startsWith('/privacy') &&
-    !request.nextUrl.pathname.startsWith('/refunds') &&
-    !request.nextUrl.pathname.startsWith('/blog') &&
-    !request.nextUrl.pathname.startsWith('/alternatives') &&
-    !request.nextUrl.pathname.startsWith('/api/') &&
-    request.nextUrl.pathname !== '/sitemap.xml' &&
-    request.nextUrl.pathname !== '/robots.txt' &&
-    request.nextUrl.pathname !== '/llms.txt' &&
-    request.nextUrl.pathname !== '/'
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
+  // Only routes that actually require a session go here. Everything else (marketing
+  // pages, blog, legal pages, and any path that doesn't match a real route at all)
+  // must fall through untouched so nonexistent URLs 404 normally instead of getting
+  // swept into a redirect to /sign-in. That was turning dead/mistyped URLs into
+  // "Page with redirect" entries in Search Console instead of clean 404s.
+  const PROTECTED_PREFIXES = ['/dashboard'];
+
+  if (!user && PROTECTED_PREFIXES.some((prefix) => request.nextUrl.pathname.startsWith(prefix))) {
     const url = request.nextUrl.clone();
     url.pathname = '/sign-in';
     return NextResponse.redirect(url);
