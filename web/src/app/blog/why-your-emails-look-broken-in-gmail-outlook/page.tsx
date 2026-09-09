@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: post.title,
     description: post.description,
-    url: `https://emlet.app/blog/${post.slug}`,
+    url: `https://www.emlet.app/blog/${post.slug}`,
     siteName: 'Emlet',
     type: 'article',
   },
@@ -31,13 +31,13 @@ const articleJsonLd = {
   description: post.description,
   image: post.image,
   datePublished: post.date,
-  author: { '@type': 'Person', name: 'Aarya', url: 'https://emlet.app' },
+  author: { '@type': 'Person', name: 'Aarya', url: 'https://www.emlet.app' },
   publisher: {
     '@type': 'Organization',
     name: 'Emlet',
-    logo: { '@type': 'ImageObject', url: 'https://emlet.app/icon.png' },
+    logo: { '@type': 'ImageObject', url: 'https://www.emlet.app/icon.png' },
   },
-  mainEntityOfPage: { '@type': 'WebPage', '@id': `https://emlet.app/blog/${post.slug}` },
+  mainEntityOfPage: { '@type': 'WebPage', '@id': `https://www.emlet.app/blog/${post.slug}` },
 };
 
 export default async function Post() {

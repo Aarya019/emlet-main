@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'The Emlet Blog',
     description: 'Practical writing on email design, deliverability, and marketing for people who would rather not think about email HTML.',
-    url: 'https://emlet.app/blog',
+    url: 'https://www.emlet.app/blog',
     siteName: 'Emlet',
     type: 'website',
   },

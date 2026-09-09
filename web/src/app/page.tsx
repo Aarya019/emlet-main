@@ -259,7 +259,7 @@ export default function Home() {
             '@context': 'https://schema.org',
             '@type': 'SoftwareApplication',
             name: 'Emlet',
-            url: 'https://emlet.app',
+            url: 'https://www.emlet.app',
             description: 'Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send.',
             applicationCategory: 'BusinessApplication',
             operatingSystem: 'Web',
@@ -267,7 +267,7 @@ export default function Home() {
               '@type': 'Offer',
               price: BETA_DISCOUNT_CODE ? '19' : '29',
               priceCurrency: 'USD',
-              url: 'https://emlet.app/#pricing',
+              url: 'https://www.emlet.app/#pricing',
             },
           }),
         }}

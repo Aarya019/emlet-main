@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: 'The Ultimate Guide to Email Fonts | Emlet Blog',
   description:
     'Everything you need to know about choosing, embedding, and fallback-stacking fonts in HTML email: client support matrix, recommended stacks, and sizing best practices.',
-  alternates: { canonical: 'https://emlet.app/blog/email-fonts-guide' },
+  alternates: { canonical: 'https://www.emlet.app/blog/email-fonts-guide' },
   openGraph: {
     title: 'The Ultimate Guide to Email Fonts',
     description:
@@ -132,13 +132,13 @@ const articleJsonLd = {
     'Everything you need to know about choosing, embedding, and fallback-stacking fonts in HTML email: client support matrix, recommended stacks, and sizing best practices.',
   image: 'https://images.pexels.com/photos/4140925/pexels-photo-4140925.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=1600&h=800',
   datePublished: '2026-03-24',
-  author: { '@type': 'Person', name: 'Aarya', url: 'https://emlet.app' },
+  author: { '@type': 'Person', name: 'Aarya', url: 'https://www.emlet.app' },
   publisher: {
     '@type': 'Organization',
     name: 'Emlet',
-    logo: { '@type': 'ImageObject', url: 'https://emlet.app/icon.png' },
+    logo: { '@type': 'ImageObject', url: 'https://www.emlet.app/icon.png' },
   },
-  mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://emlet.app/blog/email-fonts-guide' },
+  mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://www.emlet.app/blog/email-fonts-guide' },
 };
 
 export default function EmailFontsGuide() {
