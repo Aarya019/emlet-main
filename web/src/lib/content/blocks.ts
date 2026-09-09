@@ -10,4 +10,5 @@ export type ContentBlock =
   | { type: 'h2'; text: string }
   | { type: 'ul'; items: Array<{ text: string; bold?: string }> }
   | { type: 'image'; src: string; alt: string; caption?: string }
-  | { type: 'quote'; text: string; attribution?: string };
+  | { type: 'quote'; text: string; attribution?: string }
+  | { type: 'table'; headers: string[]; rows: string[][]; caption?: string };

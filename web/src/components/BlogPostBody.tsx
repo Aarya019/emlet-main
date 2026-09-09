@@ -1,6 +1,13 @@
 import type { ContentBlock } from '@/lib/content/blocks';
 import BlogInlineImage from './BlogInlineImage';
 
+function tableCellTone(cell: string) {
+  if (cell.startsWith('✓')) return 'text-emerald-400 font-medium';
+  if (cell.startsWith('~')) return 'text-yellow-400 font-medium';
+  if (cell.startsWith('✗')) return 'text-red-400 font-medium';
+  return 'text-white/65';
+}
+
 /**
  * Renders a post's ContentBlock[] with the exact same Tailwind conventions
  * the hand-written legacy posts use, so a registry-driven post is visually
@@ -40,6 +47,41 @@ export default function BlogPostBody({ blocks }: { blocks: ContentBlock[] }) {
                   <footer className="mt-2 text-sm text-white/40 not-italic">— {block.attribution}</footer>
                 )}
               </blockquote>
+            );
+          case 'table':
+            return (
+              <figure key={i}>
+                <div className="overflow-x-auto rounded-xl border border-white/10">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-white/5">
+                        {block.headers.map((h, hi) => (
+                          <th
+                            key={hi}
+                            className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-white/50"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {block.rows.map((row, ri) => (
+                        <tr key={ri} className="border-t border-white/8">
+                          {row.map((cell, ci) => (
+                            <td key={ci} className={`px-4 py-3 text-sm ${tableCellTone(cell)}`}>
+                              {cell}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {block.caption && (
+                  <figcaption className="mt-2 text-center text-sm text-white/40">{block.caption}</figcaption>
+                )}
+              </figure>
             );
           default:
             return null;

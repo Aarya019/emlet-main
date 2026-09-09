@@ -11,7 +11,7 @@ marketing) rather than clustering on one theme for many posts in a row.
 - queued: Email segmentation for a small list: the 3-4 segments that actually move revenue
 - queued: Subject line "hacks" that work vs the ones that don't (mythbusting)
 - queued: Is there really a "best time to send" an email? (mythbusting)
-- queued: Preview text: the most neglected 100 characters in an email
+- published (email-preview-text-guide): Preview text: the most neglected 100 characters in an email
 - queued: How to write a CTA button that isn't "Learn More"
 - published (copywriting-frameworks-aida-pas-bab): AIDA/PAS/BAB copywriting frameworks: do they actually help or are they crutches
 - queued: Writing for skimmers: how people actually read email (eye-tracking, F-pattern)
