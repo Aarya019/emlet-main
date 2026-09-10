@@ -758,6 +758,17 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     return () => window.removeEventListener('message', handler);
   }, [updateSection]);
 
+  // Escape closes the AI chat overlay, matching the X button / backdrop click —
+  // and every other overlay/input in this file that treats Escape as cancel.
+  useEffect(() => {
+    if (!aiChatOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !aiLoading) setAiChatOpen(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [aiChatOpen, aiLoading]);
+
   // dnd-kit sensors
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -865,8 +876,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     <div className="min-h-screen bg-black">
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur-sm">
-        <div className="max-w-full mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
+        <div className="max-w-full mx-auto px-4 sm:px-6 py-3 sm:py-4">
+          <div className="flex flex-wrap items-center justify-between gap-y-2">
             <div className="flex items-center gap-4">
               <button
                 onClick={() => {
@@ -881,12 +892,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 <span className="font-medium">Dashboard</span>
               </button>
               <div className="h-6 w-px bg-white/10"></div>
-              <h2 className="text-white font-semibold truncate max-w-md">
+              <h2 className="text-white font-semibold truncate max-w-[140px] sm:max-w-md">
                 {emailContent?.subject || 'Untitled Email'}
               </h2>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <div className="flex items-center gap-1 mr-1">
                 <button
                   onClick={undo}
@@ -920,7 +931,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               <div className="relative">
                 <button
                   onClick={() => setAiChatOpen(true)}
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-sm font-bold flex items-center gap-2 hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-sm font-bold flex items-center gap-2 whitespace-nowrap hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -931,7 +942,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               {isDirty && (
                 <button
                   onClick={handleCancelChanges}
-                  className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all border border-white/20 text-white/60 hover:border-white/40 hover:text-white/80"
+                  className="px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-all border border-white/20 text-white/60 hover:border-white/40 hover:text-white/80"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -942,7 +953,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               <button
                 onClick={handleSave}
                 disabled={!isDirty || saving}
-                className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
                   isDirty
                     ? 'bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black hover:shadow-lg hover:shadow-[#00ffff]/30'
                     : 'border border-white/10 text-white/30 cursor-not-allowed'
@@ -965,7 +976,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               <button
                 onClick={() => setShowVerifyModal(true)}
                 disabled={!editedEmail}
-                className="relative px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-40"
+                className="relative px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 whitespace-nowrap disabled:opacity-40"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -985,7 +996,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 }}
                 disabled={!email.html_code}
                 title={testSendLocked ? "You've used all 3 of your free test sends this month — upgrade to Professional for unlimited use." : undefined}
-                className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-40"
+                className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 whitespace-nowrap disabled:opacity-40"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -1004,7 +1015,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   URL.revokeObjectURL(url);
                 }}
                 disabled={!email.html_code}
-                className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 disabled:opacity-40"
+                className="px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 whitespace-nowrap disabled:opacity-40"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
