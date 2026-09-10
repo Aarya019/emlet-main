@@ -8,8 +8,8 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (welcome-email-sequence-what-to-send): Welcome email sequences: what actually goes in email 1 vs 2 vs 3
 - published (cart-abandonment-emails-why-they-underperform): Cart abandonment emails: why most underperform and what actually fixes it
 - published (reengagement-campaigns-when-to-send-vs-prune): Re-engagement campaigns: when to send one vs when to just prune the list
-- queued: Email segmentation for a small list: the 3-4 segments that actually move revenue
-- queued: Subject line "hacks" that work vs the ones that don't (mythbusting)
+- published (email-segmentation-small-list-segments-that-move-revenue): Email segmentation for a small list: the 3-4 segments that actually move revenue
+- published (subject-line-hacks-mythbusting): Subject line "hacks" that work vs the ones that don't (mythbusting)
 - queued: Is there really a "best time to send" an email? (mythbusting)
 - published (email-preview-text-guide): Preview text: the most neglected 100 characters in an email
 - queued: How to write a CTA button that isn't "Learn More"
