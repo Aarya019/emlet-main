@@ -873,7 +873,7 @@ export default function DashboardContent() {
             {/* New Email */}
             <button
               onClick={() => handleTabChange('new-email')}
-              className={`w-full flex items-center gap-3 lg:justify-start lg:group-hover:justify-start justify-start py-3 lg:px-2 lg:group-hover:px-4 px-4 rounded-lg transition-all relative ${
+              className={`w-full flex items-center gap-3 lg:justify-start lg:group-hover:justify-start justify-start py-3 lg:px-2 lg:group-hover:px-4 px-4 rounded-lg transition-all relative cursor-pointer ${
                 activeTab === 'new-email'
                   ? 'lg:bg-transparent lg:group-hover:bg-white bg-white lg:text-[#00ffff] lg:group-hover:text-black text-black font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-[#00ffff] before:rounded-r lg:before:block before:hidden lg:group-hover:before:hidden before:shadow-lg before:shadow-[#00ffff]/50'
                   : 'text-white/70 hover:bg-white/5 hover:text-white'
@@ -889,7 +889,7 @@ export default function DashboardContent() {
             {/* Brand */}
             <button
               onClick={() => handleTabChange('brand')}
-              className={`w-full flex items-center gap-3 lg:justify-start lg:group-hover:justify-start justify-start py-3 lg:px-2 lg:group-hover:px-4 px-4 rounded-lg transition-all relative ${
+              className={`w-full flex items-center gap-3 lg:justify-start lg:group-hover:justify-start justify-start py-3 lg:px-2 lg:group-hover:px-4 px-4 rounded-lg transition-all relative cursor-pointer ${
                 activeTab === 'brand'
                   ? 'lg:bg-transparent lg:group-hover:bg-white bg-white lg:text-[#00ffff] lg:group-hover:text-black text-black font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-[#00ffff] before:rounded-r lg:before:block before:hidden lg:group-hover:before:hidden before:shadow-lg before:shadow-[#00ffff]/50'
                   : 'text-white/70 hover:bg-white/5 hover:text-white'
@@ -905,7 +905,7 @@ export default function DashboardContent() {
             {/* History */}
             <button
               onClick={() => handleTabChange('history')}
-              className={`w-full flex items-center gap-3 lg:justify-start lg:group-hover:justify-start justify-start py-3 lg:px-2 lg:group-hover:px-4 px-4 rounded-lg transition-all relative ${
+              className={`w-full flex items-center gap-3 lg:justify-start lg:group-hover:justify-start justify-start py-3 lg:px-2 lg:group-hover:px-4 px-4 rounded-lg transition-all relative cursor-pointer ${
                 activeTab === 'history'
                   ? 'lg:bg-transparent lg:group-hover:bg-white bg-white lg:text-[#00ffff] lg:group-hover:text-black text-black font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-[#00ffff] before:rounded-r lg:before:block before:hidden lg:group-hover:before:hidden before:shadow-lg before:shadow-[#00ffff]/50'
                   : 'text-white/70 hover:bg-white/5 hover:text-white'
@@ -1630,6 +1630,12 @@ export default function DashboardContent() {
                         placeholder="https://yourcompany.com"
                         value={brandForm.website_url}
                         onChange={(e) => setBrandForm({ ...brandForm, website_url: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !analyzingWebsite && brandForm.website_url.trim()) {
+                            e.preventDefault();
+                            analyzeBrandWebsite();
+                          }
+                        }}
                         className="flex-1 px-4 py-3 rounded-lg bg-black border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff]"
                       />
                       <button
