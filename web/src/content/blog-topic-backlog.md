@@ -14,8 +14,8 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (email-preview-text-guide): Preview text: the most neglected 100 characters in an email
 - published (cta-button-copy-that-isnt-learn-more): How to write a CTA button that isn't "Learn More"
 - published (copywriting-frameworks-aida-pas-bab): AIDA/PAS/BAB copywriting frameworks: do they actually help or are they crutches
-- queued: Writing for skimmers: how people actually read email (eye-tracking, F-pattern)
-- queued: How to write like a person, not a brand: voice and tone basics
+- published (writing-for-skimmers-how-people-read-email): Writing for skimmers: how people actually read email (eye-tracking, F-pattern)
+- published (write-like-a-person-not-a-brand): How to write like a person, not a brand: voice and tone basics
 - published (email-accessibility-guide): Email accessibility: alt text, contrast, and screen readers
 - queued: Designing for dark mode: what actually breaks and how to avoid it
 - queued: White space in email design: why more empty space usually converts better
