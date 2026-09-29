@@ -17,8 +17,8 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (writing-for-skimmers-how-people-read-email): Writing for skimmers: how people actually read email (eye-tracking, F-pattern)
 - published (write-like-a-person-not-a-brand): How to write like a person, not a brand: voice and tone basics
 - published (email-accessibility-guide): Email accessibility: alt text, contrast, and screen readers
-- queued: Designing for dark mode: what actually breaks and how to avoid it
-- queued: White space in email design: why more empty space usually converts better
+- published (dark-mode-email-design-what-breaks): Designing for dark mode: what actually breaks and how to avoid it
+- published (white-space-email-design-converts-better): White space in email design: why more empty space usually converts better
 - queued: Marketing budget allocation for small businesses across channels
 - queued: Building an email list from zero: realistic tactics for a brand-new business
 - published (open-rate-bad-metric-what-to-track-instead): Why open rate alone is a bad engagement metric, and what to track instead
