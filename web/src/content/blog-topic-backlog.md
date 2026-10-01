@@ -19,8 +19,8 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (email-accessibility-guide): Email accessibility: alt text, contrast, and screen readers
 - published (dark-mode-email-design-what-breaks): Designing for dark mode: what actually breaks and how to avoid it
 - published (white-space-email-design-converts-better): White space in email design: why more empty space usually converts better
-- queued: Marketing budget allocation for small businesses across channels
-- queued: Building an email list from zero: realistic tactics for a brand-new business
+- published (marketing-budget-allocation-small-business): Marketing budget allocation for small businesses across channels
+- published (building-email-list-from-zero): Building an email list from zero: realistic tactics for a brand-new business
 - published (open-rate-bad-metric-what-to-track-instead): Why open rate alone is a bad engagement metric, and what to track instead
 - queued: GDPR/CAN-SPAM basics for a small business sending its first campaign
 - queued: How often should you actually email your list? (a genuinely debated question)
