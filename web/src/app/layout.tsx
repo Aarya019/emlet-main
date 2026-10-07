@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import Script from 'next/script';
 import { Suspense } from 'react';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
@@ -84,6 +85,7 @@ export default function RootLayout({
         {children}
         <Suspense fallback={null}><GoogleAnalytics /></Suspense>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
