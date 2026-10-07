@@ -22,6 +22,7 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (marketing-budget-allocation-small-business): Marketing budget allocation for small businesses across channels
 - published (building-email-list-from-zero): Building an email list from zero: realistic tactics for a brand-new business
 - published (open-rate-bad-metric-what-to-track-instead): Why open rate alone is a bad engagement metric, and what to track instead
-- queued: GDPR/CAN-SPAM basics for a small business sending its first campaign
-- queued: How often should you actually email your list? (a genuinely debated question)
-- queued: A/B testing with a small list: what to do when you don't have enough volume for significance
+- published (gdpr-can-spam-basics-first-campaign): GDPR/CAN-SPAM basics for a small business sending its first campaign
+- published (how-often-should-you-email-your-list): How often should you actually email your list? (a genuinely debated question)
+- published (ab-testing-small-list-statistical-significance): A/B testing with a small list: what to do when you don't have enough volume for significance
+- published (email-deliverability-spf-dkim-dmarc-explained): Email deliverability basics: what SPF, DKIM, and DMARC actually do
