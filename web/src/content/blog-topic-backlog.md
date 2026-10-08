@@ -26,3 +26,5 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (how-often-should-you-email-your-list): How often should you actually email your list? (a genuinely debated question)
 - published (ab-testing-small-list-statistical-significance): A/B testing with a small list: what to do when you don't have enough volume for significance
 - published (email-deliverability-spf-dkim-dmarc-explained): Email deliverability basics: what SPF, DKIM, and DMARC actually do
+- published (plain-text-vs-html-email-performance): Plain text vs HTML email: does format actually change performance
+- published (email-list-hygiene-cleaning-stale-list): Email list hygiene: when and how to actually clean a stale list
