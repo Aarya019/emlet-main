@@ -28,3 +28,5 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (email-deliverability-spf-dkim-dmarc-explained): Email deliverability basics: what SPF, DKIM, and DMARC actually do
 - published (plain-text-vs-html-email-performance): Plain text vs HTML email: does format actually change performance
 - published (email-list-hygiene-cleaning-stale-list): Email list hygiene: when and how to actually clean a stale list
+- published (single-vs-double-opt-in-signups): Single vs double opt-in: does the extra step actually cost you signups
+- published (spam-trigger-words-outdated-advice): Spam trigger words: why "avoid these words" advice is mostly outdated
