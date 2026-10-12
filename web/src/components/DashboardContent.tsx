@@ -1026,7 +1026,7 @@ export default function DashboardContent() {
         <div className="p-4 sm:p-6 lg:p-8 relative z-10 overflow-x-hidden">
           {/* Tab content */}
           {activeTab === 'new-email' && (
-            <div className="space-y-6 pt-12 sm:pt-16 lg:pt-24 relative z-10 overflow-x-hidden">
+            <div className="space-y-6 relative z-10 overflow-x-hidden">
               {/* Animated gradient blobs — sized to this tab's full content height
                   (not main's viewport-clamped box), so they cover the whole scroll
                   area instead of cutting off to plain black partway down the page. */}
