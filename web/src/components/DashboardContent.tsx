@@ -1594,7 +1594,7 @@ export default function DashboardContent() {
                 </>
               ) : (
                 /* Brand Form */
-                <div className="max-w-2xl space-y-6">
+                <div className="max-w-2xl mx-auto space-y-6">
                   <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/10">
                     <div>
                       <h2 className="text-2xl font-bold text-white">{selectedBrand ? 'Edit Brand' : 'Create New Brand'}</h2>
