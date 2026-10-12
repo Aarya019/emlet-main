@@ -79,6 +79,57 @@ export async function signUp(formData: FormData) {
   redirect('/dashboard');
 }
 
+export async function requestPasswordReset(formData: FormData) {
+  const turnstileToken = formData.get('turnstileToken') as string | null;
+  const verified = await verifyTurnstileToken(turnstileToken, await getRequestIp());
+  if (!verified) {
+    return { error: 'Verification failed. Please refresh the page and try again.' };
+  }
+
+  const email = formData.get('email') as string;
+  const supabase = await createClient();
+
+  await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getSiteUrl()}/auth/callback?next=/reset-password`,
+  });
+
+  // Always report success, whether or not the email exists — otherwise this
+  // endpoint becomes a way to check which emails have an Emlet account.
+  return { success: true, message: "If an account exists for that email, we've sent a password reset link." };
+}
+
+export async function updatePassword(formData: FormData) {
+  const password = formData.get('password') as string;
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath('/', 'layout');
+  return { success: true };
+}
+
+export async function resendConfirmationEmail(email: string) {
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.resend({
+    type: 'signup',
+    email,
+    options: {
+      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+    },
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  return { success: true, message: 'Confirmation email sent — check your inbox.' };
+}
+
 export async function signOut() {
   const supabase = await createClient();
   const { error } = await supabase.auth.signOut();

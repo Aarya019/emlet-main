@@ -25,7 +25,28 @@ const nextConfig: NextConfig = {
               "connect-src 'self' https://*.paddle.com https://checkout-service.paddle.com https://sandbox-checkout-service.paddle.com https://*.supabase.co https://www.youtube.com https://www.google-analytics.com https://analytics.google.com https://challenges.cloudflare.com",
               "img-src 'self' data: blob: https://*.paddle.com https://*.supabase.co https://images.pexels.com https://pixabay.com https://cdn.pixabay.com https://i.ytimg.com https://*.gstatic.com https://*.googleusercontent.com https://api.iconify.design https://www.googletagmanager.com",
               "font-src 'self' data: https://fonts.gstatic.com",
+              "frame-ancestors 'self'",
             ].join('; '),
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
           },
         ],
       },

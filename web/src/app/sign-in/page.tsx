@@ -1,6 +1,6 @@
 'use client';
 
-import { signIn, signInWithGoogle } from '@/app/actions/auth';
+import { signIn, signInWithGoogle, resendConfirmationEmail } from '@/app/actions/auth';
 import { useState, useEffect, useRef } from 'react';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 
@@ -11,7 +11,15 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false);
   const [hasPendingPrompt, setHasPendingPrompt] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [submittedEmail, setSubmittedEmail] = useState('');
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const turnstileRef = useRef<TurnstileHandle>(null);
+
+  const handleResendConfirmation = async () => {
+    setResendState('sending');
+    const result = await resendConfirmationEmail(submittedEmail);
+    setResendState(result?.error ? 'idle' : 'sent');
+  };
 
   useEffect(() => {
     // Check if there's a pending email prompt from the homepage
@@ -34,6 +42,8 @@ export default function SignInPage() {
   const handleSubmit = async (formData: FormData) => {
     setLoading(true);
     setError(null);
+    setResendState('idle');
+    setSubmittedEmail((formData.get('email') as string) || '');
     const result = await signIn(formData);
     if (result?.error) {
       setError(result.error);
@@ -200,6 +210,22 @@ export default function SignInPage() {
             {error && (
               <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                 {error}
+                {error.toLowerCase().includes('confirm') && submittedEmail && (
+                  <div className="mt-2">
+                    {resendState === 'sent' ? (
+                      <span className="text-[#00ff00]">Confirmation email sent — check your inbox.</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleResendConfirmation}
+                        disabled={resendState === 'sending'}
+                        className="underline font-medium text-red-300 hover:text-red-200 disabled:opacity-50"
+                      >
+                        {resendState === 'sending' ? 'Sending...' : 'Resend confirmation email'}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
