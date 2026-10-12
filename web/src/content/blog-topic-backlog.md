@@ -30,3 +30,5 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (email-list-hygiene-cleaning-stale-list): Email list hygiene: when and how to actually clean a stale list
 - published (single-vs-double-opt-in-signups): Single vs double opt-in: does the extra step actually cost you signups
 - published (spam-trigger-words-outdated-advice): Spam trigger words: why "avoid these words" advice is mostly outdated
+- published (personalization-beyond-first-name): Personalization beyond {First Name}: what actually moves the needle
+- published (from-name-matters-more-than-subject-line): The "from" name: why who it's from matters more than the subject line
