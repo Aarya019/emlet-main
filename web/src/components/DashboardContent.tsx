@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { signOut } from '@/app/actions/auth';
+import { signOut, updatePassword } from '@/app/actions/auth';
 import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle, PlanType } from '@/lib/db/types';
 import EmailGeneratingOverlay from '@/components/EmailGeneratingOverlay';
 import StarField from '@/components/StarField';
@@ -39,6 +39,102 @@ function StyleSwatch({ styleValue, size = 20 }: { styleValue: DesignStyle; size?
       style={{ width: size, height: size, ...swatch.style }}
     >
       {swatch.dot && <div className="rounded-full" style={{ width: size / 4, height: size / 4, backgroundColor: swatch.dot }} />}
+    </div>
+  );
+}
+
+function ChangePasswordCard() {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+
+  const handleSubmit = async (formData: FormData) => {
+    const password = formData.get('password') as string;
+    const confirmPassword = formData.get('confirm-password') as string;
+
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    const result = await updatePassword(formData);
+    setLoading(false);
+    if (result?.error) {
+      setError(result.error);
+    } else {
+      setDone(true);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-white">Password</p>
+          <p className="text-xs text-white/40 mt-0.5">Change the password used to sign in</p>
+        </div>
+        {!open && (
+          <button
+            onClick={() => { setOpen(true); setDone(false); setError(null); }}
+            className="px-5 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/15 transition-all"
+          >
+            Change password
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div className="mt-5 pt-5 border-t border-white/10">
+          {done ? (
+            <p className="text-sm text-[#00ff00]">Password updated.</p>
+          ) : (
+            <form action={handleSubmit} className="space-y-3 max-w-sm">
+              {error && <p className="text-xs text-red-400">{error}</p>}
+              <input
+                type="password"
+                name="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                placeholder="New password"
+                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent"
+              />
+              <input
+                type="password"
+                name="confirm-password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                placeholder="Confirm new password"
+                className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="px-5 py-2 rounded-xl bg-[#00ffff] text-black text-sm font-bold disabled:opacity-50"
+                >
+                  {loading ? 'Updating…' : 'Update password'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="px-5 py-2 rounded-xl text-white/60 text-sm hover:text-white transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -2302,6 +2398,9 @@ export default function DashboardContent() {
                   )}
                 </div>
               </div>
+
+              {/* ── Password ─────────────────────────────────────────── */}
+              <ChangePasswordCard />
 
               {/* ── Session ──────────────────────────────────────────── */}
               <div className="rounded-2xl border border-white/10 bg-white/5 p-6 flex items-center justify-between">
