@@ -1041,7 +1041,7 @@ export default function DashboardContent() {
                 <div className="absolute top-2/3 right-1/3 w-96 h-96 bg-gradient-to-br from-[#00ffff]/10 via-[#ff00ff]/10 to-[#00ff00]/10 rounded-full blur-3xl animate-blob animation-delay-4000" />
                 <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-gradient-to-br from-[#00ff00]/10 via-[#ff00ff]/10 to-[#00ffff]/10 rounded-full blur-3xl animate-blob animation-delay-6000" />
               </div>
-              <div className="space-y-6 relative z-10 overflow-x-hidden">
+              <div className="space-y-6 pt-12 sm:pt-16 lg:pt-24 relative z-10 overflow-x-hidden">
 
               {/* Email Generator - Homepage Style */}
               <div className="max-w-4xl mx-auto relative z-20">
