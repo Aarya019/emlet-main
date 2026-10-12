@@ -1026,16 +1026,22 @@ export default function DashboardContent() {
         <div className="p-4 sm:p-6 lg:p-8 relative z-10 overflow-x-hidden">
           {/* Tab content */}
           {activeTab === 'new-email' && (
-            <div className="space-y-6 relative z-10 overflow-x-hidden">
-              {/* Animated gradient blobs — sized to this tab's full content height
-                  (not main's viewport-clamped box), so they cover the whole scroll
-                  area instead of cutting off to plain black partway down the page. */}
+            <>
+              {/* Animated gradient blobs — a sibling of (not nested inside) the padded
+                  content wrapper below, so inset-0 covers this tab's full padding box,
+                  including the breathing-room padding on the sides/top, instead of
+                  stopping at the inner content's own edge and leaving a visible seam
+                  where the glow cuts off. Still sized to the tab's full content height
+                  (not main's viewport-clamped box), since this div isn't itself
+                  height-constrained, so it won't cut off to plain black partway down
+                  the page either. */}
               <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
                 <div className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-br from-[#00ff00]/10 via-[#00ffff]/10 to-[#ff00ff]/10 rounded-full blur-3xl animate-blob" />
                 <div className="absolute top-1/3 -left-32 w-80 h-80 bg-gradient-to-br from-[#ff00ff]/10 via-[#00ffff]/10 to-[#00ff00]/10 rounded-full blur-3xl animate-blob animation-delay-2000" />
                 <div className="absolute top-2/3 right-1/3 w-96 h-96 bg-gradient-to-br from-[#00ffff]/10 via-[#ff00ff]/10 to-[#00ff00]/10 rounded-full blur-3xl animate-blob animation-delay-4000" />
                 <div className="absolute bottom-0 left-1/4 w-80 h-80 bg-gradient-to-br from-[#00ff00]/10 via-[#ff00ff]/10 to-[#00ffff]/10 rounded-full blur-3xl animate-blob animation-delay-6000" />
               </div>
+              <div className="space-y-6 relative z-10 overflow-x-hidden">
 
               {/* Email Generator - Homepage Style */}
               <div className="max-w-4xl mx-auto relative z-20">
@@ -1369,6 +1375,7 @@ export default function DashboardContent() {
                 </div>
               </div>
             </div>
+            </>
           )}
 
           {activeTab === 'brand' && (
