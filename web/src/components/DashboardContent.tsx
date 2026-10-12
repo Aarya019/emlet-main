@@ -1023,7 +1023,7 @@ export default function DashboardContent() {
           </div>
         )}
 
-        <div className="p-4 sm:p-6 lg:p-8 relative z-10 overflow-x-hidden">
+        <div className="pb-4 sm:pb-6 lg:pb-8 relative z-10 overflow-x-hidden">
           {/* Tab content */}
           {activeTab === 'new-email' && (
             <div className="space-y-6 relative z-10 overflow-x-hidden">
