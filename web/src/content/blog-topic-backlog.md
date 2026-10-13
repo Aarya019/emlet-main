@@ -32,3 +32,5 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (spam-trigger-words-outdated-advice): Spam trigger words: why "avoid these words" advice is mostly outdated
 - published (personalization-beyond-first-name): Personalization beyond {First Name}: what actually moves the needle
 - published (from-name-matters-more-than-subject-line): The "from" name: why who it's from matters more than the subject line
+- published (image-to-text-ratio-email-design): Image-to-text ratio in email design: does the old 80/20 rule still matter
+- published (marketing-automation-when-small-business-needs-it): Marketing automation for small businesses: when it's worth it, when it's overkill
