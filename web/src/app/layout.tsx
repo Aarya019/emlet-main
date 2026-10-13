@@ -5,6 +5,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import Script from 'next/script';
 import { Suspense } from 'react';
 import GoogleAnalytics from '@/components/GoogleAnalytics';
+import AuthErrorRedirect from '@/components/AuthErrorRedirect';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -83,6 +84,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <AuthErrorRedirect />
         <Suspense fallback={null}><GoogleAnalytics /></Suspense>
         <Analytics />
         <SpeedInsights />
