@@ -195,7 +195,13 @@ export default function Home() {
     if (!window.location.hash) return;
     const target = window.location.hash;
     const timer = setTimeout(() => {
-      document.querySelector(target)?.scrollIntoView({ behavior: 'auto', block: 'start' });
+      try {
+        document.querySelector(target)?.scrollIntoView({ behavior: 'auto', block: 'start' });
+      } catch {
+        // Not every hash on this page is an anchor id — e.g. a Supabase auth
+        // error can land here as "#error=...", which isn't valid selector
+        // syntax. AuthErrorRedirect (root layout) handles that case.
+      }
     }, 150);
     return () => clearTimeout(timer);
   }, []);
