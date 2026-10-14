@@ -34,3 +34,5 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (from-name-matters-more-than-subject-line): The "from" name: why who it's from matters more than the subject line
 - published (image-to-text-ratio-email-design): Image-to-text ratio in email design: does the old 80/20 rule still matter
 - published (marketing-automation-when-small-business-needs-it): Marketing automation for small businesses: when it's worth it, when it's overkill
+- published (transactional-vs-marketing-email-deliverability): Transactional vs marketing emails: why mixing them can hurt deliverability
+- published (ps-line-email-copywriting): The P.S. line: an old direct-mail trick, does it still work in email
