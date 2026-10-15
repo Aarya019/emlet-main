@@ -44,6 +44,7 @@ export default function MarketingLayout({
             <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>
             <Link href="/refunds" className="hover:text-white/60 transition-colors">Refunds</Link>
             <Link href="/#pricing" className="hover:text-white/60 transition-colors">Pricing</Link>
+            <a href="mailto:support@emlet.app" className="hover:text-white/60 transition-colors">Support</a>
           </div>
         </div>
       </footer>

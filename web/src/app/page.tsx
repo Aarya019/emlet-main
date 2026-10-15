@@ -793,7 +793,7 @@ export default function Home() {
       {/* ── Footer ─────────────────────────────────────────────────────────── */}
       <footer className="relative z-10 border-t border-white/8 bg-black/80 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-10">
             {/* Brand */}
             <div className="col-span-2 md:col-span-1">
               <a href="/" className="flex items-center gap-2 mb-4 w-fit">
@@ -823,6 +823,14 @@ export default function Home() {
               <ul className="space-y-3 text-sm text-white/50">
                 <li><a href="/sign-in" className="hover:text-white transition-colors">Sign in</a></li>
                 <li><a href="/sign-up" className="hover:text-white transition-colors">Sign up</a></li>
+              </ul>
+            </div>
+
+            {/* Support */}
+            <div>
+              <h3 className="text-xs font-semibold tracking-widest text-white/60 uppercase mb-4">Support</h3>
+              <ul className="space-y-3 text-sm text-white/50">
+                <li><a href="mailto:support@emlet.app" className="hover:text-white transition-colors">support@emlet.app</a></li>
               </ul>
             </div>
 
