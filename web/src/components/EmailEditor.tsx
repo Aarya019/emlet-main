@@ -675,7 +675,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       // actions allowance (shared with generation and block regeneration) —
       // reflect that immediately instead of waiting for a second attempt to 402.
       setTrialStatus(prev => prev ? { ...prev, creditsRemaining: Math.max(0, prev.creditsRemaining - 1) } : prev);
-      setAiHistory(prev => [...prev, { role: 'ai', content: 'Done! The email has been updated. You can keep refining or close this panel.' }]);
+      const summary = typeof data.summary === 'string' && data.summary.trim()
+        ? data.summary.trim()
+        : 'Done! The email has been updated.';
+      setAiHistory(prev => [...prev, { role: 'ai', content: `${summary} You can keep refining or close this panel.` }]);
     } catch {
       setAiHistory(prev => [...prev, { role: 'ai', content: 'Network error. Please try again.' }]);
     } finally {
@@ -937,6 +940,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
                   Edit with AI
+                  <span className="px-1.5 py-0.5 rounded-full bg-black/20 text-[10px] font-bold tracking-wide">BETA</span>
                 </button>
               </div>
               {isDirty && (
