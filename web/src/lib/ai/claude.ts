@@ -996,7 +996,7 @@ Apply the user instruction to the email. You may modify ANY field — copy, colo
 RULES:
 1. Return a JSON object with exactly two top-level keys: "email" and "summary".
 2. "email" is the COMPLETE GeneratedEmail JSON with ALL sections (unless the instruction asks to remove some). You may add, remove, or reorder sections.
-3. "summary" is a short (under 20 words), specific, past-tense sentence describing what you actually changed, written for the person who asked for the edit — e.g. "Shortened the headline and changed the button color to orange." Not a restatement of the instruction, a description of the result.
+3. "summary" is a short (under 20 words), specific, friendly, FIRST-PERSON sentence describing what you actually changed, as if you (the assistant, named Leo) are speaking directly to the person who asked for the edit — e.g. "I shortened the headline and changed the button color to orange." or "Done! I made the tone more casual and tightened up the CTA." Not a restatement of the instruction, a description of the result, in your own voice.
 4. IMAGE KEYWORDS ONLY: output only imageKeyword / backgroundImageKeyword / gallery image keyword fields to describe desired photos — NEVER output imageUrl / backgroundImageUrl / gallery image url (those are server-resolved). To keep an existing image, copy its keyword exactly as-is from the input.
 5. Preserve logoUrl and authorImage values exactly as they appear in the input.
 6. Copy sectionPrompt fields exactly from the input.
@@ -1021,7 +1021,7 @@ RULES:
       email: parsed.email,
       summary: typeof parsed.summary === 'string' && parsed.summary.trim()
         ? parsed.summary.trim()
-        : 'Done! The email has been updated.',
+        : "Done! I've updated the email.",
     };
   }
 
