@@ -964,12 +964,18 @@ function stripResolvedImageUrls(email: GeneratedEmail): unknown {
  * Apply a free-form instruction to an entire email — anything can be changed:
  * copy, colors, images, URLs, structure, section types, order, etc.
  */
+export interface EmailEditResult {
+  email: GeneratedEmail;
+  /** One-line, user-facing description of what actually changed, written by the model itself. */
+  summary: string;
+}
+
 export async function editEmailWithInstruction(
   instruction: string,
   currentEmail: GeneratedEmail,
   brandProfile: BrandProfile | null,
   designStyle: string,
-): Promise<GeneratedEmail> {
+): Promise<EmailEditResult> {
   const brandContext = brandProfile
     ? `Brand: ${brandProfile.brand_name}. Voice: ${brandProfile.brand_voice}. Industry: ${brandProfile.industry || 'not specified'}. Primary color: ${brandProfile.primary_color}.`
     : 'No brand profile — use neutral professional tone.';
@@ -988,14 +994,16 @@ TASK:
 Apply the user instruction to the email. You may modify ANY field — copy, colors (backgroundColor, textColor, buttonColor, backgroundGradient), layout, structure, section types, URLs (buttonUrl, secondaryButtonUrl), section order, imagePosition, numbered, layout, etc.
 
 RULES:
-1. Return the COMPLETE GeneratedEmail JSON with ALL sections (unless the instruction asks to remove some). You may add, remove, or reorder sections.
-2. IMAGE KEYWORDS ONLY: output only imageKeyword / backgroundImageKeyword / gallery image keyword fields to describe desired photos — NEVER output imageUrl / backgroundImageUrl / gallery image url (those are server-resolved). To keep an existing image, copy its keyword exactly as-is from the input.
-3. Preserve logoUrl and authorImage values exactly as they appear in the input.
-4. Copy sectionPrompt fields exactly from the input.
-5. NO emojis anywhere. Plain text only.
-6. Return ONLY the JSON object — no markdown, no code fences, no explanation.`;
+1. Return a JSON object with exactly two top-level keys: "email" and "summary".
+2. "email" is the COMPLETE GeneratedEmail JSON with ALL sections (unless the instruction asks to remove some). You may add, remove, or reorder sections.
+3. "summary" is a short (under 20 words), specific, past-tense sentence describing what you actually changed, written for the person who asked for the edit — e.g. "Shortened the headline and changed the button color to orange." Not a restatement of the instruction, a description of the result.
+4. IMAGE KEYWORDS ONLY: output only imageKeyword / backgroundImageKeyword / gallery image keyword fields to describe desired photos — NEVER output imageUrl / backgroundImageUrl / gallery image url (those are server-resolved). To keep an existing image, copy its keyword exactly as-is from the input.
+5. Preserve logoUrl and authorImage values exactly as they appear in the input.
+6. Copy sectionPrompt fields exactly from the input.
+7. NO emojis anywhere. Plain text only.
+8. Return ONLY the JSON object — no markdown, no code fences, no explanation outside the "summary" field.`;
 
-  async function callModel(modelName: string): Promise<GeneratedEmail> {
+  async function callModel(modelName: string): Promise<EmailEditResult> {
     const response = await anthropic.messages.create({
       model: modelName,
       max_tokens: 8192,
@@ -1007,9 +1015,14 @@ RULES:
     const stripped = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
     const jsonMatch = stripped.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error('No JSON in response');
-    const parsed = JSON.parse(jsonMatch[0]) as GeneratedEmail;
-    if (!parsed.subject || !parsed.sections?.length) throw new Error('Invalid email structure returned');
-    return parsed;
+    const parsed = JSON.parse(jsonMatch[0]) as { email?: GeneratedEmail; summary?: string };
+    if (!parsed.email?.subject || !parsed.email.sections?.length) throw new Error('Invalid email structure returned');
+    return {
+      email: parsed.email,
+      summary: typeof parsed.summary === 'string' && parsed.summary.trim()
+        ? parsed.summary.trim()
+        : 'Done! The email has been updated.',
+    };
   }
 
   // Haiku-first for this endpoint specifically: high-volume, cost-sensitive,

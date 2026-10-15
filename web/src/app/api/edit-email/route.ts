@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Call Claude — full edit, anything can change
-    const aiResult = await editEmailWithInstruction(
+    const { email: aiResult, summary } = await editEmailWithInstruction(
       instruction.trim(),
       emailContent,
       brandProfile,
@@ -173,6 +173,7 @@ export async function POST(request: NextRequest) {
       success: true,
       content_json: finalEmail,
       html_code: htmlCode,
+      summary,
     });
 
   } catch (error) {
