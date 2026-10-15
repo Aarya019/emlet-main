@@ -677,8 +677,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
       setTrialStatus(prev => prev ? { ...prev, creditsRemaining: Math.max(0, prev.creditsRemaining - 1) } : prev);
       const summary = typeof data.summary === 'string' && data.summary.trim()
         ? data.summary.trim()
-        : 'Done! The email has been updated.';
-      setAiHistory(prev => [...prev, { role: 'ai', content: `${summary} You can keep refining or close this panel.` }]);
+        : "Done! I've updated the email.";
+      setAiHistory(prev => [...prev, { role: 'ai', content: summary }]);
     } catch {
       setAiHistory(prev => [...prev, { role: 'ai', content: 'Network error. Please try again.' }]);
     } finally {
@@ -932,15 +932,22 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 <span className="text-red-400 text-xs">{saveError}</span>
               )}
               <div className="relative">
+                <span className="absolute -top-2 -right-2 z-10 px-2 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-extrabold tracking-wide shadow-sm">
+                  Beta
+                </span>
                 <button
                   onClick={() => setAiChatOpen(true)}
                   className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-sm font-bold flex items-center gap-2 whitespace-nowrap hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
+                              <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 14h2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 14h2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13v2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13v2" />
                   </svg>
                   Edit with AI
-                  <span className="px-1.5 py-0.5 rounded-full bg-black/20 text-[10px] font-bold tracking-wide">BETA</span>
                 </button>
               </div>
               {isDirty && (
@@ -2473,10 +2480,15 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                         <h3 className="text-lg font-bold text-white flex items-center gap-2">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center">
                             <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
+                              <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 14h2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 14h2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13v2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13v2" />
                             </svg>
                           </div>
-                          AI Assistant
+                          Leo
                         </h3>
                         <button 
                           onClick={() => { if (!aiLoading) setAiChatOpen(false); }}
@@ -2489,7 +2501,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                         </button>
                       </div>
                       <p className="text-xs text-white/60">
-                        Describe any change — AI will rewrite the content across the whole email.
+                        Want to change something? Just tell Leo, and he&apos;ll take care of it.
                       </p>
                     </div>
 
@@ -2501,7 +2513,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                           <div className="flex gap-3">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0">
                               <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
+                              <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 14h2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 14h2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13v2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13v2" />
                               </svg>
                             </div>
                             <div className="flex-1">
@@ -2550,7 +2567,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                           {msg.role === 'ai' && (
                             <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0">
                               <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
+                              <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 14h2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 14h2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13v2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13v2" />
                               </svg>
                             </div>
                           )}
@@ -2579,7 +2601,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                         <div className="flex gap-3">
                           <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0 animate-pulse">
                             <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
+                              <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2 14h2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 14h2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13v2" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 13v2" />
                             </svg>
                           </div>
                           <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 flex items-center gap-1.5">
