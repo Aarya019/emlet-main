@@ -43,7 +43,7 @@ marketing) rather than clustering on one theme for many posts in a row.
 - queued: One-click unsubscribe: why it's no longer optional (Gmail/Yahoo/Microsoft now require it, RFC 8058 List-Unsubscribe header) and what actually implementing it involves (Deliverability)
 - queued: Why AI-written marketing emails all start to sound the same, and the specific edits that fix it (timely given 54% of small businesses now use AI for content per Constant Contact 2026, genuinely relevant to Emlet's own users, honest/non-promotional angle) (Copywriting)
 - queued: Reply rate as an email marketing metric: an underused signal, and how to actually write an email that invites one (distinct from the existing open-rate-is-a-bad-metric post, focused specifically on replies as a signal and mechanism) (Copywriting)
-- queued: Mobile email design in 2026: the specific things that still break on phones (only 47% of companies send fully responsive email per Hostinger 2026 despite most opens being mobile, needs concrete specifics: tap targets, single-column widths, preview text truncation, not generic "be responsive" advice) (Design)
+- published (mobile-email-design-what-still-breaks): Mobile email design in 2026: the specific things that still break on phones
 - queued: Retention vs acquisition: why the list you already have is a small business's most predictable growth lever in 2026 (Small Business)
-- queued: Should your newsletter actually be selling something? The shift from pure nurture content to hybrid sales newsletters (Small Business)
+- published (should-your-newsletter-sell-something): Should your newsletter actually be selling something? The shift from pure nurture content to hybrid sales newsletters
 - queued: SMS plus email: when a small business should actually add a second channel, and when it's just more noise (Small Business)
