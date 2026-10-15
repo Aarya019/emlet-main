@@ -2416,6 +2416,20 @@ export default function DashboardContent() {
                 </button>
               </div>
 
+              {/* ── Support ──────────────────────────────────────────── */}
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-white">Need help?</p>
+                  <p className="text-xs text-white/40 mt-0.5">Questions, bugs, or anything else, we actually read these</p>
+                </div>
+                <a
+                  href="mailto:support@emlet.app"
+                  className="px-5 py-2 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/15 transition-all"
+                >
+                  support@emlet.app
+                </a>
+              </div>
+
               {/* ── Danger zone ──────────────────────────────────────── */}
               <div className="rounded-2xl border border-red-500/20 bg-red-500/[0.03] p-6 flex items-center justify-between">
                 <div>
@@ -2426,7 +2440,7 @@ export default function DashboardContent() {
                   href="mailto:support@emlet.app?subject=Delete%20my%20Emlet%20account"
                   className="px-5 py-2 rounded-xl border border-red-500/40 text-red-400 text-sm font-medium hover:bg-red-500/10 transition-all"
                 >
-                  Contact Support
+                  support@emlet.app
                 </a>
               </div>
             </div>
