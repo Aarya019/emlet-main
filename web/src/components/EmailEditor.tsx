@@ -4,13 +4,16 @@ import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { EmailGeneration } from '@/lib/db/types';
-import type { GeneratedEmail, EmailSection } from '@/lib/ai/claude';
+import type { GeneratedEmail, EmailSection, FrameOverride, BorderOverride, ElementStyle } from '@/lib/ai/claude';
 import { FONT_REGISTRY, fontFamilyCSS, buildAllFontsGoogleUrl } from '@/lib/email/renderer';
 import { runEmailChecklist } from '@/lib/email/checklist';
 import ImageUploadInput from '@/components/ImageUploadInput';
 import IconPicker from '@/components/IconPicker';
 import EmailVerifyModal from '@/components/EmailVerifyModal';
 import UpgradeModal from '@/components/UpgradeModal';
+import BorderControls from '@/components/BorderControls';
+import ElementToolbar, { type ComputedElementStyle } from '@/components/ElementToolbar';
+import { describeElement, wildcardOf } from '@/lib/email/element-ids';
 import {
   DndContext,
   closestCenter,
@@ -148,6 +151,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   const [blockError, setBlockError] = useState<{ index: number; message: string; isUpgradeError?: boolean } | null>(null);
   const [upgradeModalMessage, setUpgradeModalMessage] = useState<string | null>(null);
   const [selectedSection, setSelectedSection] = useState<number | null>(null);
+  // The element (heading, button, card, icon...) selected in the preview, styled via ElementToolbar.
+  const [selectedElement, setSelectedElement] = useState<{ sectionIndex: number; id: string; kind: string; computed: ComputedElementStyle | null } | null>(null);
+  const selectedElementRef = useRef(selectedElement);
+  useEffect(() => { selectedElementRef.current = selectedElement; }, [selectedElement]);
   const [aiOpenSection, setAiOpenSection] = useState<number | null>(null);
   const [headingFontDropdownOpen, setHeadingFontDropdownOpen] = useState(false);
   const [bodyFontDropdownOpen, setBodyFontDropdownOpen] = useState(false);
@@ -403,7 +410,81 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     setIsDirty(true);
   }, []);
 
-  // Shared iframe onLoad: section click-to-select + double-click inline field editing
+  const updateFrame = useCallback((frame: FrameOverride | undefined) => {
+    setEditedEmail(prev => (prev ? { ...prev, frame } : prev));
+    setIsDirty(true);
+  }, []);
+
+  // Copies one block's border settings onto every block (outline stays per-block).
+  const applyBorderToAllSections = useCallback((border: BorderOverride | undefined) => {
+    forceImmediateHistoryRef.current = true;
+    setEditedEmail(prev => {
+      if (!prev) return prev;
+      const shared = border ? { ...border, outline: undefined } : undefined;
+      return { ...prev, sections: prev.sections.map(s => ({ ...s, border: shared ? { ...shared } : undefined })) };
+    });
+    setIsDirty(true);
+  }, []);
+
+  // Writes (or clears) one element's style override. When the element's role has an
+  // "apply to all" wildcard active and no individual override, the wildcard is edited instead.
+  const setElementStyle = useCallback((sectionIndex: number, id: string, patch: Partial<ElementStyle>) => {
+    setEditedEmail(prev => {
+      if (!prev) return prev;
+      const sections = prev.sections.map((s, i) => {
+        if (i !== sectionIndex) return s;
+        const styles: Record<string, ElementStyle> = { ...(s.styles || {}) };
+        const wild = wildcardOf(id);
+        const key = wild && styles[wild] && !styles[id] ? wild : id;
+        const merged: Record<string, unknown> = { ...(styles[key] || {}), ...patch };
+        for (const k of Object.keys(merged)) if (merged[k] === undefined) delete merged[k];
+        if (Object.keys(merged).length === 0) delete styles[key];
+        else styles[key] = merged as ElementStyle;
+        return { ...s, styles: Object.keys(styles).length ? styles : undefined };
+      });
+      return { ...prev, sections };
+    });
+    setIsDirty(true);
+  }, []);
+
+  const toggleElementApplyAll = useCallback((sectionIndex: number, id: string, on: boolean) => {
+    const wild = wildcardOf(id);
+    if (!wild) return;
+    setEditedEmail(prev => {
+      if (!prev) return prev;
+      const sections = prev.sections.map((s, i) => {
+        if (i !== sectionIndex) return s;
+        const styles: Record<string, ElementStyle> = { ...(s.styles || {}) };
+        if (on) {
+          styles[wild] = { ...(styles[wild] || {}), ...(styles[id] || {}) };
+          delete styles[id];
+        } else {
+          styles[id] = { ...(styles[wild] || {}) };
+        }
+        return { ...s, styles };
+      });
+      return { ...prev, sections };
+    });
+    setIsDirty(true);
+  }, []);
+
+  const resetElementStyle = useCallback((sectionIndex: number, id: string) => {
+    setEditedEmail(prev => {
+      if (!prev) return prev;
+      const sections = prev.sections.map((s, i) => {
+        if (i !== sectionIndex || !s.styles) return s;
+        const styles: Record<string, ElementStyle> = { ...s.styles };
+        const wild = wildcardOf(id);
+        if (styles[id]) delete styles[id];
+        else if (wild) delete styles[wild];
+        return { ...s, styles: Object.keys(styles).length ? styles : undefined };
+      });
+      return { ...prev, sections };
+    });
+    setIsDirty(true);
+  }, []);
+
+  // Shared iframe onLoad: element click-to-select + inline text editing
   const handleIframeLoad = useCallback(() => {
     const iframe = iframeRef.current;
     if (!iframe?.contentDocument?.body) return;
@@ -411,56 +492,90 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
     const style = doc.createElement('style');
     style.textContent = `
-      .em-section { cursor: pointer !important; outline: 2px solid transparent !important; outline-offset: 2px !important; transition: outline 0.12s ease !important; }
-      .em-section:hover { outline: 1px dashed rgba(150,150,150,0.5) !important; outline-offset: -1px !important; }
-      .em-section.em-selected { outline: 1px dashed rgba(180,180,180,0.8) !important; outline-offset: -1px !important; }
-      [data-em-field]:not([contenteditable="true"]):hover { outline: 1px solid rgba(96,165,250,0.45) !important; border-radius: 2px !important; cursor: text !important; }
+      [data-em-root] { cursor: pointer !important; outline: 2px solid transparent !important; outline-offset: 2px !important; transition: outline 0.12s ease !important; }
+      [data-em-root]:hover { outline: 1px dashed rgba(150,150,150,0.5) !important; outline-offset: -1px !important; }
+      [data-em-root].em-selected { outline: 1px dashed rgba(180,180,180,0.8) !important; outline-offset: -1px !important; }
+      [data-em-el]:hover { outline: 1px solid rgba(96,165,250,0.5) !important; outline-offset: 1px !important; cursor: pointer !important; }
+      [data-em-field]:not([contenteditable="true"]):hover { cursor: text !important; }
+      .em-el-selected, .em-el-selected:hover { outline: 2px solid rgba(0,255,255,0.9) !important; outline-offset: 2px !important; }
       [data-em-field][contenteditable="true"] { outline: 2px solid rgba(0,200,200,0.8) !important; outline-offset: 1px !important; border-radius: 2px !important; cursor: text !important; }
     `;
     doc.head.appendChild(style);
 
     const script = doc.createElement('script');
     script.textContent = `(function() {
-  var sections = Array.from(document.querySelectorAll('.em-section'));
+  var roots = Array.from(document.querySelectorAll('[data-em-root]'));
 
-  // Section click-to-select
-  sections.forEach(function(sectionEl) {
-    // Derive the true JSON section index from the first renderer-tagged child field.
-    // We can't use the querySelectorAll loop index because header/footer/divider/social-links
-    // sections don't have the em-section class, so the DOM index != JSON index.
-    var firstField = sectionEl.querySelector('[data-em-si]');
-    var si = firstField ? parseInt(firstField.getAttribute('data-em-si'), 10) : -1;
-    if (isNaN(si) || si < 0) return;
-    sectionEl.setAttribute('data-em-index', si);
-    sectionEl.addEventListener('click', function(e) {
-      if (document.querySelector('[contenteditable="true"]')) return;
-      e.stopPropagation();
-      sections.forEach(function(s) { s.classList.remove('em-selected'); });
-      sectionEl.classList.add('em-selected');
-      window.parent.postMessage({ type: 'section-click', index: si }, '*');
-    });
-  });
+  function toHex(c) {
+    var m = (c || '').match(/[\\d.]+/g);
+    if (!m || m.length < 3) return undefined;
+    if (m.length >= 4 && parseFloat(m[3]) === 0) return undefined;
+    return '#' + m.slice(0, 3).map(function(x) {
+      var h = Math.round(parseFloat(x)).toString(16);
+      return h.length < 2 ? '0' + h : h;
+    }).join('');
+  }
 
-  // Double-click inline editing — relies on data-em-field attrs stamped by renderer in preview mode
-  Array.from(document.querySelectorAll('[data-em-field]')).forEach(function(el) {
-    el.addEventListener('click', function(e) {
-      e.stopPropagation();
-      if (el.getAttribute('contenteditable') === 'true') return;
-      startEdit(el);
-    });
-  });
+  // What the element actually looks like right now, so the toolbar can show real values.
+  function describe(el) {
+    var cs = getComputedStyle(el);
+    return {
+      color: toHex(cs.color),
+      backgroundColor: toHex(cs.backgroundColor),
+      fontSize: parseFloat(cs.fontSize),
+      bold: parseInt(cs.fontWeight, 10) >= 600,
+      italic: cs.fontStyle === 'italic',
+      underline: (cs.textDecorationLine || '').indexOf('underline') >= 0,
+      align: cs.textAlign
+    };
+  }
+
+  // Called by the editor (also after every preview reload) to outline the selected element or block.
+  window.__emSelect = function(si, id) {
+    Array.from(document.querySelectorAll('.em-el-selected')).forEach(function(n) { n.classList.remove('em-el-selected'); });
+    roots.forEach(function(r) { r.classList.remove('em-selected'); });
+    if (si === null || si === undefined) return;
+    if (id) {
+      var el = Array.from(document.querySelectorAll('[data-em-el]')).filter(function(n) {
+        return n.getAttribute('data-em-si') === String(si) && n.getAttribute('data-em-el') === id;
+      })[0];
+      if (el) { el.classList.add('em-el-selected'); return; }
+    }
+    roots.forEach(function(r) { if (r.getAttribute('data-em-root') === String(si)) r.classList.add('em-selected'); });
+  };
+
+  // One delegated click handler: the innermost tagged element under the cursor is selected;
+  // text fields also start inline editing. Clicking elsewhere in a block selects the block.
+  document.addEventListener('click', function(e) {
+    if (document.querySelector('[contenteditable="true"]')) return;
+    var target = e.target;
+    var root = target.closest ? target.closest('[data-em-root]') : null;
+    if (!root) return;
+    var si = parseInt(root.getAttribute('data-em-root'), 10);
+    if (isNaN(si)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var el = target.closest('[data-em-el]');
+    if (el) {
+      var id = el.getAttribute('data-em-el');
+      window.__emSelect(si, id);
+      window.parent.postMessage({ type: 'element-click', sectionIndex: si, id: id, kind: el.getAttribute('data-em-kind'), computed: describe(el) }, '*');
+      if (el.hasAttribute('data-em-field')) startEdit(el);
+    } else {
+      window.__emSelect(si, null);
+      window.parent.postMessage({ type: 'element-click', sectionIndex: si, id: null }, '*');
+    }
+    window.parent.postMessage({ type: 'section-click', index: si }, '*');
+  }, true);
 
   function startEdit(el) {
     var field = el.getAttribute('data-em-field');
     var si = parseInt(el.getAttribute('data-em-si'), 10);
     if (!field || isNaN(si)) return;
     var isText = field === 'text';
-    // Walk up from the clicked element itself rather than indexing the
-    // \`sections\` array by \`si\` — that array only contains elements with the
-    // em-section class, which header/footer/divider/social-links sections
-    // don't have, so its DOM-order index doesn't line up with the true JSON
-    // section index \`si\`. Using closest() is correct regardless of that gap.
-    var sectionEl = el.closest('.em-section');
+    // Walk up from the clicked element itself to find its block (closest() is correct
+    // whatever the block's DOM order is).
+    var sectionEl = el.closest('[data-em-root]');
     var textGroup = isText
       ? Array.from(sectionEl ? sectionEl.querySelectorAll('[data-em-field="text"]') : [el])
       : null;
@@ -500,10 +615,21 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   }
 })();`;
     doc.body.appendChild(script);
+    // The preview iframe is rebuilt on every edit, so re-outline whatever is selected.
+    const sel = selectedElementRef.current;
+    (iframe.contentWindow as (Window & { __emSelect?: (si: number | null, id: string | null) => void }) | null)
+      ?.__emSelect?.(sel ? sel.sectionIndex : null, sel ? sel.id : null);
   }, []);
+
+  // Keep the preview's outline in sync when the selection changes without a reload.
+  useEffect(() => {
+    const win = iframeRef.current?.contentWindow as (Window & { __emSelect?: (si: number | null, id: string | null) => void }) | null | undefined;
+    win?.__emSelect?.(selectedElement ? selectedElement.sectionIndex : null, selectedElement ? selectedElement.id : null);
+  }, [selectedElement]);
 
   const deleteSection = useCallback((index: number) => {
     forceImmediateHistoryRef.current = true;
+    setSelectedElement(null);
     setEditedEmail(prev => {
       if (!prev) return prev;
       return { ...prev, sections: prev.sections.filter((_, i) => i !== index) };
@@ -524,6 +650,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
   const duplicateSection = useCallback((index: number) => {
     forceImmediateHistoryRef.current = true;
+    setSelectedElement(null);
     setEditedEmail(prev => {
       if (!prev) return prev;
       const sections = [...prev.sections];
@@ -554,6 +681,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
   const reorderSections = useCallback((oldIndex: number, newIndex: number) => {
     forceImmediateHistoryRef.current = true;
+    setSelectedElement(null);
     setEditedEmail(prev => {
       if (!prev) return prev;
       return { ...prev, sections: arrayMove(prev.sections, oldIndex, newIndex) };
@@ -746,6 +874,18 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
         setTimeout(() => {
           sectionRefs.current.get(idx)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }, 50);
+      }
+      if (e.data?.type === 'element-click' && typeof e.data.sectionIndex === 'number') {
+        if (typeof e.data.id === 'string') {
+          setSelectedElement({
+            sectionIndex: e.data.sectionIndex,
+            id: e.data.id,
+            kind: typeof e.data.kind === 'string' ? e.data.kind : '',
+            computed: e.data.computed ?? null,
+          });
+        } else {
+          setSelectedElement(null);
+        }
       }
       if (
         e.data?.type === 'field-update' &&
@@ -1200,6 +1340,18 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       </div>
                     );
                   })()}
+
+                  {/* Email frame (outer border, corners, shadow, top bar) */}
+                  <details className="rounded-lg border border-white/10 bg-white/5 group" open={!!editedEmail.frame}>
+                    <summary className="cursor-pointer select-none px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider list-none flex items-center gap-1.5">
+                      <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+                      Email frame
+                      {editedEmail.frame && <span className="normal-case text-[#00ffff]/60 font-normal">· customised</span>}
+                    </summary>
+                    <div className="px-4 pb-4">
+                      <BorderControls value={editedEmail.frame} onChange={updateFrame} allowAccentBar />
+                    </div>
+                  </details>
 
                   {/* Sections */}
                   <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -2164,8 +2316,14 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
                               {/* ── Color overrides ── */}
                               {section.type !== 'divider' && (
-                                <div className="pt-3 mt-1 border-t border-white/10">
-                                  <label className="block text-xs text-white/40 mb-2 uppercase tracking-wider">Colors <span className="normal-case text-white/20 font-normal">(override brand defaults)</span></label>
+                                <details className="pt-3 mt-1 border-t border-white/10 group">
+                                  <summary className="cursor-pointer select-none text-xs text-white/40 uppercase tracking-wider list-none flex items-center gap-1.5">
+                                    <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+                                    Block defaults <span className="normal-case text-white/20 font-normal">(background, text, accent)</span>
+                                  </summary>
+                                  <p className="text-[11px] text-white/30 mt-2 mb-3">
+                                    Starting colors for the whole block. To style one heading, button, card or icon on its own, click it in the preview.
+                                  </p>
                                   <div className="grid grid-cols-3 gap-2">
                                     <div>
                                       <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Background</label>
@@ -2235,7 +2393,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     </div>
                                     {!['gallery', 'image-block', 'code-block'].includes(section.type) ? (
                                       <div>
-                                        <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Accent</label>
+                                        <label className="block text-[10px] text-white/30 mb-1 uppercase tracking-wider">Accent <span className="normal-case text-white/20">(buttons, labels)</span></label>
                                         <div className="flex items-center gap-1.5">
                                           <input
                                             type="color"
@@ -2264,8 +2422,25 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       Reset to defaults
                                     </button>
                                   )}
-                                </div>
+                                </details>
                               )}
+
+                              {/* ── Borders & effects ── */}
+                              <details className="pt-3 mt-1 border-t border-white/10 group" open={!!section.border}>
+                                <summary className="cursor-pointer select-none text-xs text-white/40 uppercase tracking-wider list-none flex items-center gap-1.5">
+                                  <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+                                  Borders &amp; effects
+                                  {section.border && <span className="normal-case text-[#00ffff]/60 font-normal">· customised</span>}
+                                </summary>
+                                <div className="mt-3">
+                                  <BorderControls
+                                    value={section.border}
+                                    onChange={border => updateSection(index, { border })}
+                                    allowOutline
+                                    onApplyToAll={() => applyBorderToAllSections(section.border)}
+                                  />
+                                </div>
+                              </details>
 
                             </div>
                           )}
@@ -2683,7 +2858,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-white/40 mt-0.5">Click a section in the preview to jump to it</p>
+                  <p className="text-xs text-white/40 mt-0.5">Click any element to style it, click text to edit it</p>
                 </div>
 
                 {/* View Mode Toggle */}
@@ -2716,6 +2891,30 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   </button>
                 </div>
               </div>
+
+              {selectedElement && editedEmail?.sections[selectedElement.sectionIndex] && (() => {
+                const { sectionIndex, id, kind, computed } = selectedElement;
+                const section = editedEmail.sections[sectionIndex];
+                const wild = wildcardOf(id);
+                const exact = section.styles?.[id];
+                const wildStyle = wild ? section.styles?.[wild] : undefined;
+                const appliesToAll = !!wildStyle && !exact;
+                const blockLabel = BLOCK_TYPES.find(b => b.type === section.type)?.label ?? section.type;
+                return (
+                  <ElementToolbar
+                    label={`${describeElement(appliesToAll && wild ? wild : id)} · ${blockLabel}`}
+                    kind={kind}
+                    style={appliesToAll ? wildStyle : exact}
+                    computed={computed}
+                    appliesToAll={appliesToAll}
+                    canApplyToAll={!!wild}
+                    onChange={patch => setElementStyle(sectionIndex, id, patch)}
+                    onToggleAll={on => toggleElementApplyAll(sectionIndex, id, on)}
+                    onReset={() => resetElementStyle(sectionIndex, id)}
+                    onClose={() => setSelectedElement(null)}
+                  />
+                );
+              })()}
 
               <div className={`mx-auto transition-all duration-300 ${
                 previewMode === 'mobile' ? 'max-w-[375px]' : 'max-w-full'

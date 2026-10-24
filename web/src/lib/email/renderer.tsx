@@ -19,9 +19,20 @@ import {
   atomDark,
   oneDark,
 } from '@react-email/components';
-import type { GeneratedEmail, EmailSection } from '@/lib/ai/claude';
+import type { GeneratedEmail, EmailSection, BorderOverride, FrameOverride } from '@/lib/ai/claude';
 import type { BrandProfile } from '@/lib/db/types';
 import { buildEmailPalette, type EmailColorPalette } from '@/lib/colors/palette';
+import {
+  borderValue,
+  shadowValue,
+  overrideBox,
+  overrideSectionBorder,
+  overrideHr,
+  cardTextColor,
+  boxed,
+  BOX as BOX_KEY,
+  applyElementStyles,
+} from '@/lib/email/overrides';
 
 // ─────────────────────────────────────────────
 // Font resolver — fetches Google Fonts CSS on the server with a real browser
@@ -62,9 +73,10 @@ async function resolveFontFaceCSS(googleFontsUrl: string): Promise<string> {
 // Preview-mode data attribute helper
 // ─────────────────────────────────────────────
 
-/** Returns data attrs for inline field editing when preview=true; empty object otherwise. */
-function pv(preview: boolean, si: number, field: string, ti?: number): Record<string, string> {
-  if (!preview) return {};
+/** Data attrs identifying a text field: used for inline editing in the preview and as the element's style id. */
+function pv(_preview: boolean, si: number, field: string, ti?: number): Record<string, string> {
+  // Always emitted: applyElementStyles() reads these to give the element a stable id,
+  // then strips them from the final HTML when not rendering a preview.
   const a: Record<string, string> = { 'data-em-field': field, 'data-em-si': String(si) };
   if (ti != null) a['data-em-ti'] = String(ti);
   return a;
@@ -450,6 +462,59 @@ function applyBrandPalette(designStyle: string, base: StyleConfig, palette: Emai
 }
 
 // ─────────────────────────────────────────────
+// User border / shadow overrides
+// ─────────────────────────────────────────────
+
+/** Returns a per-block copy of the style config with the user's border overrides applied. */
+function applyBlockBorder(base: StyleConfig, o: BorderOverride): StyleConfig {
+  const config: StyleConfig = { ...base };
+  config.cardStyle = overrideBox(base.cardStyle, o);
+  config.iconBoxStyle = overrideBox(base.iconBoxStyle, o);
+  config.badgeStyle = overrideBox(base.badgeStyle, o);
+  config.sectionBorderStyle = overrideSectionBorder(base.sectionBorderStyle, o);
+  config.hrStyle = overrideHr(base.hrStyle, o);
+  if (o.radius != null) config.sectionBorderRadius = `${o.radius}px`;
+  return config;
+}
+
+/** Draws the user's border (and shadow) around a whole block by styling its root element. */
+function applyOutline(el: React.ReactElement, o: BorderOverride): React.ReactElement {
+  const extra: Record<string, unknown> = { border: borderValue(o) };
+  if (o.radius != null) extra.borderRadius = `${o.radius}px`;
+  const shadow = shadowValue(o);
+  if (shadow !== undefined) extra.boxShadow = shadow;
+  const props = el.props as { style?: React.CSSProperties };
+  return React.cloneElement(el, { style: { ...props.style, ...extra } } as Record<string, unknown>);
+}
+
+/** Style for the outer 600px email container, with the user's frame overrides on top of the style's own. */
+function frameStyle(config: StyleConfig, primaryColor: string, frame?: FrameOverride): React.CSSProperties {
+  const style: Record<string, unknown> = {
+    maxWidth: '600px',
+    margin: '0 auto',
+    backgroundColor: config.bodyBg,
+    border: config.containerBorder,
+    borderRadius: config.borderRadius,
+    overflow: 'hidden',
+    padding: '0 40px',
+    borderTop: `4px solid ${primaryColor}`,
+  };
+  if (!frame) return style as React.CSSProperties;
+  if (frame.mode === 'none') style.border = 'none';
+  else if (frame.mode === 'custom') style.border = borderValue(frame);
+  if (frame.radius != null) style.borderRadius = `${frame.radius}px`;
+  const shadow = shadowValue(frame);
+  if (shadow !== undefined) style.boxShadow = shadow;
+  // The accent bar is a separate top border, set last so it wins over the frame's top edge.
+  if (frame.accentBar === 'none') {
+    style.borderTop = style.border === 'none' || style.border == null ? 'none' : style.border;
+  } else if (frame.accentBar === 'custom') {
+    style.borderTop = `${frame.accentBarWidth ?? 4}px solid ${frame.accentBarColor ?? primaryColor}`;
+  }
+  return style as React.CSSProperties;
+}
+
+// ─────────────────────────────────────────────
 // Font variant map — curated heading + body pairs per design style
 // ─────────────────────────────────────────────
 
@@ -691,6 +756,7 @@ function renderPhosphorIcon(
     const fetch2x = size * 2;
     const url = `https://api.iconify.design/ph/${iconName}.svg?color=${encodedColor}&width=${fetch2x}&height=${fetch2x}`;
     return React.createElement(Img, {
+      ...({ 'data-em-kind': 'icon' } as Record<string, string>),
       src: url,
       alt: iconName,
       width: String(fetch2x),
@@ -771,25 +837,6 @@ function renderEyebrow(
       }
     }, text)
   );
-}
-
-// ─────────────────────────────────────────────
-// Contrast helper — picks readable text color for a given card bg
-// ─────────────────────────────────────────────
-
-/**
- * Returns a text color (dark or light) that contrasts well against `bgHex`.
- * Used to ensure card text is readable regardless of the section's textColor override.
- */
-function cardTextColor(bgHex: string | undefined): string {
-  if (!bgHex) return '#1a1a1a';
-  const hex = bgHex.replace(/^#/, '');
-  if (hex.length !== 6) return '#1a1a1a';
-  const r = parseInt(hex.slice(0, 2), 16);
-  const g = parseInt(hex.slice(2, 4), 16);
-  const b = parseInt(hex.slice(4, 6), 16);
-  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return lum > 0.45 ? '#1a1a1a' : '#f0f0f0';
 }
 
 // ─────────────────────────────────────────────
@@ -1137,7 +1184,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
   );
 }
 
-function renderFeatureList(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderFeatureList(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   // Card text must contrast the card's own background, not the section override
@@ -1149,12 +1196,13 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
 
   const eyebrowEl = section.eyebrow
     ? React.createElement('div', { style: { textAlign: (isGrid ? 'center' : 'left') as any } },
-        renderEyebrow(section.eyebrow, btn, config, false, 0)
+        renderEyebrow(section.eyebrow, btn, config, preview, si)
       )
     : null;
 
   const headingEl = section.heading
     ? React.createElement(Heading, {
+        ...pv(preview, si, 'heading'),
         as: 'h2',
         style: {
           fontFamily: config.headingFontFamily,
@@ -1275,7 +1323,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
   );
 }
 
-function renderPricingTable(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderPricingTable(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   const plans = section.plans || [];
@@ -1285,6 +1333,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
   },
     section.heading
       ? React.createElement(Heading, {
+          ...pv(preview, si, 'heading'),
           as: 'h2',
           style: {
             fontFamily: config.headingFontFamily,
@@ -1414,7 +1463,7 @@ function statValueFontSize(stats: Array<{ value?: string }>): number {
   return Math.max(20, Math.round(base - shrink));
 }
 
-function renderStats(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderStats(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   const cFg = cardTextColor(config.cardStyle.backgroundColor as string | undefined);
@@ -1426,6 +1475,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
   },
     section.heading
       ? React.createElement(Heading, {
+          ...pv(preview, si, 'heading'),
           as: 'h2',
           style: {
             fontFamily: config.headingFontFamily,
@@ -1512,7 +1562,7 @@ function renderStats(section: EmailSection, config: StyleConfig, primaryColor: s
   );
 }
 
-function renderGallery(section: EmailSection, config: StyleConfig): React.ReactElement {
+function renderGallery(section: EmailSection, config: StyleConfig, si = 0, preview = false): React.ReactElement {
   const fg = section.textColor || config.bodyColor;
   const images = section.images || [];
   // 2 per row for exactly 4 images (2×2 grid), otherwise 3 per row
@@ -1526,6 +1576,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
   },
     section.heading
       ? React.createElement(Heading, {
+          ...pv(preview, si, 'heading'),
           as: 'h2',
           style: {
             fontFamily: config.headingFontFamily,
@@ -1589,7 +1640,7 @@ function renderGallery(section: EmailSection, config: StyleConfig): React.ReactE
  * handled gracefully (extra images fall into an uneven final row) rather than
  * crashing, in case the model doesn't comply exactly.
  */
-function renderImageBlock(section: EmailSection, config: StyleConfig): React.ReactElement {
+function renderImageBlock(section: EmailSection, config: StyleConfig, si = 0, preview = false): React.ReactElement {
   const images = section.images || [];
   const fg = section.textColor || config.bodyColor;
   // Reuse this style's characteristic vertical rhythm, but drop the extra
@@ -1598,6 +1649,7 @@ function renderImageBlock(section: EmailSection, config: StyleConfig): React.Rea
 
   const caption = section.subheading
     ? React.createElement(Text, {
+        ...pv(preview, si, 'subheading'),
         style: {
           fontFamily: config.fontFamily,
           fontSize: '12px',
@@ -1671,6 +1723,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
   },
     React.createElement('div', {
       style: {
+        [BOX_KEY]: 'panel',
         ...(section.backgroundGradient ? { background: section.backgroundGradient } : { backgroundColor: section.backgroundColor || (accent + '15') }),
         border: `2px solid ${accent}`,
         borderRadius: config.sectionBorderRadius,
@@ -2108,6 +2161,7 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
   },
     React.createElement('div', {
       style: {
+        [BOX_KEY]: 'panel',
         border: `2px dashed ${btn}`,
         borderRadius: config.borderRadius,
         padding: '32px 24px',
@@ -2192,7 +2246,7 @@ function getSocialIconUrl(link: { platform: string; iconUrl?: string }): string 
   return SOCIAL_ICON_MAP[key] || null;
 }
 
-function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   const links = section.socialLinks || [];
@@ -2201,6 +2255,7 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
   },
     section.heading
       ? React.createElement(Text, {
+          ...pv(preview, si, 'heading'),
           style: {
             fontFamily: config.fontFamily,
             fontSize: '11px',
@@ -2247,7 +2302,7 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
   );
 }
 
-function renderColumns(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderColumns(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   const cFg = cardTextColor(config.cardStyle.backgroundColor as string | undefined);
@@ -2258,6 +2313,7 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
   },
     section.heading
       ? React.createElement(Heading, {
+          ...pv(preview, si, 'heading'),
           as: 'h2',
           style: {
             fontFamily: config.headingFontFamily,
@@ -2351,6 +2407,7 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
   },
     React.createElement('div', {
       style: {
+        [BOX_KEY]: 'panel',
         borderLeft: `4px solid ${btn}`,
         paddingLeft: '24px',
         margin: '0',
@@ -2389,7 +2446,7 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
   );
 }
 
-function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColor: string): React.ReactElement {
+function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg = section.textColor || config.bodyColor;
   // Pick a theme based on design style background
   const isDark = config.bodyBg === '#0a0a0f' || config.bodyBg === '#ffffff' && config.bodyColor === '#000000';
@@ -2400,6 +2457,7 @@ function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColo
   },
     section.heading
       ? React.createElement(Heading, {
+          ...pv(preview, si, 'heading'),
           as: 'h3',
           style: {
             fontFamily: config.headingFontFamily,
@@ -2424,6 +2482,7 @@ function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColo
       : null,
     section.subheading
       ? React.createElement(Text, {
+          ...pv(preview, si, 'subheading'),
           style: {
             fontFamily: config.fontFamily,
             fontSize: '13px',
@@ -2436,13 +2495,14 @@ function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColo
   );
 }
 
-function renderDivider(section: EmailSection, config: StyleConfig): React.ReactElement {
+function renderDivider(section: EmailSection, config: StyleConfig, si = 0, preview = false): React.ReactElement {
   return React.createElement(Section, {
     style: { padding: '4px 0' }
   },
     React.createElement(Hr, { style: config.hrStyle }),
     section.text
       ? React.createElement(Text, {
+          ...pv(preview, si, 'text'),
           style: {
             fontFamily: config.fontFamily,
             fontSize: '11px',
@@ -2586,6 +2646,30 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
 function renderSection(
   section: EmailSection,
   si: number,
+  baseConfig: StyleConfig,
+  primaryColor: string,
+  secondaryColor: string,
+  palette: EmailColorPalette,
+  preview = false,
+): React.ReactElement | null {
+  const border = section.border;
+  const withBorder = border ? applyBlockBorder(baseConfig, border) : baseConfig;
+  // Tag the style's container styles so applyElementStyles() can find (and let the user restyle) each card, icon box and badge.
+  const config: StyleConfig = {
+    ...withBorder,
+    cardStyle: boxed(withBorder.cardStyle, 'card'),
+    iconBoxStyle: boxed(withBorder.iconBoxStyle, 'iconBox'),
+    badgeStyle: boxed(withBorder.badgeStyle, 'badge'),
+  };
+  let el = renderSectionByType(section, si, config, primaryColor, secondaryColor, palette, preview);
+  if (!el) return el;
+  if (border?.mode === 'custom' && border.outline) el = applyOutline(el, border);
+  return applyElementStyles(el, section, si, preview);
+}
+
+function renderSectionByType(
+  section: EmailSection,
+  si: number,
   config: StyleConfig,
   primaryColor: string,
   secondaryColor: string,
@@ -2598,19 +2682,19 @@ function renderSection(
     case 'content':       return renderContent(section, config, primaryColor, si, preview);
     case 'testimonial':   return renderTestimonial(section, config, primaryColor, secondaryColor, si, preview);
     case 'testimonials':  return renderTestimonials(section, config, primaryColor, si, preview);
-    case 'feature-list':  return renderFeatureList(section, config, primaryColor);
-    case 'pricing-table': return renderPricingTable(section, config, primaryColor);
-    case 'stats':         return renderStats(section, config, primaryColor);
-    case 'gallery':       return renderGallery(section, config);
-    case 'image-block':   return renderImageBlock(section, config);
+    case 'feature-list':  return renderFeatureList(section, config, primaryColor, si, preview);
+    case 'pricing-table': return renderPricingTable(section, config, primaryColor, si, preview);
+    case 'stats':         return renderStats(section, config, primaryColor, si, preview);
+    case 'gallery':       return renderGallery(section, config, si, preview);
+    case 'image-block':   return renderImageBlock(section, config, si, preview);
     case 'announcement':  return renderAnnouncement(section, config, primaryColor, si, preview);
     case 'image-text':    return renderImageText(section, config, primaryColor, si, preview);
     case 'coupon':        return renderCoupon(section, config, primaryColor, si, preview);
-    case 'social-links':  return renderSocialLinks(section, config, primaryColor);
-    case 'columns':       return renderColumns(section, config, primaryColor);
-    case 'divider':       return renderDivider(section, config);
+    case 'social-links':  return renderSocialLinks(section, config, primaryColor, si, preview);
+    case 'columns':       return renderColumns(section, config, primaryColor, si, preview);
+    case 'divider':       return renderDivider(section, config, si, preview);
     case 'quote':         return renderQuote(section, config, primaryColor, si, preview);
-    case 'code-block':    return renderCodeBlock(section, config, primaryColor);
+    case 'code-block':    return renderCodeBlock(section, config, primaryColor, si, preview);
     case 'cta':           return renderCta(section, config, primaryColor, palette, si, preview);
     case 'footer':        return renderFooter(section, config, secondaryColor, si, preview);
     default:              return null;
@@ -2739,16 +2823,7 @@ export async function generateEmailHtml(
     },
       React.createElement(Container, {
         className: 'em-wrap',
-        style: {
-          maxWidth: '600px',
-          margin: '0 auto',
-          backgroundColor: config.bodyBg,
-          border: config.containerBorder,
-          borderRadius: config.borderRadius,
-          overflow: 'hidden',
-          padding: '0 40px',
-          borderTop: `4px solid ${primaryColor}`,
-        }
+        style: frameStyle(config, primaryColor, email.frame),
       },
         ...sectionElements
       )

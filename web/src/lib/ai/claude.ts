@@ -7,6 +7,59 @@ import { buildEmailPalette } from '@/lib/colors/palette';
 export const anthropic = new Anthropic();
 
 // Email content structure
+/**
+ * User-editable border/shadow settings. Every field is optional: undefined
+ * means "keep whatever the design style (brutalist, cyberpunk, ...) defines",
+ * so the presets are starting points, not locked rules.
+ */
+export interface BorderOverride {
+  /** 'none' removes the border entirely, 'custom' uses width/color/lineStyle below. */
+  mode?: 'default' | 'none' | 'custom';
+  /** Border width in px (custom mode). */
+  width?: number;
+  /** Border color (custom mode). */
+  color?: string;
+  lineStyle?: 'solid' | 'dashed' | 'dotted';
+  /** Corner radius in px. Undefined keeps the style's own radius. */
+  radius?: number;
+  /** 'none' removes the style's shadow/glow, 'custom' uses the shadow fields below. */
+  shadowMode?: 'default' | 'none' | 'custom';
+  shadowColor?: string;
+  /** Hard-offset shadow distance in px (the brutalist look). */
+  shadowOffset?: number;
+  shadowBlur?: number;
+  /** Block-level only: also draw the border around the whole block, not just its cards/boxes. */
+  outline?: boolean;
+}
+
+/**
+ * Style overrides for one element inside a block (a heading, a paragraph, a
+ * button, a card, an icon...). Keyed by element id in EmailSection.styles.
+ * Every field is optional; undefined keeps the block's / design style's value.
+ */
+export interface ElementStyle {
+  /** Text color (buttons: label color; cards: text color for everything inside; icons: glyph color). */
+  color?: string;
+  /** Fill for buttons and cards/boxes. */
+  backgroundColor?: string;
+  /** Font size in px (text and buttons). */
+  fontSize?: number;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  align?: 'left' | 'center' | 'right';
+  /** Border / corner radius / shadow for buttons, cards, boxes and images. */
+  border?: BorderOverride;
+}
+
+/** Outer email frame (the 600px container) overrides. */
+export interface FrameOverride extends BorderOverride {
+  /** The colored bar across the top of the email. */
+  accentBar?: 'default' | 'none' | 'custom';
+  accentBarColor?: string;
+  accentBarWidth?: number;
+}
+
 export interface EmailSection {
   type: 'hero' | 'content' | 'cta' | 'footer' | 'testimonial' | 'testimonials' | 'feature-list' | 'pricing-table' | 'gallery' | 'image-block' | 'stats' | 'announcement' | 'header' | 'image-text' | 'coupon' | 'social-links' | 'columns' | 'divider' | 'quote' | 'code-block';
   heading?: string;
@@ -141,6 +194,13 @@ export interface EmailSection {
   backgroundImageUrl?: string;
   /** Optional CSS color/rgba overlay rendered on top of the background image (e.g. "rgba(0,0,0,0.55)"). When omitted, a default cinematic dark gradient is applied automatically. */
   backgroundImageOverlay?: string;
+  /** Border/shadow overrides for this block's cards, boxes, dividers (and optionally the whole block). Undefined = design style defaults. */
+  border?: BorderOverride;
+  /**
+   * Per-element overrides, keyed by element id ('heading', 'text:0', 'button#0', 'card#2', 'icon#1', or a
+   * wildcard like 'card#*'). Ids come from the renderer, see applyElementStyles in lib/email/overrides.ts.
+   */
+  styles?: Record<string, ElementStyle>;
 }
 
 export interface GeneratedEmail {
@@ -157,6 +217,8 @@ export interface GeneratedEmail {
    * heading/body must be keys of FONT_REGISTRY exported from renderer.tsx.
    */
   fontPairing?: { heading: string; body: string };
+  /** Overrides for the outer email frame (border, radius, shadow, top accent bar). Undefined = design style defaults. */
+  frame?: FrameOverride;
   sections: EmailSection[];
 }
 
@@ -903,7 +965,7 @@ ${JSON.stringify(section, null, 2)}
 INSTRUCTIONS:
 1. Rewrite ONLY these fields: ${fieldsToReturn}
 2. Keep the exact same JSON field names — do not rename or add/remove fields
-3. Do NOT change: type, imageUrl, imageKeyword, backgroundImageKeyword, backgroundColor, textColor, buttonColor, backgroundGradient, buttonUrl, secondaryButtonUrl, sectionPrompt, or any URL/color/image fields
+3. Do NOT change: type, imageUrl, imageKeyword, backgroundImageKeyword, backgroundColor, textColor, buttonColor, backgroundGradient, border, styles, buttonUrl, secondaryButtonUrl, sectionPrompt, or any URL/color/image/styling fields
 4. If USER INSTRUCTIONS are provided above, follow them closely — they take priority over everything else
 5. Keep within the same general topic — do not change the subject matter
 6. Return ONLY a valid JSON object containing the rewritten fields — no markdown, no explanation
@@ -992,6 +1054,12 @@ ${JSON.stringify(stripResolvedImageUrls(currentEmail))}
 
 TASK:
 Apply the user instruction to the email. You may modify ANY field — copy, colors (backgroundColor, textColor, buttonColor, backgroundGradient), layout, structure, section types, URLs (buttonUrl, secondaryButtonUrl), section order, imagePosition, numbered, layout, etc.
+
+STYLING FIELDS (all optional; leave a field out to keep the design style's default look):
+- section.border: { mode: 'default'|'none'|'custom', width (px), color, lineStyle: 'solid'|'dashed'|'dotted', radius (px), shadowMode: 'default'|'none'|'custom', shadowColor, shadowOffset (px), shadowBlur (px), outline (boolean, custom mode only: also draw the border around the whole block) }. Controls the borders, corner radius and shadow of that block's cards, boxes, badges and dividers. "Remove the borders" means { mode: 'none', shadowMode: 'none' } on each affected block.
+- email.frame (top level, next to "sections"): the same fields except outline, plus accentBar: 'default'|'none'|'custom', accentBarColor, accentBarWidth (px). Controls the outer email container's border, corners, shadow and the colored bar across the top.
+- section.styles: per-element overrides, an object keyed by element id. Each value may contain: color, backgroundColor, fontSize (px number), bold, italic, underline (booleans), align ('left'|'center'|'right'), border (same shape as section.border, for buttons, cards, boxes and images). Element ids: 'heading', 'subheading', 'intro', 'eyebrow', 'text:0' (first paragraph, 'text:1' the second...), 'quote', 'author', 'authorTitle', 'button#0' (the block's first button), 'link#0' (first text link, e.g. the secondary action), 'card#0' (first card), 'iconBox#0', 'icon#0' (icon glyph color), 'badge#0' (the pill behind the eyebrow label), 'image#0', 'text#0' (first other text, such as a feature title or description). A trailing * styles every item of that kind at once, e.g. 'card#*' or 'text#*'. Example: { "heading": { "color": "#ff0000", "fontSize": 40 }, "button#0": { "backgroundColor": "#000000", "color": "#ffffff", "border": { "mode": "none", "radius": 0 } } }.
+Use these fields when the user asks about borders, shadows, rounded corners, or the look of one specific element (for example "make the button square", "remove the card borders", "make the heading bigger"). Copy border, styles and frame EXACTLY from the input for anything the user did not ask you to change.
 
 RULES:
 1. Return a JSON object with exactly two top-level keys: "email" and "summary".
