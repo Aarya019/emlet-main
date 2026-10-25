@@ -1,6 +1,7 @@
 'use client';
 
 import { requestPasswordReset } from '@/app/actions/auth';
+import SubmitButton from '@/components/SubmitButton';
 import { useState, useRef } from 'react';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 import AuthBackground from '@/components/AuthBackground';
@@ -81,13 +82,7 @@ export default function ForgotPasswordPage() {
                 className="flex justify-center"
               />
 
-              <button
-                type="submit"
-                disabled={loading || (TURNSTILE_ENABLED && !turnstileToken)}
-                className="w-full flex justify-center py-3 px-4 rounded-lg text-black bg-white font-medium hover:shadow-xl hover:shadow-white/20 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Sending...' : 'Send reset link'}
-              </button>
+              <SubmitButton loading={loading} disabled={(TURNSTILE_ENABLED && !turnstileToken)} pendingText="Sending..." className="w-full flex justify-center py-3 px-4 rounded-lg text-black bg-white font-medium hover:shadow-xl hover:shadow-white/20 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">Send reset link</SubmitButton>
             </form>
           )}
 

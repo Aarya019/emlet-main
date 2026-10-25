@@ -1,6 +1,8 @@
 'use client';
 
 import { updatePassword } from '@/app/actions/auth';
+import SubmitButton from '@/components/SubmitButton';
+import PasswordInput from '@/components/PasswordInput';
 import { useState } from 'react';
 import AuthBackground from '@/components/AuthBackground';
 
@@ -84,10 +86,9 @@ export default function ResetPasswordPage() {
                 <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
                   New password
                 </label>
-                <input
+                <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   autoComplete="new-password"
                   required
                   minLength={8}
@@ -100,10 +101,9 @@ export default function ResetPasswordPage() {
                 <label htmlFor="confirm-password" className="block text-sm font-medium text-white mb-2">
                   Confirm new password
                 </label>
-                <input
+                <PasswordInput
                   id="confirm-password"
                   name="confirm-password"
-                  type="password"
                   autoComplete="new-password"
                   required
                   minLength={8}
@@ -112,13 +112,7 @@ export default function ResetPasswordPage() {
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center py-3 px-4 rounded-lg text-black bg-white font-medium hover:shadow-xl hover:shadow-white/20 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Updating...' : 'Update password'}
-              </button>
+              <SubmitButton loading={loading} pendingText="Updating..." className="w-full flex justify-center py-3 px-4 rounded-lg text-black bg-white font-medium hover:shadow-xl hover:shadow-white/20 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">Update password</SubmitButton>
             </form>
           )}
         </div>

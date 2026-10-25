@@ -1,4 +1,5 @@
 import AuthBackground from '@/components/AuthBackground';
+import ContinueForm from './ContinueForm';
 
 /**
  * Landing page for the password-reset email link
@@ -31,15 +32,7 @@ export default async function ConfirmPage({
                 Continue to choose a new password for your account.
               </p>
             </div>
-            <form method="POST" action="/auth/confirm/verify">
-              <input type="hidden" name="token_hash" value={token_hash} />
-              <button
-                type="submit"
-                className="w-full flex justify-center py-3 px-4 rounded-lg text-black bg-white font-medium hover:shadow-xl hover:shadow-white/20 hover:-translate-y-0.5 transition-all duration-200"
-              >
-                Continue
-              </button>
-            </form>
+            <ContinueForm tokenHash={token_hash} />
           </>
         ) : (
           <>

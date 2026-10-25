@@ -197,6 +197,19 @@ export default function ElementToolbar({
               <label className={labelCls}>Style</label>
               <ToggleButton active={bold} title="Bold" onClick={() => onChange({ bold: !bold })}><b>B</b></ToggleButton>
             </div>
+            <div>
+              <label className={labelCls}>Position</label>
+              <div className="flex gap-1">
+                {(['left', 'center', 'right'] as const).map(a => (
+                  <ToggleButton key={a} active={!style?.fullWidth && style?.align === a} title={`Align button ${a}`} onClick={() => onChange({ align: a, fullWidth: undefined })}>
+                    {a === 'left' ? '⇤' : a === 'center' ? '↔' : '⇥'}
+                  </ToggleButton>
+                ))}
+                <ToggleButton active={!!style?.fullWidth} title="Full width" onClick={() => onChange({ fullWidth: style?.fullWidth ? undefined : true, align: undefined })}>
+                  ▭
+                </ToggleButton>
+              </div>
+            </div>
           </>
         )}
 

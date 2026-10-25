@@ -1,6 +1,8 @@
 'use client';
 
 import { signUp, signInWithGoogle } from '@/app/actions/auth';
+import SubmitButton from '@/components/SubmitButton';
+import PasswordInput from '@/components/PasswordInput';
 import { useState, useEffect, useRef } from 'react';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 
@@ -285,10 +287,9 @@ export default function SignUpPage() {
                 <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
                   Password
                 </label>
-                <input
+                <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   autoComplete="new-password"
                   required
                   minLength={6}
@@ -302,10 +303,9 @@ export default function SignUpPage() {
                 <label htmlFor="confirm-password" className="block text-sm font-medium text-white mb-2">
                   Confirm password
                 </label>
-                <input
+                <PasswordInput
                   id="confirm-password"
                   name="confirm-password"
-                  type="password"
                   autoComplete="new-password"
                   required
                   minLength={6}
@@ -322,13 +322,7 @@ export default function SignUpPage() {
                 className="flex justify-center"
               />
 
-              <button
-                type="submit"
-                disabled={loading || (TURNSTILE_ENABLED && !turnstileToken)}
-                className="w-full flex justify-center py-3 px-4 rounded-lg text-black bg-white font-medium hover:shadow-xl hover:shadow-white/20 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Creating account...' : 'Create account'}
-              </button>
+              <SubmitButton loading={loading} disabled={(TURNSTILE_ENABLED && !turnstileToken)} pendingText="Creating account..." className="w-full flex justify-center py-3 px-4 rounded-lg text-black bg-white font-medium hover:shadow-xl hover:shadow-white/20 hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed">Create account</SubmitButton>
 
               <p className="text-xs text-white/50 text-center">
                 By signing up, you agree to our{' '}

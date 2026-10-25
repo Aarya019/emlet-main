@@ -31,14 +31,68 @@ const DESIGN_STYLE_OPTIONS: { value: DesignStyle; label: string; desc: string }[
   { value: 'bauhaus', label: 'Bauhaus', desc: 'Geometric shapes, primary colors, structured grid' },
 ];
 
+/** One icon per design style, drawn inside the swatch so the picker shows what each style is at a glance. */
+const STYLE_ICONS: Record<DesignStyle, { color: string; strokeWidth?: number; body: React.ReactNode }> = {
+  simple: {
+    color: '#1f1f1f',
+    body: <path strokeLinecap="round" strokeLinejoin="round" d="M5 7h14M5 12h14M5 17h9" />,
+  },
+  minimalist: {
+    color: '#555555',
+    body: <circle cx="12" cy="12" r="6" />,
+  },
+  editorial: {
+    color: '#1a1a1a',
+    body: <path strokeLinecap="round" strokeLinejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2M7 8h6v4H7V8zm0 8h6" />,
+  },
+  retro: {
+    color: '#9a7b3f',
+    body: <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />,
+  },
+  brutalist: {
+    color: '#000000',
+    strokeWidth: 3.5,
+    body: <path strokeLinejoin="miter" d="M5 5h14v14H5z" />,
+  },
+  cyberpunk: {
+    color: '#00ffff',
+    body: <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />,
+  },
+  handwritten: {
+    color: '#8a7a5c',
+    body: <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />,
+  },
+  bauhaus: {
+    color: '#000000',
+    body: (
+      <>
+        <circle cx="8" cy="8" r="4" fill="#cc0000" stroke="#000000" />
+        <path strokeLinejoin="miter" d="M14 20h7l-3.5-6z" fill="#ffd400" />
+        <rect x="3" y="14" width="6" height="6" fill="#1d4ed8" />
+      </>
+    ),
+  },
+};
+
 function StyleSwatch({ styleValue, size = 20 }: { styleValue: DesignStyle; size?: number }) {
   const swatch = STYLE_SWATCHES[styleValue];
+  const icon = STYLE_ICONS[styleValue];
   return (
     <div
       className="flex-shrink-0 flex items-center justify-center"
       style={{ width: size, height: size, ...swatch.style }}
     >
-      {swatch.dot && <div className="rounded-full" style={{ width: size / 4, height: size / 4, backgroundColor: swatch.dot }} />}
+      <svg
+        width={Math.round(size * 0.62)}
+        height={Math.round(size * 0.62)}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={icon.color}
+        strokeWidth={icon.strokeWidth ?? 2}
+        aria-hidden="true"
+      >
+        {icon.body}
+      </svg>
     </div>
   );
 }
@@ -1108,7 +1162,7 @@ export default function DashboardContent() {
                             onClick={() => setStyleDropdownOpen(!styleDropdownOpen)}
                             className="flex items-center gap-2 bg-gradient-to-r from-white/10 to-white/5 border-2 border-white/20 rounded-lg pl-2.5 pr-2 py-1.5 text-xs font-medium text-white hover:border-white/40 hover:from-white/15 hover:to-white/10 transition-all min-w-[140px]"
                           >
-                            <StyleSwatch styleValue={designStyle} />
+                            <StyleSwatch styleValue={designStyle} size={24} />
                             <span className="flex-1 text-left">
                               {designStyle === 'simple' && 'Simple'}
                               {designStyle === 'minimalist' && 'Minimalist'}
@@ -1143,7 +1197,7 @@ export default function DashboardContent() {
                                       designStyle === style.value ? 'bg-[#00ffff]/10 text-[#00ffff]' : 'text-white'
                                     }`}
                                   >
-                                    <StyleSwatch styleValue={style.value} size={28} />
+                                    <StyleSwatch styleValue={style.value} size={34} />
                                     <div className="min-w-0">
                                       <div className="font-medium text-sm">{style.label}</div>
                                       <div className="text-xs text-white/50 mt-0.5">{style.desc}</div>
