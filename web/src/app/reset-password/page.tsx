@@ -1,6 +1,7 @@
 'use client';
 
 import { updatePassword } from '@/app/actions/auth';
+import PasswordInput from '@/components/PasswordInput';
 import { useState } from 'react';
 import AuthBackground from '@/components/AuthBackground';
 
@@ -84,10 +85,9 @@ export default function ResetPasswordPage() {
                 <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
                   New password
                 </label>
-                <input
+                <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   autoComplete="new-password"
                   required
                   minLength={8}
@@ -100,10 +100,9 @@ export default function ResetPasswordPage() {
                 <label htmlFor="confirm-password" className="block text-sm font-medium text-white mb-2">
                   Confirm new password
                 </label>
-                <input
+                <PasswordInput
                   id="confirm-password"
                   name="confirm-password"
-                  type="password"
                   autoComplete="new-password"
                   required
                   minLength={8}

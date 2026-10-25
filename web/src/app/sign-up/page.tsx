@@ -1,6 +1,7 @@
 'use client';
 
 import { signUp, signInWithGoogle } from '@/app/actions/auth';
+import PasswordInput from '@/components/PasswordInput';
 import { useState, useEffect, useRef } from 'react';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 
@@ -285,10 +286,9 @@ export default function SignUpPage() {
                 <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
                   Password
                 </label>
-                <input
+                <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   autoComplete="new-password"
                   required
                   minLength={6}
@@ -302,10 +302,9 @@ export default function SignUpPage() {
                 <label htmlFor="confirm-password" className="block text-sm font-medium text-white mb-2">
                   Confirm password
                 </label>
-                <input
+                <PasswordInput
                   id="confirm-password"
                   name="confirm-password"
-                  type="password"
                   autoComplete="new-password"
                   required
                   minLength={6}

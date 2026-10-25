@@ -1,6 +1,7 @@
 'use client';
 
 import { signIn, signInWithGoogle, resendConfirmationEmail } from '@/app/actions/auth';
+import PasswordInput from '@/components/PasswordInput';
 import { useState, useEffect, useRef } from 'react';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 
@@ -288,10 +289,9 @@ export default function SignInPage() {
                 <label htmlFor="password" className="block text-sm font-medium text-white mb-2">
                   Password
                 </label>
-                <input
+                <PasswordInput
                   id="password"
                   name="password"
-                  type="password"
                   autoComplete="current-password"
                   required
                   className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
