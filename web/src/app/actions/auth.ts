@@ -67,6 +67,13 @@ export async function signUp(formData: FormData) {
     return { error: error.message };
   }
 
+  // With email confirmation on, Supabase answers a sign-up for an already-registered address with a
+  // fake user that has no identities (and sends nothing), so without this check the person is told
+  // to "check your email" for a message that never comes.
+  if (authData.user && authData.user.identities?.length === 0) {
+    return { error: 'An account with this email already exists. Sign in instead, or use "Forgot password" if you need to reset it.' };
+  }
+
   // If email confirmation is required, user won't be logged in yet
   if (authData.user && !authData.session) {
     return { 
