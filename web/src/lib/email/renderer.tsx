@@ -18,6 +18,8 @@ import {
   CodeBlock,
   atomDark,
   oneDark,
+  oneLight,
+  dracula,
 } from '@react-email/components';
 import type { GeneratedEmail, EmailSection, BorderOverride, FrameOverride } from '@/lib/ai/claude';
 import type { BrandProfile } from '@/lib/db/types';
@@ -83,7 +85,25 @@ function pv(_preview: boolean, si: number, field: string, ti?: number): Record<s
 }
 
 /**
- * Row wrapped with table-layout:fixed. @react-email's Row renders a plain
+ * Applies the user's top/bottom spacing to a CSS padding shorthand ("48px 40px",
+ * "20px 0", ...). Returns the original string untouched when nothing is set, so
+ * emails without spacing overrides render exactly as before.
+ */
+function spacedPadding(original: string, spacing?: { top?: number; bottom?: number }): string {
+  if (!spacing || (spacing.top == null && spacing.bottom == null)) return original;
+  const [t, r = t, b = t, l = r] = original.trim().split(/\s+/);
+  const top = spacing.top != null ? `${spacing.top}px` : t;
+  const bottom = spacing.bottom != null ? `${spacing.bottom}px` : b;
+  return `${top} ${r} ${bottom} ${l}`;
+}
+
+/** Wraps an image in a link when the user set one. Plain <a> (not the Link component) so it never takes a numbered style id. */
+function linkImage(href: string | undefined, img: React.ReactElement): React.ReactElement {
+  if (!href) return img;
+  return React.createElement('a', { href, style: { textDecoration: 'none' } }, img);
+}
+
+/** Row wrapped with table-layout:fixed. @react-email's Row renders a plain
  * <table> with no table-layout set, so explicit percentage widths on its
  * Columns (e.g. "width: 33%" for a 3-up grid) are only a hint under the
  * browser's default auto layout — a column with longer content (a longer
@@ -203,7 +223,7 @@ interface StyleConfig {
   buttonBorderRadius: string;
   buttonPadding: string;
   containerBorder: string;
-  heroAlign: 'center' | 'left';
+  heroAlign: 'center' | 'left' | 'right';
   hrStyle: React.CSSProperties;
   sectionBorderStyle: React.CSSProperties;
   cardStyle: React.CSSProperties;
@@ -490,7 +510,7 @@ function applyOutline(el: React.ReactElement, o: BorderOverride): React.ReactEle
 /** Style for the outer 600px email container, with the user's frame overrides on top of the style's own. */
 function frameStyle(config: StyleConfig, primaryColor: string, frame?: FrameOverride): React.CSSProperties {
   const style: Record<string, unknown> = {
-    maxWidth: '600px',
+    maxWidth: `${frame?.width ?? 600}px`,
     margin: '0 auto',
     backgroundColor: config.bodyBg,
     border: config.containerBorder,
@@ -885,11 +905,11 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
     ? {
         background: section.backgroundImageOverlay ||
           `linear-gradient(to bottom, ${palette.primaryDark}1a 0%, ${palette.accentDark}e6 100%)`,
-        padding: '80px 48px',
+        padding: spacedPadding('80px 48px', section.spacing),
         textAlign: config.heroAlign,
       }
     : {
-        padding: '72px 40px',
+        padding: spacedPadding('72px 40px', section.spacing),
         textAlign: config.heroAlign,
       };
 
@@ -904,12 +924,19 @@ function renderHero(section: EmailSection, config: StyleConfig, primaryColor: st
     React.createElement('div', { className: 'em-section', style: innerStyle },
       // Show inline image only when there is no background photo
       !hasBgImage && section.imageUrl
-        ? React.createElement(Img, {
+        ? linkImage(section.imageLinkUrl, React.createElement(Img, {
             src: section.imageUrl,
             alt: section.imageAlt || '',
             width: '1040',
-            style: { width: '100%', maxWidth: '520px', marginBottom: '32px', borderRadius: config.borderRadius, display: 'block', margin: '0 auto 32px auto' }
-          })
+            style: {
+              width: '100%',
+              maxWidth: `${section.imageMaxWidth ?? 520}px`,
+              marginBottom: '32px',
+              borderRadius: config.borderRadius,
+              display: 'block',
+              margin: section.align === 'left' ? '0 0 32px 0' : section.align === 'right' ? '0 0 32px auto' : '0 auto 32px auto',
+            }
+          }))
         : null,
       // Eyebrow label
       section.eyebrow
@@ -1053,26 +1080,48 @@ function renderContent(section: EmailSection, config: StyleConfig, primaryColor:
           margin: i < paragraphs.length - 1 ? '0 0 14px 0' : '0',
         }
       }, para)
-    )
+    ),
+    section.buttonText
+      ? React.createElement(Button, {
+          href: section.buttonUrl || '#',
+          className: 'em-btn',
+          style: {
+            display: 'inline-block',
+            marginTop: '20px',
+            padding: config.buttonPadding,
+            backgroundColor: accent,
+            color: cardTextColor(accent),
+            fontFamily: config.fontFamily,
+            fontWeight: '700',
+            fontSize: '16px',
+            borderRadius: config.buttonBorderRadius,
+            textDecoration: 'none',
+            boxShadow: config.buttonShadow,
+          }
+        }, section.buttonText)
+      : null
   );
 }
 
 function renderTestimonial(section: EmailSection, config: StyleConfig, primaryColor: string, secondaryColor: string, si = 0, preview = false): React.ReactElement {
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
+  const avatar = section.avatarSize ?? 56;
+  const avatarRadius = section.avatarShape === 'square' ? '0' : '50%';
+  const quoted = (q: string) => (section.quoteMarks === false ? q : `\u201C${q}\u201D`);
   // Side-by-side layout: circular avatar on the left, quote + author on the right
   if (section.authorImage) {
     return React.createElement(Section, { className: 'em-section', style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) } },
       section.eyebrow ? renderEyebrow(section.eyebrow, btn, config, preview, si) : null,
       React.createElement('div', { style: { ...config.cardStyle } },
         fixedRow(
-          React.createElement(Column, { style: { width: '76px', verticalAlign: 'top' } },
+          React.createElement(Column, { style: { width: `${avatar + 20}px`, verticalAlign: 'top' } },
             React.createElement(Img, {
               src: section.authorImage,
               alt: section.author || '',
-              width: '56',
-              height: '56',
-              style: { borderRadius: '50%', display: 'block', width: '56px', height: '56px' }
+              width: String(avatar),
+              height: String(avatar),
+              style: { borderRadius: avatarRadius, display: 'block', width: `${avatar}px`, height: `${avatar}px` }
             })
           ),
           React.createElement(Column, { style: { verticalAlign: 'middle' } },
@@ -1087,7 +1136,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
                     lineHeight: '1.65',
                     margin: '0 0 10px 0',
                   }
-                }, `\u201C${section.quote}\u201D`)
+                }, quoted(section.quote))
               : null,
             section.author
               ? React.createElement(Text, {
@@ -1134,7 +1183,7 @@ function renderTestimonial(section: EmailSection, config: StyleConfig, primaryCo
       }
     },
       // Large decorative opening quotation mark
-      React.createElement(Text, {
+      section.quoteMarks === false ? null : React.createElement(Text, {
         style: {
           fontFamily: 'Georgia, serif',
           fontSize: '80px',
@@ -1280,6 +1329,7 @@ function renderFeatureList(section: EmailSection, config: StyleConfig, primaryCo
             isNumbered
               ? React.createElement('div', {
                   style: {
+                    [BOX_KEY]: 'numberBadge',
                     width: '28px',
                     height: '28px',
                     borderRadius: '50%',
@@ -1327,6 +1377,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || primaryColor;
   const plans = section.plans || [];
+  const marker = section.featureMarker ?? '\u2713';
   return React.createElement(Section, {
     className: 'em-section',
     style: { padding: config.sectionPadding, ...bgFillStyle(section, config.sectionBorderRadius) }
@@ -1355,6 +1406,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
             textAlign: 'center' as const,
             width: `${100 / plans.length}%`,
             ...(plan.highlighted ? {
+              [BOX_KEY]: 'plan',
               backgroundColor: btn,
               color: '#fff',
               borderRadius: config.borderRadius,
@@ -1376,7 +1428,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
                   borderRadius: '20px',
                   margin: '0 0 10px 0',
                 }
-              }, 'Recommended')
+              }, section.recommendedLabel ?? 'Recommended')
             : null,
           React.createElement(Text, {
             style: {
@@ -1419,7 +1471,7 @@ function renderPricingTable(section: EmailSection, config: StyleConfig, primaryC
                 color: plan.highlighted ? '#ffffffdd' : fg,
                 margin: '4px 0',
               }
-            }, `✓ ${feat}`)
+            }, marker ? `${marker} ${feat}` : feat)
           ),
           plan.buttonText
             ? React.createElement(Button, {
@@ -1594,15 +1646,15 @@ function renderGallery(section: EmailSection, config: StyleConfig, si = 0, previ
             React.createElement(Column, {
             key: i,
             className: 'em-col',
-            style: { padding: '4px', verticalAlign: 'top' }
+            style: { padding: section.imageGap != null ? `${section.imageGap / 2}px` : '4px', verticalAlign: 'top' }
           },
-            React.createElement(Img, {
+            linkImage(img.linkUrl, React.createElement(Img, {
               src: img.url,
               alt: img.alt,
               width: perRow === 2 ? '280' : '180',
               style: { width: '100%', borderRadius: config.borderRadius, display: 'block' }
-            }),
-            React.createElement(Text, {
+            })),
+            section.showImageAlt === false ? null : React.createElement(Text, {
               style: {
                 fontFamily: config.fontFamily,
                 fontSize: '12px',
@@ -1664,15 +1716,15 @@ function renderImageBlock(section: EmailSection, config: StyleConfig, si = 0, pr
     const img = images[0];
     return React.createElement(Section, {
       className: 'em-section',
-      style: { padding: `${verticalPadding} 0`, ...bgFillStyle(section) }
+      style: { padding: spacedPadding(`${verticalPadding} 0`, section.spacing), ...bgFillStyle(section) }
     },
       img
-        ? React.createElement(Img, {
+        ? linkImage(img.linkUrl, React.createElement(Img, {
             src: img.url,
             alt: img.alt,
             width: '600',
             style: { width: '100%', display: 'block', borderRadius: config.borderRadius }
-          })
+          }))
         : null,
       caption
     );
@@ -1686,7 +1738,7 @@ function renderImageBlock(section: EmailSection, config: StyleConfig, si = 0, pr
 
   return React.createElement(Section, {
     className: 'em-section',
-    style: { padding: `${verticalPadding} 0`, ...bgFillStyle(section) }
+    style: { padding: spacedPadding(`${verticalPadding} 0`, section.spacing), ...bgFillStyle(section) }
   },
     ...rows.map((rowImages, rowIdx) =>
       React.createElement(Section, { key: rowIdx },
@@ -1695,14 +1747,14 @@ function renderImageBlock(section: EmailSection, config: StyleConfig, si = 0, pr
             React.createElement(Column, {
               key: i,
               className: 'em-col',
-              style: { width: `${100 / cols}%`, verticalAlign: 'top' as const }
+              style: { width: `${100 / cols}%`, verticalAlign: 'top' as const, ...(section.imageGap ? { padding: `${section.imageGap / 2}px` } : {}) }
             },
-              React.createElement(Img, {
+              linkImage(img.linkUrl, React.createElement(Img, {
                 src: img.url,
                 alt: img.alt,
                 width: '300',
                 style: { width: '100%', display: 'block' }
-              })
+              }))
             )
           )
         )
@@ -1728,7 +1780,7 @@ function renderAnnouncement(section: EmailSection, config: StyleConfig, primaryC
         border: `2px solid ${accent}`,
         borderRadius: config.sectionBorderRadius,
         padding: '24px',
-        textAlign: 'center' as const,
+        textAlign: (section.align ?? 'center') as 'left' | 'center' | 'right',
       }
     },
       section.eyebrow
@@ -1834,11 +1886,11 @@ function renderCta(section: EmailSection, config: StyleConfig, primaryColor: str
         background: section.backgroundImageOverlay ||
           `linear-gradient(to bottom, ${palette.primaryDark}40 0%, ${palette.accentDark}f0 100%)`,
         padding: config.sectionPadding,
-        textAlign: 'center' as const,
+        textAlign: (section.align ?? 'center') as 'left' | 'center' | 'right',
       }
     : {
         padding: config.sectionPadding,
-        textAlign: 'center' as const,
+        textAlign: (section.align ?? 'center') as 'left' | 'center' | 'right',
       };
 
   return React.createElement(Section, { style: { ...sectionBgStyle, borderRadius: config.sectionBorderRadius, ...(hasBgImage ? { overflow: 'hidden' as const } : {}) } },
@@ -1928,17 +1980,17 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
   const fg  = section.textColor   || config.bodyColor;
   const btn = section.buttonColor || secondaryColor;
   return React.createElement(Section, {
-    style: { padding: '24px 0 20px 0', textAlign: 'center' as const, ...bgFillStyle(section, config.sectionBorderRadius) }
+    style: { padding: spacedPadding('24px 0 20px 0', section.spacing), textAlign: 'center' as const, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     React.createElement(Hr, { style: config.hrStyle }),
     section.logoUrl
-      ? React.createElement(Img, {
+      ? linkImage(section.logoLinkUrl, React.createElement(Img, {
           src: section.logoUrl,
           alt: section.logoAlt || '',
-          height: '28',
+          height: String(section.logoHeight ?? 28),
           className: 'em-logo',
-          style: { height: '28px', maxWidth: '120px', width: 'auto', margin: '0 auto 14px auto', display: 'block', opacity: '0.7' }
-        })
+          style: { height: `${section.logoHeight ?? 28}px`, maxWidth: section.logoHeight ? `${section.logoHeight * 4}px` : '120px', width: 'auto', margin: '0 auto 14px auto', display: 'block', opacity: '0.7' }
+        }))
       : null,
     React.createElement(Text, {
       ...pv(preview, si, 'text'),
@@ -1961,6 +2013,18 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
           }
         }, section.buttonText)
       : null,
+    section.secondaryButtonText
+      ? React.createElement(Link, {
+          href: section.secondaryButtonUrl || '#',
+          style: {
+            fontFamily: config.fontFamily,
+            fontSize: '11px',
+            color: btn,
+            textDecoration: 'underline',
+            marginLeft: section.buttonText ? '14px' : '0',
+          }
+        }, section.secondaryButtonText)
+      : null,
     React.createElement(Text, {
       style: {
         fontFamily: config.fontFamily,
@@ -1969,7 +2033,7 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
         margin: '10px 0 0 0',
       }
     },
-      'Don\'t want these emails? ',
+      (section.unsubscribeText ?? 'Don\'t want these emails?') ? `${section.unsubscribeText ?? 'Don\'t want these emails?'} ` : null,
       React.createElement(Link, {
         href: section.unsubscribeUrl || '{{unsubscribe_url}}',
         style: {
@@ -1978,7 +2042,7 @@ function renderFooter(section: EmailSection, config: StyleConfig, secondaryColor
           color: fg + '66',
           textDecoration: 'underline',
         }
-      }, 'Unsubscribe')
+      }, section.unsubscribeLinkText ?? 'Unsubscribe')
     )
   );
 }
@@ -1988,18 +2052,18 @@ function renderHeader(section: EmailSection, config: StyleConfig, primaryColor: 
   const btn = section.buttonColor || secondaryColor;  // tagline + nav links
   const borderVal = `${config.hrStyle.borderWidth ?? '1px'} ${config.hrStyle.borderStyle ?? 'solid'} ${config.hrStyle.borderColor ?? '#e0e0e0'}`;
   return React.createElement(Section, {
-    style: { padding: '20px 0', borderBottom: borderVal, marginBottom: '8px', ...bgFillStyle(section, config.sectionBorderRadius) }
+    style: { padding: spacedPadding('20px 0', section.spacing), borderBottom: borderVal, marginBottom: '8px', ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     fixedRow(
       React.createElement(Column, { style: { verticalAlign: 'middle' } },
         section.logoUrl
-          ? React.createElement(Img, {
+          ? linkImage(section.logoLinkUrl, React.createElement(Img, {
               src: section.logoUrl,
               alt: section.logoAlt || 'Logo',
-              height: '40',
+              height: String(section.logoHeight ?? 40),
               className: 'em-logo',
-              style: { height: '40px', maxWidth: '160px', width: 'auto', display: 'block' }
-            })
+              style: { height: `${section.logoHeight ?? 40}px`, maxWidth: section.logoHeight ? `${section.logoHeight * 4}px` : '160px', width: 'auto', display: 'block' }
+            }))
           : React.createElement(Text, {
               style: {
                 fontFamily: config.fontFamily,
@@ -2063,23 +2127,23 @@ function renderImageText(section: EmailSection, config: StyleConfig, primaryColo
   const imageCol = hasImage ? React.createElement(Column, {
     className: 'em-col',
     style: {
-      width: '45%',
+      width: `${section.imageWidthPercent ?? 45}%`,
       verticalAlign: 'middle' as const,
       paddingRight: isLeft ? '20px' : '0',
       paddingLeft: isLeft ? '0' : '20px',
     }
   },
-    React.createElement(Img, {
+    linkImage(section.imageLinkUrl, React.createElement(Img, {
       src: section.imageUrl!,
       alt: section.imageAlt || '',
       width: '520',
       style: { width: '100%', borderRadius: config.borderRadius, display: 'block' }
-    })
+    }))
   ) : null;
 
   const textCol = React.createElement(Column, {
     className: 'em-col',
-    style: { width: hasImage ? '55%' : '100%', verticalAlign: 'middle' as const }
+    style: { width: hasImage ? `${100 - (section.imageWidthPercent ?? 45)}%` : '100%', verticalAlign: 'middle' as const }
   },
     section.heading
       ? React.createElement(Heading, {
@@ -2222,6 +2286,25 @@ function renderCoupon(section: EmailSection, config: StyleConfig, primaryColor: 
               margin: '0',
             }
           }, section.expiryText)
+        : null,
+      section.buttonText
+        ? React.createElement(Button, {
+            href: section.buttonUrl || '#',
+            className: 'em-btn',
+            style: {
+              display: 'inline-block',
+              marginTop: '16px',
+              padding: config.buttonPadding,
+              backgroundColor: btn,
+              color: cardTextColor(btn),
+              fontFamily: config.fontFamily,
+              fontWeight: '700',
+              fontSize: '14px',
+              borderRadius: config.buttonBorderRadius,
+              textDecoration: 'none',
+              boxShadow: config.buttonShadow,
+            }
+          }, section.buttonText)
         : null
     )
   );
@@ -2251,7 +2334,7 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
   const btn = section.buttonColor || primaryColor;
   const links = section.socialLinks || [];
   return React.createElement(Section, {
-    style: { padding: '16px 0', textAlign: 'center' as const, ...bgFillStyle(section, config.sectionBorderRadius) }
+    style: { padding: spacedPadding('16px 0', section.spacing), textAlign: 'center' as const, ...bgFillStyle(section, config.sectionBorderRadius) }
   },
     section.heading
       ? React.createElement(Text, {
@@ -2291,9 +2374,9 @@ function renderSocialLinks(section: EmailSection, config: StyleConfig, primaryCo
             ? React.createElement(Img, {
                 src: resolvedIconUrl,
                 alt: link.platform,
-                width: '28',
-                height: '28',
-                style: { width: '28px', height: '28px', display: 'block' }
+                width: String(section.socialIconSize ?? 28),
+                height: String(section.socialIconSize ?? 28),
+                style: { width: `${section.socialIconSize ?? 28}px`, height: `${section.socialIconSize ?? 28}px`, display: 'block' }
               })
             : (link.icon || link.platform)
         );
@@ -2344,13 +2427,13 @@ function renderColumns(section: EmailSection, config: StyleConfig, primaryColor:
                 )
               : null,
             col.imageUrl
-              ? React.createElement(Img, {
+              ? linkImage(col.imageLinkUrl, React.createElement(Img, {
                   src: col.imageUrl,
                   alt: col.heading || '',
-                  width: '80',
-                  height: '80',
+                  width: String(section.columnImageSize ?? 80),
+                  height: String(section.columnImageSize ?? 80),
                   style: { borderRadius: config.borderRadius, margin: '0 auto 12px auto', display: 'block' }
-                })
+                }))
               : null,
             col.heading
               ? React.createElement(Text, {
@@ -2426,7 +2509,7 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
               lineHeight: '1.5',
               margin: '0 0 12px 0',
             }
-          }, `\u201C${section.text}\u201D`)
+          }, section.quoteMarks === false ? section.text : `\u201C${section.text}\u201D`)
         : null,
       section.author
         ? React.createElement(Text, {
@@ -2440,7 +2523,7 @@ function renderQuote(section: EmailSection, config: StyleConfig, primaryColor: s
               color: btn,
               margin: '0',
             }
-          }, `\u2014 ${section.author}${section.authorTitle ? `, ${section.authorTitle}` : ''}`)
+          }, `${section.authorDash === false ? '' : '\u2014 '}${section.author}${section.authorTitle ? `, ${section.authorTitle}` : ''}`)
         : null
     )
   );
@@ -2450,7 +2533,11 @@ function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColo
   const fg = section.textColor || config.bodyColor;
   // Pick a theme based on design style background
   const isDark = config.bodyBg === '#0a0a0f' || config.bodyBg === '#ffffff' && config.bodyColor === '#000000';
-  const theme = isDark ? oneDark : atomDark;
+  const theme =
+    section.codeTheme === 'dark' ? oneDark
+    : section.codeTheme === 'light' ? oneLight
+    : section.codeTheme === 'dracula' ? dracula
+    : isDark ? oneDark : atomDark;
   return React.createElement(Section, {
     className: 'em-section',
     style: { padding: config.sectionPadding, ...bgFillStyle(section) }
@@ -2497,7 +2584,7 @@ function renderCodeBlock(section: EmailSection, config: StyleConfig, primaryColo
 
 function renderDivider(section: EmailSection, config: StyleConfig, si = 0, preview = false): React.ReactElement {
   return React.createElement(Section, {
-    style: { padding: '4px 0' }
+    style: { padding: spacedPadding('4px 0', section.spacing) }
   },
     React.createElement(Hr, { style: config.hrStyle }),
     section.text
@@ -2524,6 +2611,8 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
   const cFg      = cardTextColor(config.cardStyle.backgroundColor as string | undefined);
   const cFgMuted = cFg + '99';
   const items    = section.testimonials || [];
+  const avatar   = section.avatarSize ?? 36;
+  const avatarRadius = section.avatarShape === 'square' ? '0' : '50%';
 
   const headingEl = section.heading
     ? React.createElement(Heading, {
@@ -2575,7 +2664,7 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
             },
               React.createElement('div', { style: { ...config.cardStyle } },
                 // Star rating
-                React.createElement(Text, {
+                section.showRatings === false ? null : React.createElement(Text, {
                   style: {
                     fontFamily: "'Arial', sans-serif",
                     fontSize: '16px',
@@ -2594,17 +2683,17 @@ function renderTestimonials(section: EmailSection, config: StyleConfig, primaryC
                     lineHeight: '1.65',
                     margin: '0 0 16px 0',
                   }
-                }, `\u201C${item.quote}\u201D`),
+                }, section.quoteMarks === false ? item.quote : `\u201C${item.quote}\u201D`),
                 // Author: avatar + name/title
                 fixedRow(
                   item.authorImage
-                    ? React.createElement(Column, { style: { width: '44px', verticalAlign: 'middle' } },
+                    ? React.createElement(Column, { style: { width: `${avatar + 8}px`, verticalAlign: 'middle' } },
                         React.createElement(Img, {
                           src: item.authorImage,
                           alt: item.author,
-                          width: '36',
-                          height: '36',
-                          style: { width: '36px', height: '36px', borderRadius: '50%', display: 'block' }
+                          width: String(avatar),
+                          height: String(avatar),
+                          style: { width: `${avatar}px`, height: `${avatar}px`, borderRadius: avatarRadius, display: 'block' }
                         })
                       )
                     : null,
@@ -2657,6 +2746,9 @@ function renderSection(
   // Tag the style's container styles so applyElementStyles() can find (and let the user restyle) each card, icon box and badge.
   const config: StyleConfig = {
     ...withBorder,
+    // image-block applies spacing itself (its vertical padding is derived from this value).
+    sectionPadding: section.type === 'image-block' ? withBorder.sectionPadding : spacedPadding(withBorder.sectionPadding, section.spacing),
+    heroAlign: section.align ?? withBorder.heroAlign,
     cardStyle: boxed(withBorder.cardStyle, 'card'),
     iconBoxStyle: boxed(withBorder.iconBoxStyle, 'iconBox'),
     badgeStyle: boxed(withBorder.badgeStyle, 'badge'),
@@ -2664,6 +2756,11 @@ function renderSection(
   let el = renderSectionByType(section, si, config, primaryColor, secondaryColor, palette, preview);
   if (!el) return el;
   if (border?.mode === 'custom' && border.outline) el = applyOutline(el, border);
+  // Blocks whose text just inherits alignment (the hero, CTA and announcement set theirs explicitly above).
+  if (section.align && (section.type === 'content' || section.type === 'quote')) {
+    const props = el.props as { style?: React.CSSProperties };
+    el = React.cloneElement(el, { style: { ...props.style, textAlign: section.align } } as Record<string, unknown>);
+  }
   return applyElementStyles(el, section, si, preview);
 }
 
@@ -2815,7 +2912,7 @@ export async function generateEmailHtml(
     React.createElement(Preview, null, email.previewText),
     React.createElement(Body, {
       style: {
-        backgroundColor: backgroundColor || config.bodyBg,
+        backgroundColor: email.frame?.pageColor || backgroundColor || config.bodyBg,
         margin: '0',
         padding: '20px 0',
         fontFamily: config.fontFamily,

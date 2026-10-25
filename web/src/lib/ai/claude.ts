@@ -47,7 +47,10 @@ export interface ElementStyle {
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
+  /** Text alignment; for buttons, where the button sits in its row. */
   align?: 'left' | 'center' | 'right';
+  /** Buttons only: stretch to the full width of the block. */
+  fullWidth?: boolean;
   /** Border / corner radius / shadow for buttons, cards, boxes and images. */
   border?: BorderOverride;
 }
@@ -58,6 +61,10 @@ export interface FrameOverride extends BorderOverride {
   accentBar?: 'default' | 'none' | 'custom';
   accentBarColor?: string;
   accentBarWidth?: number;
+  /** Background color of the page behind the email (default: the brand's background color / style default). */
+  pageColor?: string;
+  /** Email width in px (default 600). */
+  width?: number;
 }
 
 export interface EmailSection {
@@ -129,6 +136,8 @@ export interface EmailSection {
     caption?: string;
     /** 5–8 word photographic scene description for Pexels. Describe the specific visual: subject + setting + mood. BAD: "food". GOOD: "chef plating gourmet dish restaurant kitchen steam". */
     keyword?: string;
+    /** Where clicking this image goes. */
+    linkUrl?: string;
   }>;
   // For stats sections
   stats?: Array<{
@@ -167,6 +176,8 @@ export interface EmailSection {
     /** Phosphor icon name for email clients — e.g. "rocket", "shield-check", "lightning", "globe" */
     iconName?: string;
     imageUrl?: string;
+    /** Where clicking the column image goes. */
+    imageLinkUrl?: string;
     buttonText?: string;
     buttonUrl?: string;
   }>;
@@ -196,6 +207,46 @@ export interface EmailSection {
   backgroundImageOverlay?: string;
   /** Border/shadow overrides for this block's cards, boxes, dividers (and optionally the whole block). Undefined = design style defaults. */
   border?: BorderOverride;
+  // ── Small layout / wording controls (all optional; undefined = the renderer's own default) ──
+  /** Text alignment for hero, content, CTA, announcement and quote blocks. */
+  align?: 'left' | 'center' | 'right';
+  /** Padding above/below the block in px. */
+  spacing?: { top?: number; bottom?: number };
+  /** Where the hero's inline image / the image-text image links to. */
+  imageLinkUrl?: string;
+  /** Where the header/footer logo links to. */
+  logoLinkUrl?: string;
+  /** Header/footer logo height in px (defaults: header 40, footer 28). */
+  logoHeight?: number;
+  /** Hero inline image max width in px (default 520). */
+  imageMaxWidth?: number;
+  /** Image-text: how much of the row the image takes, in percent (default 45). */
+  imageWidthPercent?: number;
+  /** Columns: image size in px (default 80). */
+  columnImageSize?: number;
+  /** Social links: icon size in px (default 28). */
+  socialIconSize?: number;
+  /** Testimonial(s): author photo size in px, and its shape (default circle). */
+  avatarSize?: number;
+  avatarShape?: 'circle' | 'square';
+  /** Gallery / image-block: gap between images in px. */
+  imageGap?: number;
+  /** Gallery: print each image's alt text as a visible label under it (default true). */
+  showImageAlt?: boolean;
+  /** Testimonial(s) and quote: add curly quote marks around the quote automatically (default true). */
+  quoteMarks?: boolean;
+  /** Quote: put a dash before the author's name (default true). */
+  authorDash?: boolean;
+  /** Testimonials grid: show star ratings (default true). */
+  showRatings?: boolean;
+  /** Footer: wording of the unsubscribe line, e.g. "Don't want these emails?" and "Unsubscribe". */
+  unsubscribeText?: string;
+  unsubscribeLinkText?: string;
+  /** Pricing: label on the highlighted plan (default "Recommended") and the marker before each feature (default a check mark; empty string for none). */
+  recommendedLabel?: string;
+  featureMarker?: string;
+  /** Code block color theme (default: picked from the design style). */
+  codeTheme?: 'auto' | 'dark' | 'light' | 'dracula';
   /**
    * Per-element overrides, keyed by element id ('heading', 'text:0', 'button#0', 'card#2', 'icon#1', or a
    * wildcard like 'card#*'). Ids come from the renderer, see applyElementStyles in lib/email/overrides.ts.
@@ -1059,6 +1110,7 @@ STYLING FIELDS (all optional; leave a field out to keep the design style's defau
 - section.border: { mode: 'default'|'none'|'custom', width (px), color, lineStyle: 'solid'|'dashed'|'dotted', radius (px), shadowMode: 'default'|'none'|'custom', shadowColor, shadowOffset (px), shadowBlur (px), outline (boolean, custom mode only: also draw the border around the whole block) }. Controls the borders, corner radius and shadow of that block's cards, boxes, badges and dividers. "Remove the borders" means { mode: 'none', shadowMode: 'none' } on each affected block.
 - email.frame (top level, next to "sections"): the same fields except outline, plus accentBar: 'default'|'none'|'custom', accentBarColor, accentBarWidth (px). Controls the outer email container's border, corners, shadow and the colored bar across the top.
 - section.styles: per-element overrides, an object keyed by element id. Each value may contain: color, backgroundColor, fontSize (px number), bold, italic, underline (booleans), align ('left'|'center'|'right'), border (same shape as section.border, for buttons, cards, boxes and images). Element ids: 'heading', 'subheading', 'intro', 'eyebrow', 'text:0' (first paragraph, 'text:1' the second...), 'quote', 'author', 'authorTitle', 'button#0' (the block's first button), 'link#0' (first text link, e.g. the secondary action), 'card#0' (first card), 'iconBox#0', 'icon#0' (icon glyph color), 'badge#0' (the pill behind the eyebrow label), 'image#0', 'text#0' (first other text, such as a feature title or description). A trailing * styles every item of that kind at once, e.g. 'card#*' or 'text#*'. Example: { "heading": { "color": "#ff0000", "fontSize": 40 }, "button#0": { "backgroundColor": "#000000", "color": "#ffffff", "border": { "mode": "none", "radius": 0 } } }.
+- Other optional section fields: align ('left'|'center'|'right', for hero/content/cta/announcement/quote), spacing { top, bottom } (padding in px), imageLinkUrl / logoLinkUrl / images[].linkUrl / columns[].imageLinkUrl (where an image links to), logoHeight, imageMaxWidth, imageWidthPercent, columnImageSize, socialIconSize, avatarSize, avatarShape ('circle'|'square'), imageGap, showImageAlt, quoteMarks, authorDash, showRatings, unsubscribeText / unsubscribeLinkText (footer wording), recommendedLabel / featureMarker (pricing), codeTheme ('auto'|'dark'|'light'|'dracula'). Element styles on a button may also set align ('left'|'center'|'right') or fullWidth (boolean). email.frame may also set pageColor (hex) and width (px).
 Use these fields when the user asks about borders, shadows, rounded corners, or the look of one specific element (for example "make the button square", "remove the card borders", "make the heading bigger"). Copy border, styles and frame EXACTLY from the input for anything the user did not ask you to change.
 
 RULES:

@@ -184,6 +184,8 @@ export function applyElementStyles(
       if (ov) {
         style = style ?? {};
         if (ov.backgroundColor) style.backgroundColor = ov.backgroundColor;
+        // Plain-string children (e.g. the number in a numbered badge) inherit this.
+        if (ov.color) style.color = ov.color;
         if (ov.border) style = overrideBox(style as React.CSSProperties, ov.border) as AnyProps;
         const fg = ov.color ?? (isHex(ov.backgroundColor) ? cardTextColor(ov.backgroundColor) : undefined);
         if (fg) childCtx = { fg };
@@ -206,6 +208,7 @@ export function applyElementStyles(
         if (ov.color) style.color = ov.color;
         if (ov.fontSize) style.fontSize = `${ov.fontSize}px`;
         if (ov.bold != null) style.fontWeight = ov.bold ? '700' : '400';
+        if (ov.fullWidth) Object.assign(style, { display: 'block', width: '100%', boxSizing: 'border-box', textAlign: 'center' });
         if (ov.border) style = overrideBox(style as React.CSSProperties, ov.border) as AnyProps;
       }
     } else if (kind === 'image') {
@@ -235,11 +238,17 @@ export function applyElementStyles(
 
     const children = props.children as React.ReactNode;
     const mapped = children === undefined ? undefined : visit(children, childCtx, false);
-    const config = { ...next, key: el.key ?? undefined };
-    if (mapped === undefined) return React.createElement(el.type, config);
-    return Array.isArray(mapped)
-      ? React.createElement(el.type, config, ...mapped)
-      : React.createElement(el.type, config, mapped);
+    // A button with an alignment (and not full width) sits inside a wrapper that carries the text-align.
+    const wrapAlign = kind === 'button' && ov?.align && !ov.fullWidth ? ov.align : undefined;
+    const config = { ...next, key: wrapAlign ? undefined : el.key ?? undefined };
+    const built = mapped === undefined
+      ? React.createElement(el.type, config)
+      : Array.isArray(mapped)
+        ? React.createElement(el.type, config, ...mapped)
+        : React.createElement(el.type, config, mapped);
+    return wrapAlign
+      ? React.createElement('div', { key: el.key ?? undefined, style: { textAlign: wrapAlign } }, built)
+      : built;
   };
 
   return visit(root, {}, true) as React.ReactElement;

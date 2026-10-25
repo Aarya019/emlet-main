@@ -36,6 +36,88 @@ interface EmailEditorProps {
   emailId: string;
 }
 
+/** Which optional fields each block type actually renders, so the editor offers them even when the generated JSON left them out. */
+const FIELD_SUPPORT: Record<'heading' | 'subheading' | 'button' | 'secondaryButton' | 'image', EmailSection['type'][]> = {
+  heading: ['hero', 'content', 'cta', 'announcement', 'image-text', 'feature-list', 'testimonials', 'pricing-table', 'stats', 'gallery', 'columns', 'coupon', 'social-links', 'code-block'],
+  subheading: ['hero', 'testimonials', 'image-block', 'code-block'],
+  button: ['hero', 'content', 'cta', 'announcement', 'image-text', 'coupon', 'footer'],
+  secondaryButton: ['hero', 'cta', 'announcement', 'footer'],
+  image: ['hero', 'image-text'],
+};
+const supportsField = (type: EmailSection['type'], field: keyof typeof FIELD_SUPPORT) => FIELD_SUPPORT[field].includes(type);
+
+const layoutInputCls =
+  'w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20';
+const layoutLabelCls = 'block text-[10px] text-white/30 mb-1 uppercase tracking-wider';
+
+function LayoutNumber({ label, value, placeholder, min = 0, max = 999, onChange }: {
+  label: string; value: number | undefined; placeholder: string; min?: number; max?: number; onChange: (v: number | undefined) => void;
+}) {
+  return (
+    <div>
+      <label className={layoutLabelCls}>{label}</label>
+      <input
+        type="number"
+        min={min}
+        max={max}
+        value={value ?? ''}
+        placeholder={placeholder}
+        onChange={e => onChange(e.target.value === '' ? undefined : Math.min(max, Math.max(min, Number(e.target.value))))}
+        className={layoutInputCls}
+      />
+    </div>
+  );
+}
+
+function LayoutText({ label, value, placeholder, onChange, wide, hint }: {
+  label: string; value: string | undefined; placeholder: string; onChange: (v: string | undefined) => void; wide?: boolean; hint?: string;
+}) {
+  return (
+    <div className={wide ? 'col-span-2' : ''}>
+      <label className={layoutLabelCls}>{label}</label>
+      <input type="text" value={value ?? ''} placeholder={placeholder} onChange={e => onChange(e.target.value === '' ? undefined : e.target.value)} className={layoutInputCls} />
+      {hint && <p className="text-[10px] text-white/25 mt-1">{hint}</p>}
+    </div>
+  );
+}
+
+function LayoutSelect<T extends string>({ label, value, options, onChange }: {
+  label: string; value: T | undefined; options: Array<{ value: T | ''; label: string }>; onChange: (v: T | undefined) => void;
+}) {
+  return (
+    <div>
+      <label className={layoutLabelCls}>{label}</label>
+      <select value={value ?? ''} onChange={e => onChange(e.target.value === '' ? undefined : (e.target.value as T))} className={layoutInputCls}>
+        {options.map(o => (
+          <option key={o.value} value={o.value} className="bg-black">{o.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+/** Checkbox for a setting that is ON unless explicitly set to false. */
+function LayoutToggle({ label, value, onChange }: { label: string; value: boolean | undefined; onChange: (v: boolean | undefined) => void }) {
+  return (
+    <label className="flex items-center gap-2 text-[11px] text-white/50 cursor-pointer col-span-2">
+      <input type="checkbox" checked={value !== false} onChange={e => onChange(e.target.checked ? undefined : false)} className="accent-[#00ffff]" />
+      {label}
+    </label>
+  );
+}
+
+/** Merges a patch into the frame overrides, dropping undefined fields and returning undefined once nothing is left. */
+function mergeFrame(current: FrameOverride | undefined, patch: Partial<FrameOverride>): FrameOverride | undefined {
+  const next: Record<string, unknown> = { ...(current || {}), ...patch };
+  for (const k of Object.keys(next)) if (next[k] === undefined) delete next[k];
+  return Object.keys(next).length ? (next as FrameOverride) : undefined;
+}
+
+function nextSpacing(current: EmailSection['spacing'], key: 'top' | 'bottom', v: number | undefined): EmailSection['spacing'] {
+  const next = { ...(current || {}), [key]: v };
+  return next.top == null && next.bottom == null ? undefined : next;
+}
+
 function SortableSectionItem({ id, children }: { id: number; children: (dragHandleProps: React.HTMLAttributes<HTMLElement>) => React.ReactNode }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style: React.CSSProperties = {
@@ -207,7 +289,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
     'pricing-table': { heading: 'Pricing', plans: [{ name: 'Pro', price: '$29', period: '/mo', features: ['Feature A', 'Feature B'], buttonText: 'Start Free Trial' }] },
     coupon:        { heading: 'Special Offer', text: 'Use this code at checkout.', code: 'SAVE20', expiryText: 'Expires soon' },
     columns:       { heading: '', columns: [{ heading: 'Column 1', text: 'Content here.' }, { heading: 'Column 2', text: 'Content here.' }] },
-    'social-links': { heading: '', text: 'Follow us on social media', socialLinks: [{ platform: 'Twitter', url: 'https://' }, { platform: 'Instagram', url: 'https://' }] },
+    'social-links': { heading: 'Follow us', socialLinks: [{ platform: 'Twitter', url: 'https://' }, { platform: 'Instagram', url: 'https://' }] },
     header:        { logoUrl: '', logoAlt: 'Logo', tagline: '', columns: [] },
     footer:        { text: 'You received this email because you subscribed. Unsubscribe.', buttonText: '', buttonUrl: '', logoUrl: '' },
     divider:       { text: '' },
@@ -1349,6 +1431,28 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       {editedEmail.frame && <span className="normal-case text-[#00ffff]/60 font-normal">· customised</span>}
                     </summary>
                     <div className="px-4 pb-4">
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                          <label className={layoutLabelCls}>Page background</label>
+                          <div className="flex items-center gap-1.5">
+                            <input
+                              type="color"
+                              value={/^#[0-9a-f]{6}$/i.test(editedEmail.frame?.pageColor || '') ? editedEmail.frame!.pageColor : (defaultColors?.bodyBg ?? '#ffffff')}
+                              onChange={e => updateFrame(mergeFrame(editedEmail.frame, { pageColor: e.target.value }))}
+                              className="w-7 h-7 rounded cursor-pointer border border-white/20 bg-transparent p-0.5 flex-shrink-0"
+                            />
+                            <input
+                              type="text"
+                              value={editedEmail.frame?.pageColor || ''}
+                              placeholder="default"
+                              onChange={e => updateFrame(mergeFrame(editedEmail.frame, { pageColor: e.target.value || undefined }))}
+                              className={layoutInputCls}
+                            />
+                          </div>
+                        </div>
+                        <LayoutNumber label="Email width (px)" value={editedEmail.frame?.width} placeholder="600" min={320} max={760}
+                          onChange={v => updateFrame(mergeFrame(editedEmail.frame, { width: v }))} />
+                      </div>
                       <BorderControls value={editedEmail.frame} onChange={updateFrame} allowAccentBar />
                     </div>
                   </details>
@@ -1591,14 +1695,14 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="e.g. New Feature, Announcement…" />
                                 </div>
                               )}
-                              {section.heading !== undefined && (
+                              {(section.heading !== undefined || supportsField(section.type, 'heading')) && (
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Heading</label>
                                   <input type="text" value={section.heading || ''} onChange={e => updateSection(index, { heading: e.target.value })}
                                     className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Enter heading…" />
                                 </div>
                               )}
-                              {section.subheading !== undefined && (
+                              {(section.subheading !== undefined || supportsField(section.type, 'subheading')) && (
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Subheading</label>
                                   <input type="text" value={section.subheading || ''} onChange={e => updateSection(index, { subheading: e.target.value })}
@@ -1619,7 +1723,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Enter content…" />
                                 </div>
                               )}
-                              {section.buttonText !== undefined && (
+                              {(section.buttonText !== undefined || supportsField(section.type, 'button')) && (
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Button Text</label>
@@ -1634,7 +1738,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   </div>
                                 </div>
                               )}
-                              {section.buttonText !== undefined && ['cta', 'hero', 'announcement'].includes(section.type) && (
+                              {supportsField(section.type, 'secondaryButton') && (
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Secondary Button</label>
@@ -1649,7 +1753,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   </div>
                                 </div>
                               )}
-                              {section.imageUrl !== undefined && (
+                              {(section.imageUrl !== undefined || supportsField(section.type, 'image')) && (
                                 <ImageUploadInput
                                   label="Image URL"
                                   value={section.imageUrl || ''}
@@ -1657,7 +1761,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   onRemove={section.imageUrl ? () => updateSection(index, { imageUrl: '' }) : undefined}
                                 />
                               )}
-                              {section.imageUrl !== undefined && (
+                              {(section.imageUrl !== undefined || supportsField(section.type, 'image')) && (
                                 <div className="grid grid-cols-2 gap-3">
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Image Alt Text</label>
@@ -2045,6 +2149,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         <input type="text" value={img.keyword || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, keyword: e.target.value } : x); updateSection(index, { images: imgs }); }}
                                           className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Pexels keyword" />
                                       </div>
+                                      <input type="text" value={img.linkUrl || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, linkUrl: e.target.value || undefined } : x); updateSection(index, { images: imgs }); }}
+                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Links to (optional) https://…" />
                                       <input type="text" value={img.caption || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, caption: e.target.value } : x); updateSection(index, { images: imgs }); }}
                                         className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Caption (optional)" />
                                     </div>
@@ -2089,6 +2195,8 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         <input type="text" value={img.keyword || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, keyword: e.target.value } : x); updateSection(index, { images: imgs }); }}
                                           className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Pexels keyword" />
                                       </div>
+                                      <input type="text" value={img.linkUrl || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, linkUrl: e.target.value || undefined } : x); updateSection(index, { images: imgs }); }}
+                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Links to (optional) https://…" />
                                     </div>
                                   ))}
                                   <input type="text" value={section.subheading || ''} onChange={e => updateSection(index, { subheading: e.target.value })}
@@ -2203,6 +2311,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         compact
                                         placeholder="Column image URL (optional)"
                                       />
+                                      {col.imageUrl && (
+                                        <input type="text" value={col.imageLinkUrl || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, imageLinkUrl: e.target.value || undefined } : x); updateSection(index, { columns: c }); }}
+                                          className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Image links to (optional) https://…" />
+                                      )}
                                       <div className="grid grid-cols-2 gap-2">
                                         <input type="text" value={col.buttonText || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, buttonText: e.target.value } : x); updateSection(index, { columns: c }); }}
                                           className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button text" />
@@ -2313,6 +2425,105 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                               )}
 
 
+
+                              {/* ── Layout, spacing & wording ── */}
+                              <details className="pt-3 mt-1 border-t border-white/10 group">
+                                <summary className="cursor-pointer select-none text-xs text-white/40 uppercase tracking-wider list-none flex items-center gap-1.5">
+                                  <span className="inline-block transition-transform group-open:rotate-90">▸</span>
+                                  Layout, spacing &amp; wording
+                                </summary>
+                                <div className="mt-3 grid grid-cols-2 gap-3">
+                                  <LayoutNumber label="Space above (px)" value={section.spacing?.top} placeholder="default" max={200}
+                                    onChange={v => updateSection(index, { spacing: nextSpacing(section.spacing, 'top', v) })} />
+                                  <LayoutNumber label="Space below (px)" value={section.spacing?.bottom} placeholder="default" max={200}
+                                    onChange={v => updateSection(index, { spacing: nextSpacing(section.spacing, 'bottom', v) })} />
+
+                                  {['hero', 'content', 'cta', 'announcement', 'quote'].includes(section.type) && (
+                                    <LayoutSelect label="Text alignment" value={section.align}
+                                      options={[{ value: '', label: 'Style default' }, { value: 'left', label: 'Left' }, { value: 'center', label: 'Center' }, { value: 'right', label: 'Right' }]}
+                                      onChange={align => updateSection(index, { align })} />
+                                  )}
+
+                                  {section.type === 'hero' && (section.imageUrl || supportsField('hero', 'image')) && (
+                                    <>
+                                      <LayoutNumber label="Image max width (px)" value={section.imageMaxWidth} placeholder="520" min={40} max={600} onChange={v => updateSection(index, { imageMaxWidth: v })} />
+                                      <LayoutText label="Image links to" value={section.imageLinkUrl} placeholder="https://…" wide onChange={v => updateSection(index, { imageLinkUrl: v })} />
+                                    </>
+                                  )}
+
+                                  {section.type === 'image-text' && (
+                                    <>
+                                      <LayoutNumber label="Image width (% of row)" value={section.imageWidthPercent} placeholder="45" min={15} max={75} onChange={v => updateSection(index, { imageWidthPercent: v })} />
+                                      <LayoutText label="Image links to" value={section.imageLinkUrl} placeholder="https://…" wide onChange={v => updateSection(index, { imageLinkUrl: v })} />
+                                    </>
+                                  )}
+
+                                  {(section.type === 'header' || section.type === 'footer') && (
+                                    <>
+                                      <LayoutNumber label="Logo height (px)" value={section.logoHeight} placeholder={section.type === 'header' ? '40' : '28'} min={12} max={160} onChange={v => updateSection(index, { logoHeight: v })} />
+                                      <LayoutText label="Logo links to" value={section.logoLinkUrl} placeholder="https://yoursite.com" wide onChange={v => updateSection(index, { logoLinkUrl: v })} />
+                                    </>
+                                  )}
+
+                                  {section.type === 'footer' && (
+                                    <>
+                                      <LayoutText label="Unsubscribe line" value={section.unsubscribeText} placeholder="Don't want these emails?" hint="Leave empty for the default. Your ESP's unsubscribe link is added after it." onChange={v => updateSection(index, { unsubscribeText: v })} />
+                                      <LayoutText label="Unsubscribe link text" value={section.unsubscribeLinkText} placeholder="Unsubscribe" onChange={v => updateSection(index, { unsubscribeLinkText: v })} />
+                                    </>
+                                  )}
+
+                                  {(section.type === 'gallery' || section.type === 'image-block') && (
+                                    <LayoutNumber label="Gap between images (px)" value={section.imageGap} placeholder={section.type === 'gallery' ? '8' : '0'} max={60} onChange={v => updateSection(index, { imageGap: v })} />
+                                  )}
+                                  {section.type === 'gallery' && (
+                                    <LayoutToggle label="Show each image's alt text under it" value={section.showImageAlt} onChange={v => updateSection(index, { showImageAlt: v })} />
+                                  )}
+
+                                  {section.type === 'columns' && (
+                                    <LayoutNumber label="Column image size (px)" value={section.columnImageSize} placeholder="80" min={24} max={300} onChange={v => updateSection(index, { columnImageSize: v })} />
+                                  )}
+
+                                  {section.type === 'social-links' && (
+                                    <LayoutNumber label="Icon size (px)" value={section.socialIconSize} placeholder="28" min={16} max={80} onChange={v => updateSection(index, { socialIconSize: v })} />
+                                  )}
+
+                                  {(section.type === 'testimonial' || section.type === 'testimonials') && (
+                                    <>
+                                      <LayoutNumber label="Photo size (px)" value={section.avatarSize} placeholder={section.type === 'testimonial' ? '56' : '36'} min={24} max={120} onChange={v => updateSection(index, { avatarSize: v })} />
+                                      <LayoutSelect label="Photo shape" value={section.avatarShape}
+                                        options={[{ value: '', label: 'Circle' }, { value: 'square', label: 'Square' }]}
+                                        onChange={avatarShape => updateSection(index, { avatarShape })} />
+                                    </>
+                                  )}
+                                  {section.type === 'testimonials' && (
+                                    <LayoutToggle label="Show star ratings" value={section.showRatings} onChange={v => updateSection(index, { showRatings: v })} />
+                                  )}
+                                  {(section.type === 'testimonial' || section.type === 'testimonials' || section.type === 'quote') && (
+                                    <LayoutToggle label="Add quote marks around the quote automatically" value={section.quoteMarks} onChange={v => updateSection(index, { quoteMarks: v })} />
+                                  )}
+                                  {section.type === 'quote' && (
+                                    <LayoutToggle label="Dash before the author's name" value={section.authorDash} onChange={v => updateSection(index, { authorDash: v })} />
+                                  )}
+
+                                  {section.type === 'pricing-table' && (
+                                    <>
+                                      <LayoutText label="Highlighted plan label" value={section.recommendedLabel} placeholder="Recommended" onChange={v => updateSection(index, { recommendedLabel: v })} />
+                                      <div>
+                                        <label className={layoutLabelCls}>Marker before each feature</label>
+                                        <input type="text" value={section.featureMarker ?? ''} placeholder="✓" onChange={e => updateSection(index, { featureMarker: e.target.value })} className={layoutInputCls} />
+                                        <button type="button" onClick={() => updateSection(index, { featureMarker: undefined })} className="text-[10px] text-white/30 hover:text-white/60 mt-1">use default</button>
+                                        <button type="button" onClick={() => updateSection(index, { featureMarker: '' })} className="text-[10px] text-white/30 hover:text-white/60 mt-1 ml-3">none</button>
+                                      </div>
+                                    </>
+                                  )}
+
+                                  {section.type === 'code-block' && (
+                                    <LayoutSelect label="Code theme" value={section.codeTheme}
+                                      options={[{ value: '', label: 'Auto (from style)' }, { value: 'dark', label: 'Dark' }, { value: 'light', label: 'Light' }, { value: 'dracula', label: 'Dracula' }]}
+                                      onChange={codeTheme => updateSection(index, { codeTheme })} />
+                                  )}
+                                </div>
+                              </details>
 
                               {/* ── Color overrides ── */}
                               {section.type !== 'divider' && (
