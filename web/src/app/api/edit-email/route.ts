@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
       subject: aiResult.subject || emailContent.subject,
       previewText: aiResult.previewText || emailContent.previewText,
       emailType: aiResult.emailType || emailContent.emailType,
+      frame: aiResult.frame ?? emailContent.frame,
       sections: finalSections,
     };
 
