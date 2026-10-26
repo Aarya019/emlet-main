@@ -3,6 +3,7 @@
 import { signUp, signInWithGoogle } from '@/app/actions/auth';
 import SubmitButton from '@/components/SubmitButton';
 import PasswordInput from '@/components/PasswordInput';
+import AuthEmailShowcase from '@/components/AuthEmailShowcase';
 import { useState, useEffect, useRef } from 'react';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 
@@ -154,36 +155,12 @@ export default function SignUpPage() {
               </p>
             </div>
 
-            <div className="space-y-6">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#00ff00]/20 border border-[#00ff00] flex items-center justify-center mt-1">
-                  <div className="w-2 h-2 rounded-full bg-[#00ff00]" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Free to start</h3>
-                  <p className="text-white/60 text-sm">No credit card required. Start creating instantly.</p>
-                </div>
-              </div>
+            <AuthEmailShowcase />
 
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#00ffff]/20 border border-[#00ffff] flex items-center justify-center mt-1">
-                  <div className="w-2 h-2 rounded-full bg-[#00ffff]" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Cancel anytime</h3>
-                  <p className="text-white/60 text-sm">Flexible plans that grow with your needs</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#ff00ff]/20 border border-[#ff00ff] flex items-center justify-center mt-1">
-                  <div className="w-2 h-2 rounded-full bg-[#ff00ff]" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Expert support</h3>
-                  <p className="text-white/60 text-sm">Get help whenever you need it</p>
-                </div>
-              </div>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/60">
+              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-[#00ff00]" />Free to start, no card needed</span>
+              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-[#00ffff]" />Cancel anytime</span>
+              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-[#ff00ff]" />Expert support</span>
             </div>
           </div>
         </div>
