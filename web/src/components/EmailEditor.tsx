@@ -1158,7 +1158,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   Beta
                 </span>
                 <button
-                  onClick={() => setAiChatOpen(true)}
+                  onClick={() => { setShowVerifyModal(false); setShowSendModal(false); setSendResult(null); setAiChatOpen(true); }}
                   className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-sm font-bold flex items-center gap-2 whitespace-nowrap hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1207,7 +1207,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 )}
               </button>
               <button
-                onClick={() => setShowVerifyModal(true)}
+                onClick={() => { if (aiLoading) return; setAiChatOpen(false); setShowSendModal(false); setSendResult(null); setShowVerifyModal(true); }}
                 disabled={!editedEmail}
                 className="relative px-4 py-2 rounded-lg border border-white/20 text-white hover:bg-white/5 transition-all text-sm font-medium flex items-center gap-2 whitespace-nowrap disabled:opacity-40"
               >
@@ -1223,6 +1223,9 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               </button>
               <button
                 onClick={() => {
+                  if (aiLoading) return;
+                  setAiChatOpen(false);
+                  setShowVerifyModal(false);
                   setSendResult(null);
                   setSendToEmail('');
                   setShowSendModal(true);
