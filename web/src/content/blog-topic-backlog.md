@@ -40,10 +40,10 @@ marketing) rather than clustering on one theme for many posts in a row.
 <!-- Researched 2026-10-14 via WebSearch (Gmail/Yahoo/Microsoft sender docs coverage, Constant Contact 2026 Small Business Now report, Litmus/Mailchimp/Campaign Monitor benchmark roundups, Instantly/Hostinger/DailyStory trend pieces). Pull from here before inventing a new topic cold. -->
 
 - published (gmail-yahoo-microsoft-bulk-sender-rules-small-list): Gmail/Yahoo/Microsoft bulk sender rules in 2026: does a small list need to care
-- queued: One-click unsubscribe: why it's no longer optional (Gmail/Yahoo/Microsoft now require it, RFC 8058 List-Unsubscribe header) and what actually implementing it involves (Deliverability)
+- published (one-click-unsubscribe-what-it-is-and-how-to-set-it-up): One-click unsubscribe: why it is no longer optional and what setting it up involves
 - published (ai-written-emails-all-sound-the-same): Why AI-written marketing emails all start to sound the same, and the edits that fix it
 - published (reply-rate-underused-email-metric): Reply rate as an email marketing metric: an underused signal, and how to write an email that invites one
 - published (mobile-email-design-what-still-breaks): Mobile email design in 2026: the specific things that still break on phones
 - published (retention-vs-acquisition-small-business-email): Retention vs acquisition: why the list you already have is a small business's most predictable growth lever
 - published (should-your-newsletter-sell-something): Should your newsletter actually be selling something? The shift from pure nurture content to hybrid sales newsletters
-- queued: SMS plus email: when a small business should actually add a second channel, and when it's just more noise (Small Business)
+- published (sms-plus-email-when-to-add-a-second-channel): SMS plus email: when a small business should add a second channel, and when it is just more noise
