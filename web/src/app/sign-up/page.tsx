@@ -130,70 +130,11 @@ export default function SignUpPage() {
         ))}
       </div>
 
-      {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-[#001a00]" />
-        
-        {/* Animated blobs */}
-        <div className="absolute top-20 left-20 w-96 h-96 bg-[#00ff00]/20 rounded-full blur-3xl animate-pulse-slower" />
-        <div className="absolute bottom-20 right-20 w-80 h-80 bg-[#00ffff]/20 rounded-full blur-3xl animate-pulse-slow" />
-        
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center px-16 py-12">
-          <div className="space-y-8">
-            <div>
-              <div className="flex items-center gap-3 mb-6">
-                <img src="/logo.png" alt="Emlet" className="h-12 w-auto" />
-              </div>
-              <h1 className="text-5xl font-bold text-white mb-4">
-                Start creating today
-              </h1>
-              <p className="text-xl text-white/70">
-                Join thousands of teams creating better emails, faster.
-              </p>
-            </div>
-
-            <div className="space-y-6">
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#00ff00]/20 border border-[#00ff00] flex items-center justify-center mt-1">
-                  <div className="w-2 h-2 rounded-full bg-[#00ff00]" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Free to start</h3>
-                  <p className="text-white/60 text-sm">No credit card required. Start creating instantly.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#00ffff]/20 border border-[#00ffff] flex items-center justify-center mt-1">
-                  <div className="w-2 h-2 rounded-full bg-[#00ffff]" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Cancel anytime</h3>
-                  <p className="text-white/60 text-sm">Flexible plans that grow with your needs</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-6 h-6 rounded-full bg-[#ff00ff]/20 border border-[#ff00ff] flex items-center justify-center mt-1">
-                  <div className="w-2 h-2 rounded-full bg-[#ff00ff]" />
-                </div>
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Expert support</h3>
-                  <p className="text-white/60 text-sm">Get help whenever you need it</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Right side - Sign up form */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 justify-center mb-8">
+          {/* Logo */}
+          <div className="flex items-center gap-2 justify-center mb-8">
             <img src="/logo.png" alt="Emlet" className="h-10 w-auto" />
           </div>
 
