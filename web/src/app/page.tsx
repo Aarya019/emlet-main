@@ -6,28 +6,32 @@ import Image from 'next/image';
 import { createClient } from '@/lib/supabase/client';
 import { getPaddle } from '@/lib/paddle/client';
 import StarField from '@/components/StarField';
+import StepVideo from '@/components/StepVideo';
 import type { User } from '@supabase/supabase-js';
 import type { PlanType } from '@/lib/db/types';
 
-// ── Replace these with your actual YouTube video IDs ──────────────────────────
-const STEPS = [
+// ── How-it-works steps ───────────────────────────────────────────────────────
+// `video` is the path of a short silent clip WITHOUT extension. Put the files in
+// public/videos/ (step-1.webm, step-1.mp4, step-1.webp poster) and set it, e.g.
+// video: '/videos/step-1'. While it is null the "coming soon" placeholder shows.
+const STEPS: { number: string; title: string; description: string; video: string | null }[] = [
   {
     number: '01',
     title: 'Describe your email',
     description: 'Type what you want in plain English: a product launch, Black Friday promo, welcome email, or newsletter. No templates to fill in, no design decisions upfront.',
-    videoId: 'PLACEHOLDER_VIDEO_ID_1',
+    video: null,
   },
   {
     number: '02',
     title: 'AI generates a stunning design',
     description: 'Emlet writes the copy and builds a fully designed, brand-matched email in seconds. Beautiful layouts, compelling headlines, production-ready out of the box.',
-    videoId: 'PLACEHOLDER_VIDEO_ID_2',
+    video: null,
   },
   {
     number: '03',
-    title: 'Edit, export & send',
-    description: 'Fine-tune every block in the visual editor. Export pixel-perfect HTML and drop it into Mailchimp, SendGrid, Resend, or any email provider.',
-    videoId: 'PLACEHOLDER_VIDEO_ID_3',
+    title: 'Edit using AI, export & send',
+    description: 'Fine-tune every block in the visual editor. Export pixel-perfect HTML and drop it into your email provider.',
+    video: null,
   },
 ];
 
@@ -543,7 +547,9 @@ export default function Home() {
               {/* Video embed */}
               <div className="flex-1 w-full">
                 <div className="relative rounded-xl overflow-hidden border border-white/10 shadow-xl bg-black aspect-video">
-                  {step.videoId === 'PLACEHOLDER_VIDEO_ID_1' || step.videoId === 'PLACEHOLDER_VIDEO_ID_2' || step.videoId === 'PLACEHOLDER_VIDEO_ID_3' ? (
+                  {step.video ? (
+                    <StepVideo src={step.video} title={step.title} />
+                  ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/60 bg-white/[0.02]">
                       <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -553,14 +559,6 @@ export default function Home() {
                         Demo video coming soon
                       </p>
                     </div>
-                  ) : (
-                    <iframe
-                      className="absolute inset-0 w-full h-full"
-                      src={`https://www.youtube.com/embed/${step.videoId}?autoplay=1&mute=1&loop=1&playlist=${step.videoId}&controls=0&modestbranding=1&rel=0`}
-                      title={step.title}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
                   )}
                 </div>
               </div>
