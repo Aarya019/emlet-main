@@ -3,7 +3,6 @@
 import { signUp, signInWithGoogle } from '@/app/actions/auth';
 import SubmitButton from '@/components/SubmitButton';
 import PasswordInput from '@/components/PasswordInput';
-import AuthEmailShowcase from '@/components/AuthEmailShowcase';
 import { useState, useEffect, useRef } from 'react';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 
@@ -131,46 +130,11 @@ export default function SignUpPage() {
         ))}
       </div>
 
-      {/* Left side - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden">
-        {/* Gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-black to-[#001a00]" />
-        
-        {/* Animated blobs */}
-        <div className="absolute top-20 left-20 w-96 h-96 bg-[#00ff00]/20 rounded-full blur-3xl animate-pulse-slower" />
-        <div className="absolute bottom-20 right-20 w-80 h-80 bg-[#00ffff]/20 rounded-full blur-3xl animate-pulse-slow" />
-        
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center px-16 py-12">
-          <div className="space-y-8">
-            <div>
-              <div className="flex items-center gap-3 mb-6">
-                <img src="/logo.png" alt="Emlet" className="h-12 w-auto" />
-              </div>
-              <h1 className="text-5xl font-bold text-white mb-4">
-                Start creating today
-              </h1>
-              <p className="text-xl text-white/70">
-                Join thousands of teams creating better emails, faster.
-              </p>
-            </div>
-
-            <AuthEmailShowcase />
-
-            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-white/60">
-              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-[#00ff00]" />Free to start, no card needed</span>
-              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-[#00ffff]" />Cancel anytime</span>
-              <span className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-[#ff00ff]" />Expert support</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Right side - Sign up form */}
       <div className="flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-md space-y-8">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 justify-center mb-8">
+          {/* Logo */}
+          <div className="flex items-center gap-2 justify-center mb-8">
             <img src="/logo.png" alt="Emlet" className="h-10 w-auto" />
           </div>
 
