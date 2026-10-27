@@ -12,26 +12,26 @@ import type { PlanType } from '@/lib/db/types';
 
 // ── How-it-works steps ───────────────────────────────────────────────────────
 // `video` is the path of a short silent clip WITHOUT extension. Put the files in
-// public/videos/ (step-1.webm, step-1.mp4, step-1.webp poster) and set it, e.g.
-// video: '/videos/step-1'. While it is null the "coming soon" placeholder shows.
+// public/videos/ (step-1.mp4 required; step-1.webm and step-1.webp poster optional, then
+// pass hasWebm / hasPoster to StepVideo). While it is null the "coming soon" placeholder shows.
 const STEPS: { number: string; title: string; description: string; video: string | null }[] = [
   {
     number: '01',
     title: 'Describe your email',
     description: 'Type what you want in plain English: a product launch, Black Friday promo, welcome email, or newsletter. No templates to fill in, no design decisions upfront.',
-    video: null,
+    video: '/videos/step-1',
   },
   {
     number: '02',
     title: 'AI generates a stunning design',
     description: 'Emlet writes the copy and builds a fully designed, brand-matched email in seconds. Beautiful layouts, compelling headlines, production-ready out of the box.',
-    video: null,
+    video: '/videos/step-2',
   },
   {
     number: '03',
     title: 'Edit using AI, export & send',
     description: 'Fine-tune every block in the visual editor. Export pixel-perfect HTML and drop it into your email provider.',
-    video: null,
+    video: '/videos/step-3',
   },
 ];
 
