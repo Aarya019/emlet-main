@@ -3,9 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 
 interface StepVideoProps {
-  /** Path without extension, e.g. "/videos/step-1". Expects step-1.webm, step-1.mp4 and step-1.webp (poster). */
+  /** Path without extension, e.g. "/videos/step-1". Always needs step-1.mp4. */
   src: string;
   title: string;
+  /** Set when step-1.webm exists too (smaller for Chrome/Firefox). */
+  hasWebm?: boolean;
+  /** Set when step-1.webp exists: shown instantly before the video loads. */
+  hasPoster?: boolean;
 }
 
 /**
@@ -15,7 +19,7 @@ interface StepVideoProps {
  * - visitors who prefer reduced motion get the poster plus play controls instead of autoplay.
  * The parent supplies the aspect ratio box, so there is no layout shift.
  */
-export default function StepVideo({ src, title }: StepVideoProps) {
+export default function StepVideo({ src, title, hasWebm = false, hasPoster = false }: StepVideoProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [armed, setArmed] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -64,7 +68,7 @@ export default function StepVideo({ src, title }: StepVideoProps) {
     <video
       ref={videoRef}
       className="absolute inset-0 h-full w-full object-cover"
-      poster={`${src}.webp`}
+      poster={hasPoster ? `${src}.webp` : undefined}
       muted
       loop
       playsInline
@@ -74,7 +78,7 @@ export default function StepVideo({ src, title }: StepVideoProps) {
     >
       {armed && (
         <>
-          <source src={`${src}.webm`} type="video/webm" />
+          {hasWebm && <source src={`${src}.webm`} type="video/webm" />}
           <source src={`${src}.mp4`} type="video/mp4" />
         </>
       )}
