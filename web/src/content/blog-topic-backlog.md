@@ -47,3 +47,5 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (retention-vs-acquisition-small-business-email): Retention vs acquisition: why the list you already have is a small business's most predictable growth lever
 - published (should-your-newsletter-sell-something): Should your newsletter actually be selling something? The shift from pure nurture content to hybrid sales newsletters
 - published (sms-plus-email-when-to-add-a-second-channel): SMS plus email: when a small business should add a second channel, and when it is just more noise
+- published (product-launch-email-sequence-small-business): How to write a product launch email, and the three-email sequence around it
+- published (event-invitation-email-what-to-include): Event invitation emails: what to include, when to send, and how to fill the room
