@@ -19,8 +19,11 @@ export default function SignInPage() {
 
   const handleResendConfirmation = async () => {
     setResendState('sending');
-    const result = await resendConfirmationEmail(submittedEmail);
+    const result = await resendConfirmationEmail(submittedEmail, turnstileToken ?? undefined);
     setResendState(result?.error ? 'idle' : 'sent');
+    // Single-use token: get a fresh one for the next action.
+    setTurnstileToken(null);
+    turnstileRef.current?.reset();
   };
 
   useEffect(() => {
@@ -161,7 +164,7 @@ export default function SignInPage() {
                       <button
                         type="button"
                         onClick={handleResendConfirmation}
-                        disabled={resendState === 'sending'}
+                        disabled={resendState === 'sending' || (TURNSTILE_ENABLED && !turnstileToken)}
                         className="underline font-medium text-red-300 hover:text-red-200 disabled:opacity-50"
                       >
                         {resendState === 'sending' ? 'Sending...' : 'Resend confirmation email'}

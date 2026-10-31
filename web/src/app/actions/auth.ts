@@ -2,13 +2,11 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
-import { verifyTurnstileToken } from '@/lib/turnstile';
 
-async function getRequestIp(): Promise<string | undefined> {
-  const headersList = await headers();
-  return headersList.get('x-forwarded-for')?.split(',')[0]?.trim() || headersList.get('x-real-ip') || undefined;
+/** Supabase's captcha errors are technical ("captcha protection: request disallowed (no captcha_token found)"); show something a person can act on. */
+function authErrorMessage(message: string): string {
+  return /captcha/i.test(message) ? 'Verification failed. Please refresh the page and try again.' : message;
 }
 
 function getSiteUrl() {
@@ -18,11 +16,7 @@ function getSiteUrl() {
 }
 
 export async function signIn(formData: FormData) {
-  const turnstileToken = formData.get('turnstileToken') as string | null;
-  const verified = await verifyTurnstileToken(turnstileToken, await getRequestIp());
-  if (!verified) {
-    return { error: 'Verification failed. Please refresh the page and try again.' };
-  }
+  const captchaToken = (formData.get('turnstileToken') as string | null) || undefined;
 
   const supabase = await createClient();
 
@@ -31,10 +25,10 @@ export async function signIn(formData: FormData) {
     password: formData.get('password') as string,
   };
 
-  const { error } = await supabase.auth.signInWithPassword(data);
+  const { error } = await supabase.auth.signInWithPassword({ ...data, options: { captchaToken } });
 
   if (error) {
-    return { error: error.message };
+    return { error: authErrorMessage(error.message) };
   }
 
   revalidatePath('/', 'layout');
@@ -42,11 +36,7 @@ export async function signIn(formData: FormData) {
 }
 
 export async function signUp(formData: FormData) {
-  const turnstileToken = formData.get('turnstileToken') as string | null;
-  const verified = await verifyTurnstileToken(turnstileToken, await getRequestIp());
-  if (!verified) {
-    return { error: 'Verification failed. Please refresh the page and try again.' };
-  }
+  const captchaToken = (formData.get('turnstileToken') as string | null) || undefined;
 
   const supabase = await createClient();
 
@@ -60,11 +50,12 @@ export async function signUp(formData: FormData) {
     password: data.password,
     options: {
       emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+      captchaToken,
     },
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: authErrorMessage(error.message) };
   }
 
   // With email confirmation on, Supabase answers a sign-up for an already-registered address with a
@@ -87,18 +78,20 @@ export async function signUp(formData: FormData) {
 }
 
 export async function requestPasswordReset(formData: FormData) {
-  const turnstileToken = formData.get('turnstileToken') as string | null;
-  const verified = await verifyTurnstileToken(turnstileToken, await getRequestIp());
-  if (!verified) {
-    return { error: 'Verification failed. Please refresh the page and try again.' };
-  }
+  const captchaToken = (formData.get('turnstileToken') as string | null) || undefined;
 
   const email = formData.get('email') as string;
   const supabase = await createClient();
 
-  await supabase.auth.resetPasswordForEmail(email, {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${getSiteUrl()}/auth/callback/reset-password`,
+    captchaToken,
   });
+  // Only a failed bot check is reported; every other outcome looks the same so the form can't be
+  // used to find out which emails have accounts.
+  if (error && /captcha/i.test(error.message)) {
+    return { error: authErrorMessage(error.message) };
+  }
 
   // Always report success, whether or not the email exists — otherwise this
   // endpoint becomes a way to check which emails have an Emlet account.
@@ -119,7 +112,7 @@ export async function updatePassword(formData: FormData) {
   return { success: true };
 }
 
-export async function resendConfirmationEmail(email: string) {
+export async function resendConfirmationEmail(email: string, captchaToken?: string) {
   const supabase = await createClient();
 
   const { error } = await supabase.auth.resend({
@@ -127,11 +120,12 @@ export async function resendConfirmationEmail(email: string) {
     email,
     options: {
       emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+      captchaToken: captchaToken || undefined,
     },
   });
 
   if (error) {
-    return { error: error.message };
+    return { error: authErrorMessage(error.message) };
   }
 
   return { success: true, message: 'Confirmation email sent — check your inbox.' };
