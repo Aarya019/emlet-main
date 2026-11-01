@@ -53,7 +53,7 @@ export default async function Post() {
       </Link>
 
       <div className="mb-10">
-        <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-3">{post.category}</p>
+        <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-3">{post.category}</p>
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 leading-tight">{post.title}</h1>
         <div className="flex items-center gap-3 text-sm text-white/40">
           <span>Aarya, Founder of Emlet</span>
@@ -119,7 +119,7 @@ export default async function Post() {
         <h2 className="text-2xl font-bold text-white pt-6">The part nobody warns you about: HTML email is its own animal</h2>
         <p>
           Even once the design decisions are made, there's a second, more annoying problem: getting it to actually render the same way in Gmail, Outlook, and Apple Mail. Email clients don't render HTML like browsers do. Outlook on Windows in particular still uses Microsoft Word's rendering engine, not a real browser engine, which means a lot of ordinary CSS just doesn't work. I wrote a full breakdown of what specifically breaks and why in{' '}
-          <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-neon-ink hover:underline">
+          <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-primary hover:underline">
             this post
           </Link>
           , but the short version is: design decisions and rendering problems are two separate skills, and most people only find out about the second one after their newsletter shows up looking like a ransom note in someone's inbox.

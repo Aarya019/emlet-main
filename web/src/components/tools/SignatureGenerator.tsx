@@ -43,7 +43,7 @@ export default function SignatureGenerator() {
                 aria-checked={input.layout === l.id}
                 onClick={() => set('layout', l.id)}
                 className={`rounded-xl border p-3 text-left transition-colors ${
-                  input.layout === l.id ? 'border-[#00ffff]/70 bg-[#00ffff]/10' : 'border-white/15 hover:border-white/35'
+                  input.layout === l.id ? 'border-primary-bright/70 bg-primary-bright/10' : 'border-white/15 hover:border-white/35'
                 }`}
               >
                 <span className="block text-sm font-bold text-white">{l.label}</span>
@@ -171,7 +171,7 @@ export default function SignatureGenerator() {
               value={output.html}
               rows={10}
               onFocus={(e) => e.currentTarget.select()}
-              className="mt-3 w-full resize-y rounded-lg border border-white/15 bg-black/50 p-3 font-mono text-xs leading-relaxed text-white/75 outline-none focus:border-[#00ffff]/60"
+              className="mt-3 w-full resize-y rounded-lg border border-white/15 bg-black/50 p-3 font-mono text-xs leading-relaxed text-white/75 outline-none focus:border-primary-bright/60"
             />
           </details>
         </Panel>

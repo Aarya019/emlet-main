@@ -30,7 +30,7 @@ interface ElementToolbarProps {
 }
 
 const inputCls =
-  'px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20';
+  'px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-primary transition-colors placeholder-white/20';
 const labelCls = 'block text-[10px] text-white/30 mb-1 uppercase tracking-wider';
 
 function ColorInput({
@@ -74,7 +74,7 @@ function ToggleButton({ active, title, onClick, children }: { active: boolean; t
       title={title}
       onClick={onClick}
       className={`w-7 h-7 rounded border text-xs transition-colors ${
-        active ? 'bg-[#00ffff]/15 border-[#00ffff]/50 text-neon-ink' : 'border-white/10 text-white/50 hover:text-white hover:bg-white/5'
+        active ? 'bg-primary-bright/15 border-primary-bright/50 text-primary' : 'border-white/10 text-white/50 hover:text-white hover:bg-white/5'
       }`}
     >
       {children}
@@ -113,17 +113,17 @@ export default function ElementToolbar({
   const showBorder = isButton || isBox || isImage;
 
   return (
-    <div className="sticky top-0 z-20 mb-4 rounded-lg border border-[#00ffff]/30 bg-surface/95 backdrop-blur p-3 shadow-xl">
+    <div className="sticky top-0 z-20 mb-4 rounded-lg border border-primary-bright/30 bg-surface/95 backdrop-blur p-3 shadow-xl">
       <div className="flex items-center justify-between gap-3 mb-2.5">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#00ffff] flex-shrink-0" />
+          <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />
           <span className="text-xs font-semibold text-white truncate">{label}</span>
-          {hasOverride && <span className="text-[10px] text-neon-ink/60">customised</span>}
+          {hasOverride && <span className="text-[10px] text-primary/60">customised</span>}
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
           {canApplyToAll && (
             <label className="flex items-center gap-1.5 text-[11px] text-white/50 cursor-pointer">
-              <input type="checkbox" checked={appliesToAll} onChange={e => onToggleAll(e.target.checked)} className="accent-neon-ink" />
+              <input type="checkbox" checked={appliesToAll} onChange={e => onToggleAll(e.target.checked)} className="accent-primary" />
               Apply to all similar
             </label>
           )}

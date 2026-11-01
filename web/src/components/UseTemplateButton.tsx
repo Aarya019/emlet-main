@@ -13,7 +13,7 @@ export default function UseTemplateButton({ slug }: { slug: string }) {
       <input type="hidden" name="slug" value={slug} />
       <SubmitButton
         pendingText="Opening in the editor..."
-        className="w-full px-6 py-3.5 rounded-xl bg-[#00ffff] text-pure-black font-bold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 hover:-translate-y-px transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+        className="w-full px-6 py-3.5 rounded-xl bg-primary text-on-primary font-bold text-sm hover:shadow-lg hover:shadow-primary-bright/30 hover:-translate-y-px transition-all disabled:opacity-60 disabled:cursor-not-allowed"
       >
         Use this template, free
       </SubmitButton>

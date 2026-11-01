@@ -21,7 +21,7 @@ export default function TemplateCategoryPage({
         ← All templates
       </Link>
       <div className="mb-10">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-neon-ink/60">{eyebrow}</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary/60">{eyebrow}</p>
         <h1 className="mb-4 text-4xl font-black tracking-tight sm:text-5xl">{heading}</h1>
         <p className="max-w-2xl text-lg text-white/50">{blurb}</p>
       </div>

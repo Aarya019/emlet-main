@@ -41,7 +41,7 @@ function P({ children }: { children: React.ReactNode }) {
 
 function Callout({ type = 'tip', children }: { type?: 'tip' | 'warning' | 'info'; children: React.ReactNode }) {
   const styles = {
-    tip: 'bg-[#00ffff]/5 border-[#00ffff]/30 text-neon-ink/80',
+    tip: 'bg-primary-bright/5 border-primary-bright/30 text-primary/80',
     warning: 'bg-yellow-400/5 border-yellow-400/30 text-yellow-400/80',
     info: 'bg-white/5 border-white/15 text-white/60',
   };
@@ -56,7 +56,7 @@ function Callout({ type = 'tip', children }: { type?: 'tip' | 'warning' | 'info'
 
 function Code({ children }: { children: string }) {
   return (
-    <code className="bg-white/8 text-neon-ink text-[0.82em] px-1.5 py-0.5 rounded font-mono">
+    <code className="bg-white/8 text-primary text-[0.82em] px-1.5 py-0.5 rounded font-mono">
       {children}
     </code>
   );
@@ -163,7 +163,7 @@ export default function EmailFontsGuide() {
           </nav>
           <div className="flex items-center justify-end gap-3">
             <ThemeToggle size="sm" />
-            <Link href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-neon-ink">
+            <Link href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-primary hover:text-primary">
               Sign in
             </Link>
             <Link href="/sign-up" className="hidden sm:block rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
@@ -186,12 +186,12 @@ export default function EmailFontsGuide() {
           <div className="flex items-center gap-2 text-xs text-white/30 mb-8">
             <Link href="/blog" className="hover:text-white/60 transition-colors">Blog</Link>
             <span>/</span>
-            <span className="text-neon-ink/60">Design</span>
+            <span className="text-primary/60">Design</span>
           </div>
 
           {/* Title block */}
           <div className="mb-10">
-            <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-4">
+            <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-4">
               Design, 12 min read
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.05] mb-6">
@@ -242,7 +242,7 @@ export default function EmailFontsGuide() {
               { title: 'Brand perception.', body: 'Typography is a brand signal. A brand that uses Inter or DM Sans on its website but delivers Times New Roman emails signals inconsistency, even if subscribers can\'t articulate why.' },
             ].map(({ title, body }) => (
               <li key={title} className="flex gap-3">
-                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
+                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-primary-bright/50 flex-shrink-0" />
                 <span className="text-white/65 leading-relaxed">
                   <strong className="text-white/85">{title}</strong> {body}
                 </span>
@@ -633,7 +633,7 @@ export default function EmailFontsGuide() {
               { label: '800–900 (extra-bold / black)', note: 'Useful for impactful hero headlines, but verify the custom font supports this weight before loading it.' },
             ].map(({ label, note }) => (
               <li key={label} className="flex gap-3">
-                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
+                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-primary-bright/50 flex-shrink-0" />
                 <span className="text-white/65 leading-relaxed">
                   <Code>{label}</Code>: {note}
                 </span>
@@ -662,7 +662,7 @@ export default function EmailFontsGuide() {
               'Never use letter-spacing on preheader / hidden text (breaks reading order in some accessibility tools)',
             ].map((item) => (
               <li key={item} className="flex gap-3">
-                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
+                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-primary-bright/50 flex-shrink-0" />
                 <span className="text-white/65 leading-relaxed">{item}</span>
               </li>
             ))}
@@ -690,7 +690,7 @@ export default function EmailFontsGuide() {
               { label: 'Coloured text: ', note: 'Brand colours often fail contrast checks when used for body text. Use them for headings or on appropriately dark/light backgrounds.' },
             ].map(({ label, note }) => (
               <li key={label} className="flex gap-3">
-                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
+                <span className="mt-2 h-1.5 w-1.5 rounded-full bg-primary-bright/50 flex-shrink-0" />
                 <span className="text-white/65 leading-relaxed"><strong className="text-white/80">{label}</strong>{note}</span>
               </li>
             ))}
@@ -807,7 +807,7 @@ export default function EmailFontsGuide() {
 
           {/* CTA */}
           <div className="rounded-2xl bg-gradient-to-br from-white/8 to-white/3 border border-white/10 p-8 text-center mt-12">
-            <p className="text-xs font-bold uppercase tracking-widest text-neon-ink/60 mb-3">Put it into practice</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-primary/60 mb-3">Put it into practice</p>
             <h2 className="text-2xl sm:text-3xl font-black mb-3">
               Ship better-looking emails. Starting now.
             </h2>
@@ -849,7 +849,7 @@ export default function EmailFontsGuide() {
             <Link href="/terms" className="hover:text-white/60 transition-colors">Terms</Link>
             <Link href="/blog" className="hover:text-white/60 transition-colors">Blog</Link>
           </div>
-          <p className="text-xs text-white/20">© 2026 Emlet. All rights reserved.</p>
+          <p className="text-xs text-white/30">© 2026 Emlet. All rights reserved.</p>
         </div>
       </footer>
 

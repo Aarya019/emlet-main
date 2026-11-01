@@ -103,7 +103,7 @@ export default function HtmlChecker() {
             rows={12}
             value={inlined.html}
             onFocus={(e) => e.currentTarget.select()}
-            className="w-full resize-y rounded-lg border border-white/15 bg-black/50 p-3 font-mono text-xs leading-relaxed text-white/75 outline-none focus:border-[#00ffff]/60"
+            className="w-full resize-y rounded-lg border border-white/15 bg-black/50 p-3 font-mono text-xs leading-relaxed text-white/75 outline-none focus:border-primary-bright/60"
           />
           <div className="mt-3 flex flex-wrap gap-2">
             <CopyButton getText={() => inlined.html} label="Copy inlined HTML" className={primaryButtonClass} />
@@ -142,7 +142,7 @@ export default function HtmlChecker() {
                       <p className="text-sm font-semibold text-white">{f.title}</p>
                       <p className="text-sm leading-relaxed text-white/55">{f.detail}</p>
                       <p className="mt-1 text-xs text-white/40"><span className="font-semibold text-white/55">Affects:</span> {f.clients}</p>
-                      <p className="text-sm text-white/70"><span className="font-semibold text-neon-ink/80">Fix:</span> {f.fix}</p>
+                      <p className="text-sm text-white/70"><span className="font-semibold text-primary/80">Fix:</span> {f.fix}</p>
                     </div>
                   </li>
                 ))}

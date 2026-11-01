@@ -98,7 +98,7 @@ export default function IconPicker({ iconName, icon, onChange }: IconPickerProps
                   title={opt.name}
                   onClick={() => { onChange({ iconName: opt.name, icon: opt.emoji }); setOpen(false); }}
                   className={`w-8 h-8 rounded flex items-center justify-center hover:bg-white/10 transition-colors ${
-                    iconName === opt.name ? 'bg-[#00ffff]/15 border border-[#00ffff]/50' : 'border border-transparent'
+                    iconName === opt.name ? 'bg-primary-bright/15 border border-primary-bright/50' : 'border border-transparent'
                   }`}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}

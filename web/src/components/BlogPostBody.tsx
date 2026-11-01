@@ -41,7 +41,7 @@ export default function BlogPostBody({ blocks }: { blocks: ContentBlock[] }) {
             return <BlogInlineImage key={i} src={block.src} alt={block.alt} caption={block.caption} />;
           case 'quote':
             return (
-              <blockquote key={i} className="border-l-2 border-[#00ffff]/40 pl-5 py-1 text-white/80 italic">
+              <blockquote key={i} className="border-l-2 border-primary-bright/40 pl-5 py-1 text-white/80 italic">
                 {block.text}
                 {block.attribution && (
                   <footer className="mt-2 text-sm text-white/40 not-italic">— {block.attribution}</footer>

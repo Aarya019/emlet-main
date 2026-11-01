@@ -53,7 +53,7 @@ export default async function Post() {
       </Link>
 
       <div className="mb-10">
-        <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-3">{post.category}</p>
+        <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-3">{post.category}</p>
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 leading-tight">{post.title}</h1>
         <div className="flex items-center gap-3 text-sm text-white/40">
           <span>Aarya, Founder of Emlet</span>
@@ -102,7 +102,7 @@ export default async function Post() {
         <h2 className="text-2xl font-bold text-white pt-6">Why this is a genuinely separate skill from design</h2>
         <p>
           I wrote a companion post on the actual design decisions, hierarchy, color, spacing, that make an email look intentional, which you can read{' '}
-          <Link href="/blog/email-design-without-a-designer" className="text-neon-ink hover:underline">
+          <Link href="/blog/email-design-without-a-designer" className="text-primary hover:underline">
             here
           </Link>
           . The point worth repeating is that design and rendering are two different problems. You can make every correct visual decision and still have the email fall apart in Outlook, because the thing that broke it wasn't a design choice, it was a CSS property that a legacy rendering engine doesn't support. Nobody teaches this in a normal design education, because it's specific to email and genuinely a little arcane.

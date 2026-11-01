@@ -194,7 +194,7 @@ export default function SubjectLineTester() {
                       <td className="py-2.5 pr-3 tabular-nums text-white/60">{row.chars}</td>
                       <td className="py-2.5 pr-3 text-white/50">{row.flags.length > 0 ? row.flags.join('; ') : 'Nothing flagged'}</td>
                       <td className="py-2.5 text-right">
-                        <button type="button" onClick={() => setSubject(row.subject)} className="text-xs font-semibold text-neon-ink hover:underline">
+                        <button type="button" onClick={() => setSubject(row.subject)} className="text-xs font-semibold text-primary hover:underline">
                           Use
                         </button>
                       </td>

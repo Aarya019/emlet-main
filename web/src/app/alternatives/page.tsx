@@ -19,7 +19,7 @@ export default function AlternativesIndexPage() {
   return (
     <MarketingLayout contentClassName="max-w-4xl">
       <div className="mb-12">
-        <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-3">Comparisons</p>
+        <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-3">Comparisons</p>
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
           How Emlet compares
         </h1>
@@ -33,7 +33,7 @@ export default function AlternativesIndexPage() {
           <Link
             key={alt.slug}
             href={`/alternatives/${alt.slug}`}
-            className="group rounded-2xl border border-white/10 bg-white/5 overflow-hidden hover:border-[#00ffff]/30 hover:bg-white/[0.07] transition-all"
+            className="group rounded-2xl border border-white/10 bg-white/5 overflow-hidden hover:border-primary-bright/30 hover:bg-white/[0.07] transition-all"
           >
             <div className="relative aspect-[16/9] overflow-hidden border-b border-white/10">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -44,11 +44,11 @@ export default function AlternativesIndexPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
               <p className="absolute bottom-3 left-4 text-xs font-bold tracking-widest text-white uppercase">
-                Emlet <span className="text-neon-ink">vs</span> {alt.competitor}
+                Emlet <span className="text-primary">vs</span> {alt.competitor}
               </p>
             </div>
             <div className="p-6">
-              <h2 className="text-lg font-bold text-white mb-2 group-hover:text-neon-ink transition-colors leading-snug">
+              <h2 className="text-lg font-bold text-white mb-2 group-hover:text-primary transition-colors leading-snug">
                 {alt.title.replace('Emlet vs ', '').replace(/:.*$/, '')}
               </h2>
               <p className="text-sm text-white/50 leading-relaxed">{alt.description}</p>

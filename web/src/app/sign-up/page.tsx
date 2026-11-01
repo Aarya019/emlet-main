@@ -155,13 +155,13 @@ export default function SignUpPage() {
             <h2 className="text-3xl font-bold text-white">Create your account</h2>
             <p className="mt-2 text-sm text-white/60">
               {hasPendingPrompt && (
-                <span className="mb-1 block text-neon-ink">Sign up to generate your email</span>
+                <span className="mb-1 block text-primary">Sign up to generate your email</span>
               )}
               {hasPendingTemplate && !hasPendingPrompt && (
-                <span className="mb-1 block text-neon-ink">Create a free account to open the template you picked.</span>
+                <span className="mb-1 block text-primary">Create a free account to open the template you picked.</span>
               )}
               Already have an account?{' '}
-              <a href="/sign-in" className="font-medium text-neon-ink hover:text-neon-ink/80 transition-colors">
+              <a href="/sign-in" className="font-medium text-primary hover:text-primary/80 transition-colors">
                 Sign in
               </a>
             </p>
@@ -232,7 +232,7 @@ export default function SignUpPage() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="you@example.com"
                 />
               </div>
@@ -247,7 +247,7 @@ export default function SignUpPage() {
                   autoComplete="new-password"
                   required
                   minLength={6}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />
                 <p className="mt-1 text-xs text-white/50">Must be at least 6 characters</p>
@@ -263,7 +263,7 @@ export default function SignUpPage() {
                   autoComplete="new-password"
                   required
                   minLength={6}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />
               </div>
@@ -280,11 +280,11 @@ export default function SignUpPage() {
 
               <p className="text-xs text-white/50 text-center">
                 By signing up, you agree to our{' '}
-                <a href="/terms" className="text-neon-ink hover:text-neon-ink/80">
+                <a href="/terms" className="text-primary hover:text-primary/80">
                   Terms of Service
                 </a>{' '}
                 and{' '}
-                <a href="/privacy" className="text-neon-ink hover:text-neon-ink/80">
+                <a href="/privacy" className="text-primary hover:text-primary/80">
                   Privacy Policy
                 </a>
               </p>

@@ -154,7 +154,7 @@ export default function FooterGenerator() {
             value={code}
             rows={12}
             onFocus={(e) => e.currentTarget.select()}
-            className="w-full resize-y rounded-lg border border-white/15 bg-black/50 p-3 font-mono text-xs leading-relaxed text-white/75 outline-none focus:border-[#00ffff]/60"
+            className="w-full resize-y rounded-lg border border-white/15 bg-black/50 p-3 font-mono text-xs leading-relaxed text-white/75 outline-none focus:border-primary-bright/60"
           />
           <p className="mt-2 text-xs text-white/35">
             {view === 'html'

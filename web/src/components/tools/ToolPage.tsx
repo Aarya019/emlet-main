@@ -68,7 +68,7 @@ export default async function ToolPage({
       </Link>
 
       <header className="mb-10">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-neon-ink/60">Free tool</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary/60">Free tool</p>
         <h1 className="mb-4 text-3xl font-black leading-tight tracking-tight sm:text-5xl">{tool.name}</h1>
         <p className="max-w-2xl text-lg text-white/50">{tool.tagline}</p>
         <p className="mt-3 text-sm text-white/35">Free, no signup. Everything runs in your browser; what you type is never sent to us.</p>
@@ -108,7 +108,7 @@ export default async function ToolPage({
         </p>
         <Link
           href="/sign-up"
-          className="inline-block rounded-xl bg-[#00ffff] px-6 py-3 text-sm font-bold text-pure-black transition-all hover:-translate-y-px hover:shadow-lg hover:shadow-[#00ffff]/30"
+          className="inline-block rounded-xl bg-primary px-6 py-3 text-sm font-bold text-on-primary transition-all hover:-translate-y-px hover:shadow-lg hover:shadow-primary-bright/30"
         >
           Generate your first email free
         </Link>
@@ -119,7 +119,7 @@ export default async function ToolPage({
         <div className="grid gap-4 sm:grid-cols-2">
           {otherTools.map((t) => (
             <Link key={t.slug} href={toolUrl(t.slug)} className="group rounded-xl border border-white/10 p-4 transition-colors hover:border-white/30">
-              <p className="mb-1 font-bold text-white transition-colors group-hover:text-neon-ink">{t.name}</p>
+              <p className="mb-1 font-bold text-white transition-colors group-hover:text-primary">{t.name}</p>
               <p className="text-sm text-white/45">{t.tagline}</p>
             </Link>
           ))}
@@ -132,7 +132,7 @@ export default async function ToolPage({
           <ul className="space-y-2">
             {reading.map((p) => (
               <li key={p.slug}>
-                <Link href={`/blog/${p.slug}`} className="text-white/60 underline decoration-white/20 underline-offset-4 transition-colors hover:text-neon-ink">
+                <Link href={`/blog/${p.slug}`} className="text-white/60 underline decoration-white/20 underline-offset-4 transition-colors hover:text-primary">
                   {p.title}
                 </Link>
               </li>

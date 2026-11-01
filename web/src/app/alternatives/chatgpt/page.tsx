@@ -43,7 +43,7 @@ export default function ChatGptAlternativePage() {
       </Link>
 
       <div className="mb-8">
-        <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-3">Emlet vs ChatGPT</p>
+        <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-3">Emlet vs ChatGPT</p>
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 leading-tight">{alt.title}</h1>
       </div>
 
@@ -70,7 +70,7 @@ export default function ChatGptAlternativePage() {
         <h2 className="text-2xl font-bold text-white pt-6">Where it falls apart: the HTML itself</h2>
         <p>
           Ask ChatGPT to "write an HTML email" and it can produce something that looks fine in a code preview or even in Gmail, and then falls apart in Outlook. That's not a knowledge gap in the model exactly, it's that safe email HTML requires specific, non-obvious constraints: table-based layout instead of flexbox or grid, every style inlined rather than in a stylesheet, and Outlook-specific conditional comments (MSO comments) for things like button padding that render inconsistently otherwise. Unless you already know to ask for all of that explicitly, and know enough to check the output for it, what you get back is web HTML wearing an email costume. I go through the specific rendering failures, dark mode inversion, Outlook's Word-based engine, image blocking, in{' '}
-          <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-neon-ink hover:underline">
+          <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-primary hover:underline">
             this post
           </Link>
           , if you want the detail.

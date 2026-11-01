@@ -35,7 +35,7 @@ export default async function TemplatesIndexPage() {
   return (
     <MarketingLayout contentClassName="max-w-6xl">
       <div className="mb-10">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-neon-ink/60">Templates</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary/60">Templates</p>
         <h1 className="mb-4 text-4xl font-black tracking-tight sm:text-5xl">Email templates with some personality</h1>
         <p className="max-w-2xl text-lg text-white/50">
           Original designs you can open in the editor, recolour to your brand, and change block by block. Free account, no AI credit used.
@@ -45,7 +45,7 @@ export default async function TemplatesIndexPage() {
       {templates.length === 0 ? (
         <p className="py-12 text-white/40">
           New templates are on the way. In the meantime,{' '}
-          <Link href="/sign-up" className="text-neon-ink hover:underline">generate one from a description</Link>.
+          <Link href="/sign-up" className="text-primary hover:underline">generate one from a description</Link>.
         </p>
       ) : (
         <>

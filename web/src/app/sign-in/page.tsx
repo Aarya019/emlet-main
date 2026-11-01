@@ -141,10 +141,10 @@ export default function SignInPage() {
             <h2 className="text-3xl font-bold text-white">Sign in to your account</h2>
             <p className="mt-2 text-sm text-white/60">
               {hasPendingPrompt && (
-                <span className="mb-1 block text-neon-ink">Sign in to generate your email</span>
+                <span className="mb-1 block text-primary">Sign in to generate your email</span>
               )}
               Don't have an account?{' '}
-              <a href="/sign-up" className="font-medium text-neon-ink hover:text-neon-ink/80 transition-colors">
+              <a href="/sign-up" className="font-medium text-primary hover:text-primary/80 transition-colors">
                 Sign up
               </a>
             </p>
@@ -158,7 +158,7 @@ export default function SignInPage() {
                 {error.toLowerCase().includes('confirm') && submittedEmail && (
                   <div className="mt-2">
                     {resendState === 'sent' ? (
-                      <span className="text-neon-lime-ink">Confirmation email sent — check your inbox.</span>
+                      <span className="text-brand-lime">Confirmation email sent — check your inbox.</span>
                     ) : (
                       <button
                         type="button"
@@ -224,7 +224,7 @@ export default function SignInPage() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="you@example.com"
                 />
               </div>
@@ -238,7 +238,7 @@ export default function SignInPage() {
                   name="password"
                   autoComplete="current-password"
                   required
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />
               </div>
@@ -249,7 +249,7 @@ export default function SignInPage() {
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
-                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-neon-ink focus:ring-[#00ffff] focus:ring-offset-0"
+                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-primary focus:ring-primary focus:ring-offset-0"
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-white/70">
                     Remember me
@@ -257,7 +257,7 @@ export default function SignInPage() {
                 </div>
 
                 <div className="text-sm">
-                  <a href="/forgot-password" className="font-medium text-neon-ink hover:text-neon-ink/80 transition-colors">
+                  <a href="/forgot-password" className="font-medium text-primary hover:text-primary/80 transition-colors">
                     Forgot password?
                   </a>
                 </div>

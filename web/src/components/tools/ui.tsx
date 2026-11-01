@@ -4,13 +4,13 @@ import type { Severity } from '@/lib/tools/severity';
 /** Shared look for the free tools' forms and panels. Presentational only (works in server and client components). */
 
 export const inputClass =
-  'w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-[#00ffff]/60';
+  'w-full rounded-lg border border-white/15 bg-black/40 px-3 py-2 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-primary-bright/60';
 
 export const buttonClass =
   'inline-flex items-center justify-center rounded-lg border border-white/20 px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:opacity-50';
 
 export const primaryButtonClass =
-  'inline-flex items-center justify-center rounded-lg bg-[#00ffff] px-4 py-2 text-sm font-bold text-pure-black transition-all hover:-translate-y-px hover:shadow-lg hover:shadow-[#00ffff]/30 disabled:opacity-50';
+  'inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-bold text-on-primary transition-all hover:-translate-y-px hover:shadow-lg hover:shadow-primary-bright/30 disabled:opacity-50';
 
 export function Panel({ title, children, className = '' }: { title?: string; children: ReactNode; className?: string }) {
   return (

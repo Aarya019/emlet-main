@@ -104,7 +104,7 @@ export default function ConsentManager() {
           <p className="mb-1 text-sm font-bold">Cookies</p>
           <p className="mb-4 text-sm leading-relaxed text-white/60">
             We&apos;d like to use Google Analytics, and one small cookie that records which link brought you here, to see what is useful. Nothing is set unless you accept, and the site works the same either way.{' '}
-            <Link href="/privacy" className="text-white underline underline-offset-2 hover:text-neon-ink">
+            <Link href="/privacy" className="text-white underline underline-offset-2 hover:text-primary">
               Privacy policy
             </Link>
           </p>

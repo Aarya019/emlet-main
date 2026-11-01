@@ -38,7 +38,7 @@ export default function MagneticButton({
 
   const baseClasses = variant === 'primary'
     ? 'rounded-full bg-white px-5 sm:px-6 py-2.5 text-sm font-medium text-black transition-all duration-300 hover:shadow-2xl hover:shadow-white/30 hover:scale-105 active:scale-100'
-    : 'rounded-full border border-white/20 px-5 py-2 text-white transition-all hover:border-[#00ffff] hover:text-neon-ink hover:shadow-lg hover:shadow-[#00ffff]/30';
+    : 'rounded-full border border-white/20 px-5 py-2 text-white transition-all hover:border-primary hover:text-primary hover:shadow-lg hover:shadow-primary-bright/30';
 
   return (
     <button
