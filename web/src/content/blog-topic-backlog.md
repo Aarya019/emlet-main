@@ -49,3 +49,5 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (sms-plus-email-when-to-add-a-second-channel): SMS plus email: when a small business should add a second channel, and when it is just more noise
 - published (product-launch-email-sequence-small-business): How to write a product launch email, and the three-email sequence around it
 - published (event-invitation-email-what-to-include): Event invitation emails: what to include, when to send, and how to fill the room
+- published (black-friday-holiday-email-calendar-small-business): A Black Friday and holiday email plan for small businesses, without burning out your list
+- published (how-long-should-a-marketing-email-be): How long should a marketing email be? A practical answer
