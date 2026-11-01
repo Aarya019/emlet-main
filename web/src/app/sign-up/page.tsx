@@ -152,19 +152,16 @@ export default function SignUpPage() {
           <div>
             <h2 className="text-3xl font-bold text-white">Create your account</h2>
             <p className="mt-2 text-sm text-white/60">
-              {hasPendingPrompt ? (
-                <span className="text-[#00ffff]">Sign up to generate your email</span>
-              ) : (
-                <>
-                  {hasPendingTemplate && (
-                    <span className="mb-1 block text-[#00ffff]">Create a free account to open the template you picked.</span>
-                  )}
-                  Already have an account?{' '}
-                  <a href="/sign-in" className="font-medium text-[#00ffff] hover:text-[#00ffff]/80 transition-colors">
-                    Sign in
-                  </a>
-                </>
+              {hasPendingPrompt && (
+                <span className="mb-1 block text-[#00ffff]">Sign up to generate your email</span>
               )}
+              {hasPendingTemplate && !hasPendingPrompt && (
+                <span className="mb-1 block text-[#00ffff]">Create a free account to open the template you picked.</span>
+              )}
+              Already have an account?{' '}
+              <a href="/sign-in" className="font-medium text-[#00ffff] hover:text-[#00ffff]/80 transition-colors">
+                Sign in
+              </a>
             </p>
           </div>
 

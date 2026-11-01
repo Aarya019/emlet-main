@@ -3,6 +3,7 @@ import { getAllPostsMeta } from '@/lib/content/posts';
 import { ALTERNATIVES } from '@/lib/content/alternatives';
 import { getAllTemplatesMeta } from '@/lib/content/templates-registry';
 import { MIN_INDEXABLE_CATEGORY } from '@/lib/content/templates';
+import { TOOLS, toolUrl } from '@/lib/content/tools';
 
 const SITE_URL = 'https://www.emlet.app';
 
@@ -11,6 +12,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/`, changeFrequency: 'weekly', priority: 1 },
     { url: `${SITE_URL}/blog`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/alternatives`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${SITE_URL}/tools`, changeFrequency: 'monthly', priority: 0.8 },
+    ...TOOLS.map((tool) => ({ url: `${SITE_URL}${toolUrl(tool.slug)}`, changeFrequency: 'monthly' as const, priority: 0.7 })),
     { url: `${SITE_URL}/terms`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/refunds`, changeFrequency: 'yearly', priority: 0.3 },

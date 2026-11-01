@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: 'Privacy Policy for Emlet, the AI email design generator.',
 };
 
-const LAST_UPDATED = 'September 1, 2026';
+const LAST_UPDATED = 'November 1, 2026';
 const CONTACT_EMAIL = 'support@emlet.app';
 
 export default function PrivacyPage() {

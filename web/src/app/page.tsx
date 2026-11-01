@@ -313,12 +313,14 @@ export default function Home() {
           <a href="/" className="flex items-center gap-2 group">
             <Image src="/logo.png" alt="Emlet" width={532} height={532} priority className="h-7 w-auto md:h-8" />
           </a>
-          <nav className="hidden items-center justify-center gap-8 text-sm text-white/70 md:flex">
+          <nav className="hidden items-center justify-center gap-6 whitespace-nowrap text-sm text-white/70 md:flex lg:gap-8">
             <a href="#how-it-works" className="transition-colors hover:text-white">How it works</a>
             <a href="#features" className="transition-colors hover:text-white">Features</a>
             <a href="#pricing" className="transition-colors hover:text-white">Pricing</a>
             <a href="#faq" className="transition-colors hover:text-white">FAQ</a>
-            {SHOW_TEMPLATES_IN_NAV && <a href="/templates" className="transition-colors hover:text-white">Templates</a>}
+            {/* Templates and Free tools are in the mobile menu and the footer; they join this bar from lg up, where it has room. */}
+            {SHOW_TEMPLATES_IN_NAV && <a href="/templates" className="hidden transition-colors hover:text-white lg:inline">Templates</a>}
+            <a href="/tools" className="hidden transition-colors hover:text-white lg:inline">Free tools</a>
             <a href="/blog" className="transition-colors hover:text-white">Blog</a>
           </nav>
           {/* Desktop auth buttons */}
@@ -386,6 +388,8 @@ export default function Home() {
                 { href: '#features', label: 'Features' },
                 { href: '#pricing', label: 'Pricing' },
                 { href: '#faq', label: 'FAQ' },
+                ...(SHOW_TEMPLATES_IN_NAV ? [{ href: '/templates', label: 'Templates' }] : []),
+                { href: '/tools', label: 'Free tools' },
                 { href: '/blog', label: 'Blog' },
               ].map((link) => (
                 <a
@@ -814,6 +818,7 @@ export default function Home() {
                 <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
                 <li><a href="/dashboard" className="hover:text-white transition-colors">Dashboard</a></li>
                 {SHOW_TEMPLATES_IN_NAV && <li><a href="/templates" className="hover:text-white transition-colors">Templates</a></li>}
+                <li><a href="/tools" className="hover:text-white transition-colors">Free tools</a></li>
                 <li><a href="/blog" className="hover:text-white transition-colors">Blog</a></li>
                 <li><a href="/alternatives" className="hover:text-white transition-colors">Alternatives</a></li>
               </ul>

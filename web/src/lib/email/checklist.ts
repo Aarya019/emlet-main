@@ -42,7 +42,7 @@ const SPAM_TRIGGER_WORDS = [
   'weight loss', 'lose weight', '$$$', 'why pay more', '100% satisfied',
 ];
 
-function findSpamWords(subject: string): string[] {
+export function findSpamWords(subject: string): string[] {
   const lower = subject.toLowerCase();
   return SPAM_TRIGGER_WORDS.filter((w) => {
     if (w.includes(' ') || /[^a-z0-9]/i.test(w)) return lower.includes(w);

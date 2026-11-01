@@ -138,16 +138,13 @@ export default function SignInPage() {
           <div>
             <h2 className="text-3xl font-bold text-white">Sign in to your account</h2>
             <p className="mt-2 text-sm text-white/60">
-              {hasPendingPrompt ? (
-                <span className="text-[#00ffff]">Sign in to generate your email</span>
-              ) : (
-                <>
-                  Don't have an account?{' '}
-                  <a href="/sign-up" className="font-medium text-[#00ffff] hover:text-[#00ffff]/80 transition-colors">
-                    Sign up
-                  </a>
-                </>
+              {hasPendingPrompt && (
+                <span className="mb-1 block text-[#00ffff]">Sign in to generate your email</span>
               )}
+              Don't have an account?{' '}
+              <a href="/sign-up" className="font-medium text-[#00ffff] hover:text-[#00ffff]/80 transition-colors">
+                Sign up
+              </a>
             </p>
           </div>
 
