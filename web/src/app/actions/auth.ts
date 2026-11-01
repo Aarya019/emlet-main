@@ -2,7 +2,9 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { SOURCE_COOKIE, parseAttribution } from '@/lib/attribution';
 
 /** Supabase's captcha errors are technical ("captcha protection: request disallowed (no captcha_token found)"); show something a person can act on. */
 function authErrorMessage(message: string): string {
@@ -45,12 +47,16 @@ export async function signUp(formData: FormData) {
     password: formData.get('password') as string,
   };
 
+  // Which channel brought this visitor in (see SourceCapture); stored on the account for later analysis.
+  const signupSource = parseAttribution((await cookies()).get(SOURCE_COOKIE)?.value);
+
   const { data: authData, error } = await supabase.auth.signUp({
     email: data.email,
     password: data.password,
     options: {
       emailRedirectTo: `${getSiteUrl()}/auth/callback`,
       captchaToken,
+      data: signupSource ? { signup_source: signupSource } : undefined,
     },
   });
 

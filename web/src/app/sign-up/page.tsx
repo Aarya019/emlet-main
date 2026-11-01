@@ -13,6 +13,7 @@ export default function SignUpPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasPendingPrompt, setHasPendingPrompt] = useState(false);
+  const [hasPendingTemplate, setHasPendingTemplate] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileHandle>(null);
 
@@ -21,6 +22,16 @@ export default function SignUpPage() {
     const pendingPrompt = localStorage.getItem('pendingEmailPrompt');
     if (pendingPrompt) {
       setHasPendingPrompt(true);
+    }
+
+    // A template picked in the public library (/sign-up?template=slug). Remember it in localStorage:
+    // confirming the email leaves this page, and the dashboard opens the template once they're in.
+    const template = new URLSearchParams(window.location.search).get('template');
+    if (template && /^[a-z0-9-]{1,100}$/.test(template)) {
+      localStorage.setItem('pendingTemplate', template);
+    }
+    if (localStorage.getItem('pendingTemplate')) {
+      setHasPendingTemplate(true);
     }
   }, []);
 
@@ -145,6 +156,9 @@ export default function SignUpPage() {
                 <span className="text-[#00ffff]">Sign up to generate your email</span>
               ) : (
                 <>
+                  {hasPendingTemplate && (
+                    <span className="mb-1 block text-[#00ffff]">Create a free account to open the template you picked.</span>
+                  )}
                   Already have an account?{' '}
                   <a href="/sign-in" className="font-medium text-[#00ffff] hover:text-[#00ffff]/80 transition-colors">
                     Sign in

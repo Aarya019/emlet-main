@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { startTransition, useEffect, useMemo, useState } from 'react';
+import { startTemplate } from '@/app/actions/templates';
 import { signOut } from '@/app/actions/auth';
 import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle, PlanType } from '@/lib/db/types';
 import EmailGeneratingOverlay from '@/components/EmailGeneratingOverlay';
@@ -226,6 +227,18 @@ export default function DashboardContent() {
   const [upgradeStatus, setUpgradeStatus] = useState<'idle' | 'checking' | 'success' | 'pending'>('idle');
 
   useEffect(() => {
+    // A library template picked before signing up (see /templates/[slug]): open it in the editor now
+    // that the user is signed in. Cleared first so a refresh or a second effect run can't repeat it.
+    const pendingTemplate = localStorage.getItem('pendingTemplate');
+    if (pendingTemplate) {
+      localStorage.removeItem('pendingTemplate');
+      const formData = new FormData();
+      formData.set('slug', pendingTemplate);
+      startTransition(() => {
+        void startTemplate(null, formData);
+      });
+    }
+
     // Retrieve and clear the pending prompt from localStorage
     const prompt = localStorage.getItem('pendingEmailPrompt');
     if (prompt) {

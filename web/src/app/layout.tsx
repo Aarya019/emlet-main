@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import Script from 'next/script';
-import { Suspense } from 'react';
-import GoogleAnalytics from '@/components/GoogleAnalytics';
 import AuthErrorRedirect from '@/components/AuthErrorRedirect';
+import ConsentManager from '@/components/ConsentManager';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -69,23 +67,14 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-79R1XR82LB"
-          strategy="lazyOnload"
-        />
-        <Script id="gtag-init" strategy="lazyOnload">{`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-79R1XR82LB');
-        `}</Script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
         <AuthErrorRedirect />
-        <Suspense fallback={null}><GoogleAnalytics /></Suspense>
+        {/* Google Analytics + the attribution cookie, behind cookie consent where the law requires it. */}
+        <ConsentManager />
         <Analytics />
         <SpeedInsights />
       </body>

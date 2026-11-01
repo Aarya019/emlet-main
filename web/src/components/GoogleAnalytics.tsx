@@ -2,8 +2,7 @@
 
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
-
-const GA_ID = 'G-79R1XR82LB';
+import { GA_MEASUREMENT_ID as GA_ID } from '@/lib/consent';
 
 export default function GoogleAnalytics() {
   const pathname = usePathname();

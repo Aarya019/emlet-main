@@ -139,6 +139,13 @@ export default function PrivacyPage() {
             used. You can disable cookies in your browser settings, but some features of the Service
             may not work correctly without them.
           </p>
+          <p className="mt-3">
+            Google Analytics, and a small first-party cookie that records which link or website brought
+            you to us (for example a campaign tag), are optional. If you are in the European Union, the
+            European Economic Area, the United Kingdom or Switzerland, we only set them after you accept
+            in the cookie banner. You can change your choice at any time with the &quot;Cookie
+            settings&quot; link in the footer. Vercel Analytics does not use cookies.
+          </p>
         </Section>
 
         <Section title="7. Your Rights">

@@ -9,6 +9,8 @@ import StarField from '@/components/StarField';
 import StepVideo from '@/components/StepVideo';
 import type { User } from '@supabase/supabase-js';
 import type { PlanType } from '@/lib/db/types';
+import { SHOW_TEMPLATES_IN_NAV } from '@/lib/content/templates';
+import CookieSettingsLink from '@/components/CookieSettingsLink';
 
 // ── How-it-works steps ───────────────────────────────────────────────────────
 // `video` is the path of a short silent clip WITHOUT extension. Put the files in
@@ -316,6 +318,7 @@ export default function Home() {
             <a href="#features" className="transition-colors hover:text-white">Features</a>
             <a href="#pricing" className="transition-colors hover:text-white">Pricing</a>
             <a href="#faq" className="transition-colors hover:text-white">FAQ</a>
+            {SHOW_TEMPLATES_IN_NAV && <a href="/templates" className="transition-colors hover:text-white">Templates</a>}
             <a href="/blog" className="transition-colors hover:text-white">Blog</a>
           </nav>
           {/* Desktop auth buttons */}
@@ -810,6 +813,7 @@ export default function Home() {
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
                 <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
                 <li><a href="/dashboard" className="hover:text-white transition-colors">Dashboard</a></li>
+                {SHOW_TEMPLATES_IN_NAV && <li><a href="/templates" className="hover:text-white transition-colors">Templates</a></li>}
                 <li><a href="/blog" className="hover:text-white transition-colors">Blog</a></li>
                 <li><a href="/alternatives" className="hover:text-white transition-colors">Alternatives</a></li>
               </ul>
@@ -839,6 +843,7 @@ export default function Home() {
                 <li><a href="/terms" className="hover:text-white transition-colors">Terms of Service</a></li>
                 <li><a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
                 <li><a href="/refunds" className="hover:text-white transition-colors">Refund Policy</a></li>
+                <li><CookieSettingsLink className="hover:text-white transition-colors" /></li>
               </ul>
             </div>
           </div>

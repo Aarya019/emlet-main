@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { getAllPostsMeta } from '@/lib/content/posts';
 import { ALTERNATIVES } from '@/lib/content/alternatives';
+import { getAllTemplatesMeta } from '@/lib/content/templates-registry';
+import { MIN_INDEXABLE_CATEGORY } from '@/lib/content/templates';
 
 const SITE_URL = 'https://www.emlet.app';
 
@@ -28,5 +30,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...blogRoutes, ...alternativeRoutes];
+  // Template library: nothing is listed until there is at least one published template, and category
+  // pages only once they have enough templates to be worth a search result.
+  const templates = await getAllTemplatesMeta();
+  const templateRoutes: MetadataRoute.Sitemap = [];
+  if (templates.length > 0) {
+    templateRoutes.push({ url: `${SITE_URL}/templates`, changeFrequency: 'weekly', priority: 0.8 });
+    for (const t of templates) {
+      templateRoutes.push({ url: `${SITE_URL}/templates/${t.slug}`, lastModified: t.date, changeFrequency: 'monthly', priority: 0.7 });
+    }
+    const addCategories = (segment: string, keys: string[]) => {
+      const sizes = new Map<string, number>();
+      for (const k of keys) sizes.set(k, (sizes.get(k) ?? 0) + 1);
+      for (const [key, n] of sizes) {
+        if (n >= MIN_INDEXABLE_CATEGORY) {
+          templateRoutes.push({ url: `${SITE_URL}/templates/${segment}/${key}`, changeFrequency: 'weekly', priority: 0.6 });
+        }
+      }
+    };
+    addCategories('type', templates.map((t) => t.emailType));
+    addCategories('industry', templates.map((t) => t.industry));
+  }
+
+  return [...staticRoutes, ...blogRoutes, ...alternativeRoutes, ...templateRoutes];
 }
