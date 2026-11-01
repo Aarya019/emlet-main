@@ -142,7 +142,7 @@ export default function HtmlChecker() {
                       <p className="text-sm font-semibold text-white">{f.title}</p>
                       <p className="text-sm leading-relaxed text-white/55">{f.detail}</p>
                       <p className="mt-1 text-xs text-white/40"><span className="font-semibold text-white/55">Affects:</span> {f.clients}</p>
-                      <p className="text-sm text-white/70"><span className="font-semibold text-[#00ffff]/80">Fix:</span> {f.fix}</p>
+                      <p className="text-sm text-white/70"><span className="font-semibold text-neon-ink/80">Fix:</span> {f.fix}</p>
                     </div>
                   </li>
                 ))}

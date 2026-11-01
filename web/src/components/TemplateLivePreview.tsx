@@ -76,7 +76,7 @@ export default function TemplateLivePreview({ slug, title, imageSrc, imageWidth,
             title={`${title}: live ${mode} preview`}
             srcDoc={html}
             sandbox=""
-            className="mx-auto block h-[720px] w-full rounded-lg bg-white"
+            className="mx-auto block h-[720px] w-full rounded-lg bg-pure-white"
             style={{ maxWidth: mode === 'mobile' ? 375 : 640 }}
           />
         ) : (

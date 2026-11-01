@@ -20,9 +20,9 @@ export default function EmailSignatureGeneratorPage() {
               </p>
               <p>
                 For the same reason it keeps to common fonts, text links instead of icon images, and one linked photo at most. Fewer moving parts means fewer surprises. Our posts on{' '}
-                <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-[#00ffff] hover:underline">why emails look broken in Gmail and Outlook</Link>{' '}
+                <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-neon-ink hover:underline">why emails look broken in Gmail and Outlook</Link>{' '}
                 and{' '}
-                <Link href="/blog/html-email-font-family-stacks" className="text-[#00ffff] hover:underline">email-safe font stacks</Link> explain the thinking.
+                <Link href="/blog/html-email-font-family-stacks" className="text-neon-ink hover:underline">email-safe font stacks</Link> explain the thinking.
               </p>
             </>
           ),

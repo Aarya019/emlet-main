@@ -26,7 +26,7 @@ export default function RefundsPage() {
         <section>
           <p>
             This page explains how refunds work for Emlet's Professional plan. It's a companion to our{' '}
-            <Link href="/terms" className="text-[#00ffff] hover:underline">Terms of Service</Link>, which
+            <Link href="/terms" className="text-neon-ink hover:underline">Terms of Service</Link>, which
             remains the governing document if the two ever conflict.
           </p>
         </section>
@@ -53,7 +53,7 @@ export default function RefundsPage() {
           <p>
             If you were charged in error, didn't mean to subscribe, or aren't happy with the Service,
             email us at{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">{CONTACT_EMAIL}</a>{' '}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-neon-ink hover:underline">{CONTACT_EMAIL}</a>{' '}
             within 7 days of the charge, with the email address on your account and the approximate
             charge date. We review requests individually and typically respond within 2 business days.
           </p>
@@ -87,7 +87,7 @@ export default function RefundsPage() {
         <Section title="6. Contact">
           <p>
             Questions about a specific charge or this policy can go to{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-neon-ink hover:underline">
               {CONTACT_EMAIL}
             </a>. Emlet is operated from Hyderabad, Telangana, India.
           </p>

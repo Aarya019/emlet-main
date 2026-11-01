@@ -1,5 +1,6 @@
 import AuthBackground from '@/components/AuthBackground';
 import ContinueForm from './ContinueForm';
+import ThemeToggle from '@/components/ThemeToggle';
 
 /**
  * Landing page for the password-reset email link
@@ -17,6 +18,7 @@ export default async function ConfirmPage({
 
   return (
     <div className="relative min-h-screen bg-black flex items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8">
+      <ThemeToggle className="fixed right-4 top-4 z-30" />
       <AuthBackground />
 
       <div className="relative z-10 w-full max-w-md space-y-8 text-center">

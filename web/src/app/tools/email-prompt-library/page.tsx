@@ -33,9 +33,9 @@ export default function EmailPromptLibraryPage() {
           body: (
             <p>
               Left alone, AI writes the average email. The cure is specifics: your real details, a tone you have named, and permission to be plain. We go deeper in{' '}
-              <Link href="/blog/ai-written-emails-all-sound-the-same" className="text-[#00ffff] hover:underline">why AI-written emails all sound the same</Link>{' '}
+              <Link href="/blog/ai-written-emails-all-sound-the-same" className="text-neon-ink hover:underline">why AI-written emails all sound the same</Link>{' '}
               and{' '}
-              <Link href="/blog/write-like-a-person-not-a-brand" className="text-[#00ffff] hover:underline">how to write like a person, not a brand</Link>.
+              <Link href="/blog/write-like-a-person-not-a-brand" className="text-neon-ink hover:underline">how to write like a person, not a brand</Link>.
             </p>
           ),
         },

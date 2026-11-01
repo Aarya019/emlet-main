@@ -11,6 +11,7 @@ import type { User } from '@supabase/supabase-js';
 import type { PlanType } from '@/lib/db/types';
 import { SHOW_TEMPLATES_IN_NAV } from '@/lib/content/templates';
 import CookieSettingsLink from '@/components/CookieSettingsLink';
+import ThemeToggle from '@/components/ThemeToggle';
 
 // ── How-it-works steps ───────────────────────────────────────────────────────
 // `video` is the path of a short silent clip WITHOUT extension. Put the files in
@@ -287,9 +288,9 @@ export default function Home() {
       <StarField />
       {/* ── Try for free announcement pill ──────────────────────────────────── */}
       <div className="relative z-50 flex items-center justify-center gap-3 bg-gradient-to-r from-[#00ffff]/10 via-[#00ff00]/10 to-[#ff00ff]/10 border-b border-white/5 px-4 py-2 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 px-3 py-0.5 text-xs font-semibold text-[#00ffff] tracking-wide uppercase">Free</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 px-3 py-0.5 text-xs font-semibold text-neon-ink tracking-wide uppercase">Free</span>
         <span className="text-xs text-white/60">Try for free, no credit card required.</span>
-        <a href="/sign-up" className="text-xs font-semibold text-white underline underline-offset-2 hover:text-[#00ffff] transition-colors whitespace-nowrap">Start free →</a>
+        <a href="/sign-up" className="text-xs font-semibold text-white underline underline-offset-2 hover:text-neon-ink transition-colors whitespace-nowrap">Start free →</a>
       </div>
       {/* Animated gradient blobs with magnetic effect (desktop only — see effect above) */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
@@ -309,7 +310,7 @@ export default function Home() {
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5">
-        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-3 md:px-6 md:py-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-4 px-4 py-3 md:grid-cols-[1fr_auto_1fr] md:px-6 md:py-4">
           <a href="/" className="flex items-center gap-2 group">
             <Image src="/logo.png" alt="Emlet" width={532} height={532} priority className="h-7 w-auto md:h-8" />
           </a>
@@ -325,6 +326,7 @@ export default function Home() {
           </nav>
           {/* Desktop auth buttons */}
           <div className="hidden items-center justify-end gap-3 md:flex">
+            <ThemeToggle />
             {user ? (
               <>
                 {isPaidUser && (
@@ -342,7 +344,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                <a href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
+                <a href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-neon-ink">
                   Sign in
                 </a>
                 <a href="/sign-up" className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
@@ -353,6 +355,7 @@ export default function Home() {
           </div>
           {/* Mobile: sign-in/dashboard link + hamburger */}
           <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle size="sm" />
             {user ? (
               <a href="/dashboard" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white">
                 Dashboard
@@ -456,10 +459,10 @@ export default function Home() {
               />
               <div className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
                 <div className="flex items-center gap-2 text-xs text-white/60">
-                  <svg className="h-3.5 w-3.5 flex-shrink-0 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-3.5 w-3.5 flex-shrink-0 text-neon-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  <span className="text-[#00ffff]">AI-powered</span>
+                  <span className="text-neon-ink">AI-powered</span>
                   <span className="hidden sm:inline text-white/60">·</span>
                   <span className="hidden sm:inline">HTML export</span>
                 </div>
@@ -496,7 +499,7 @@ export default function Home() {
 
       {/* ── Hero image (email editor screenshot) ──────────────────────────── */}
       <section className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pb-24">
-        <div className="relative rounded-2xl border border-white/10 overflow-hidden shadow-2xl shadow-black/60">
+        <div className="relative rounded-2xl border border-white/10 overflow-hidden shadow-2xl shadow-pure-black/60">
           {/* Glow behind the image */}
           <div className="absolute -inset-1 bg-gradient-to-r from-[#00ffff]/20 via-[#00ff00]/10 to-[#ff00ff]/20 blur-2xl pointer-events-none" />
           <div className="relative aspect-[16/9] w-full bg-white/5 flex items-center justify-center">
@@ -529,7 +532,7 @@ export default function Home() {
       {/* ── How it works ───────────────────────────────────────────────────── */}
       <section id="how-it-works" className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-20 md:py-28 scroll-mt-24">
         <div className="text-center mb-16">
-          <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">How it works</p>
+          <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-3">How it works</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
             From idea to inbox in 3 steps
           </h2>
@@ -577,7 +580,7 @@ export default function Home() {
       {/* ── Features grid ──────────────────────────────────────────────────── */}
       <section id="features" className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-20 md:py-28 scroll-mt-24">
         <div className="text-center mb-14">
-          <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Features</p>
+          <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-3">Features</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
             Everything you need to convert
           </h2>
@@ -590,7 +593,7 @@ export default function Home() {
           {FEATURES.map((f) => (
             <div key={f.title} className="rounded-2xl border border-white/8 bg-white/[0.02] p-6 hover:border-white/15 hover:bg-white/[0.04] transition-all group">
 
-              <h3 className="text-base font-bold text-white mb-1 group-hover:text-[#00ffff] transition-colors">{f.title}</h3>
+              <h3 className="text-base font-bold text-white mb-1 group-hover:text-neon-ink transition-colors">{f.title}</h3>
               <p className="text-sm text-white/50 leading-relaxed">{f.desc}</p>
             </div>
           ))}
@@ -600,7 +603,7 @@ export default function Home() {
       {/* ── Pricing ─────────────────────────────────────────────────────────── */}
       <section id="pricing" className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-20 md:py-28 scroll-mt-36">
         <div className="text-center mb-14">
-          <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Pricing</p>
+          <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-3">Pricing</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
             Try it free. Then go{' '}
             <span className="bg-gradient-to-r from-[#00ffff] via-[#00ff00] to-[#ff00ff] bg-clip-text text-transparent">unlimited</span>.
@@ -648,7 +651,7 @@ export default function Home() {
 
           {/* Professional card — the centerpiece */}
           <div className="relative rounded-2xl border border-[#00ffff]/40 bg-gradient-to-b from-[#00ffff]/[0.07] to-transparent shadow-lg shadow-[#00ffff]/10 p-7 sm:p-8 flex flex-col gap-6">
-            <div className="absolute -top-3 left-7 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-xs font-black uppercase tracking-wide">
+            <div className="absolute -top-3 left-7 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-pure-black text-xs font-black uppercase tracking-wide">
               {isPaidUser ? 'Your plan' : BETA_DISCOUNT_CODE ? 'Beta pricing - locked in forever' : 'Unlock everything'}
             </div>
 
@@ -671,7 +674,7 @@ export default function Home() {
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 flex-1">
               {PROFESSIONAL_FEATURES.map((feature) => (
                 <li key={feature} className="flex items-center gap-2.5 text-sm text-white/85">
-                  <CheckIcon className="w-4 h-4 shrink-0 text-[#00ff00]" />
+                  <CheckIcon className="w-4 h-4 shrink-0 text-neon-lime-ink" />
                   {feature}
                 </li>
               ))}
@@ -685,7 +688,7 @@ export default function Home() {
               <button
                 onClick={handleUpgrade}
                 disabled={checkoutLoading}
-                className="w-full py-3 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black hover:shadow-lg hover:shadow-[#00ffff]/30 hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                className="w-full py-3 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-pure-black hover:shadow-lg hover:shadow-[#00ffff]/30 hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
                 {checkoutLoading ? 'Opening checkout…' : user ? 'Upgrade to Professional' : 'Sign up & upgrade'}
               </button>
@@ -709,7 +712,7 @@ export default function Home() {
 
           {/* About / founder note */}
           <div>
-            <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-6">About</p>
+            <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-6">About</p>
             <div className="flex items-center gap-4 mb-6">
               {/* Photo — replace src with the real headshot at /public/images/founder-aarya.jpg */}
               <div className="relative flex-shrink-0 w-14 h-14">
@@ -745,7 +748,7 @@ export default function Home() {
 
           {/* FAQ */}
           <div id="faq" className="scroll-mt-24">
-            <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-6">FAQ</p>
+            <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-6">FAQ</p>
             <div className="divide-y divide-white/8">
               {FAQS.map((faq, i) => (
                 <div key={i}>
@@ -753,8 +756,8 @@ export default function Home() {
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
                     className="flex w-full items-center justify-between py-4 text-left gap-6 group"
                   >
-                    <span className="text-sm sm:text-base font-semibold text-white group-hover:text-[#00ffff] transition-colors">{faq.q}</span>
-                    <span className={`flex-shrink-0 text-[#00ffff]/60 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>
+                    <span className="text-sm sm:text-base font-semibold text-white group-hover:text-neon-ink transition-colors">{faq.q}</span>
+                    <span className={`flex-shrink-0 text-neon-ink/60 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>
                       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>

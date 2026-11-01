@@ -14,7 +14,7 @@ interface EmailVerifyModalProps {
 const STATUS_STYLES: Record<CheckStatus, { dot: string; text: string; label: string }> = {
   fail: { dot: 'bg-red-400', text: 'text-red-400', label: 'Fix' },
   warn: { dot: 'bg-yellow-400', text: 'text-yellow-400', label: 'Warning' },
-  pass: { dot: 'bg-[#00ff80]', text: 'text-[#00ff80]', label: 'Pass' },
+  pass: { dot: 'bg-[#00ff80]', text: 'text-neon-mint-ink', label: 'Pass' },
 };
 
 export default function EmailVerifyModal({ email, colors, htmlCode, onClose }: EmailVerifyModalProps) {
@@ -28,11 +28,11 @@ export default function EmailVerifyModal({ email, colors, htmlCode, onClose }: E
   return (
     <>
       <div
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10 animate-in fade-in duration-200"
+        className="absolute inset-0 bg-pure-black/70 backdrop-blur-sm z-10 animate-in fade-in duration-200"
         onClick={onClose}
       />
       <div className="absolute inset-0 z-20 flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-200">
-        <div className="w-full max-w-lg max-h-[85vh] flex flex-col bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="w-full max-w-lg max-h-[85vh] flex flex-col bg-surface border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-white/10 flex-shrink-0">
             <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -58,7 +58,7 @@ export default function EmailVerifyModal({ email, colors, htmlCode, onClose }: E
             <span className="flex items-center gap-1.5 text-yellow-400">
               <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" /> {warnCount} warning{warnCount === 1 ? '' : 's'}
             </span>
-            <span className="flex items-center gap-1.5 text-[#00ff80]">
+            <span className="flex items-center gap-1.5 text-neon-mint-ink">
               <span className="w-1.5 h-1.5 rounded-full bg-[#00ff80]" /> {passCount} passed
             </span>
           </div>

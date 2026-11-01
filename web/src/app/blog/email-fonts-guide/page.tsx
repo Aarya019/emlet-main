@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import TocSidebar from './TocSidebar';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export const metadata: Metadata = {
   title: 'The Ultimate Guide to Email Fonts | Emlet Blog',
@@ -40,7 +41,7 @@ function P({ children }: { children: React.ReactNode }) {
 
 function Callout({ type = 'tip', children }: { type?: 'tip' | 'warning' | 'info'; children: React.ReactNode }) {
   const styles = {
-    tip: 'bg-[#00ffff]/5 border-[#00ffff]/30 text-[#00ffff]/80',
+    tip: 'bg-[#00ffff]/5 border-[#00ffff]/30 text-neon-ink/80',
     warning: 'bg-yellow-400/5 border-yellow-400/30 text-yellow-400/80',
     info: 'bg-white/5 border-white/15 text-white/60',
   };
@@ -55,7 +56,7 @@ function Callout({ type = 'tip', children }: { type?: 'tip' | 'warning' | 'info'
 
 function Code({ children }: { children: string }) {
   return (
-    <code className="bg-white/8 text-[#00ffff] text-[0.82em] px-1.5 py-0.5 rounded font-mono">
+    <code className="bg-white/8 text-neon-ink text-[0.82em] px-1.5 py-0.5 rounded font-mono">
       {children}
     </code>
   );
@@ -69,7 +70,7 @@ function CodeBlock({ children, label }: { children: string; label?: string }) {
           {label}
         </div>
       )}
-      <pre className="bg-[#0a0a0a] overflow-x-auto px-5 py-4 text-sm text-white/75 font-mono leading-relaxed whitespace-pre">
+      <pre className="bg-surface overflow-x-auto px-5 py-4 text-sm text-white/75 font-mono leading-relaxed whitespace-pre">
         {children}
       </pre>
     </div>
@@ -161,7 +162,8 @@ export default function EmailFontsGuide() {
             <Link href="/blog" className="transition-colors hover:text-white">Blog</Link>
           </nav>
           <div className="flex items-center justify-end gap-3">
-            <Link href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
+            <ThemeToggle size="sm" />
+            <Link href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-neon-ink">
               Sign in
             </Link>
             <Link href="/sign-up" className="hidden sm:block rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
@@ -184,12 +186,12 @@ export default function EmailFontsGuide() {
           <div className="flex items-center gap-2 text-xs text-white/30 mb-8">
             <Link href="/blog" className="hover:text-white/60 transition-colors">Blog</Link>
             <span>/</span>
-            <span className="text-[#00ffff]/60">Design</span>
+            <span className="text-neon-ink/60">Design</span>
           </div>
 
           {/* Title block */}
           <div className="mb-10">
-            <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-4">
+            <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-4">
               Design, 12 min read
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.05] mb-6">
@@ -805,7 +807,7 @@ export default function EmailFontsGuide() {
 
           {/* CTA */}
           <div className="rounded-2xl bg-gradient-to-br from-white/8 to-white/3 border border-white/10 p-8 text-center mt-12">
-            <p className="text-xs font-bold uppercase tracking-widest text-[#00ffff]/60 mb-3">Put it into practice</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-neon-ink/60 mb-3">Put it into practice</p>
             <h2 className="text-2xl sm:text-3xl font-black mb-3">
               Ship better-looking emails. Starting now.
             </h2>

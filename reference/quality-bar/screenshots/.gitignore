@@ -1,0 +1,7 @@
+# Screenshots of other brands' emails stay on your machine by default (not for a git repository).
+# Delete this file if you want to commit screenshots you are free to use.
+*
+!*/
+!.gitignore
+!.gitkeep
+!README.md

@@ -19,7 +19,7 @@ export default function ToolsHubPage() {
   return (
     <MarketingLayout contentClassName="max-w-5xl">
       <div className="mb-12">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#00ffff]/60">Free tools</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-neon-ink/60">Free tools</p>
         <h1 className="mb-4 text-4xl font-black tracking-tight sm:text-5xl">Small tools that make email less annoying</h1>
         <p className="max-w-2xl text-lg text-white/50">
           No signup, no limits. Everything runs in your browser, so what you type stays with you.
@@ -33,18 +33,18 @@ export default function ToolsHubPage() {
             href={toolUrl(tool.slug)}
             className="group rounded-2xl border border-white/10 bg-white/[0.04] p-6 transition-colors hover:border-white/30"
           >
-            <h2 className="mb-2 text-xl font-black tracking-tight text-white transition-colors group-hover:text-[#00ffff]">{tool.name}</h2>
+            <h2 className="mb-2 text-xl font-black tracking-tight text-white transition-colors group-hover:text-neon-ink">{tool.name}</h2>
             <p className="leading-relaxed text-white/50">{tool.tagline}</p>
-            <p className="mt-4 text-sm font-semibold text-[#00ffff]">Open the tool →</p>
+            <p className="mt-4 text-sm font-semibold text-neon-ink">Open the tool →</p>
           </Link>
         ))}
       </div>
 
       <p className="mt-14 text-sm text-white/40">
         Looking for ready-made designs?{' '}
-        <Link href="/blog" className="text-[#00ffff] hover:underline">Read the blog</Link>{' '}
+        <Link href="/blog" className="text-neon-ink hover:underline">Read the blog</Link>{' '}
         or{' '}
-        <Link href="/sign-up" className="text-[#00ffff] hover:underline">generate an email in your brand colours</Link>.
+        <Link href="/sign-up" className="text-neon-ink hover:underline">generate an email in your brand colours</Link>.
       </p>
     </MarketingLayout>
   );

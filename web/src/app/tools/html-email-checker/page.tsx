@@ -20,7 +20,7 @@ export default function HtmlEmailCheckerPage() {
               </p>
               <p>
                 The checker looks for the usual culprits: flexbox and grid, background images, web fonts, SVG, missing alt text, a message big enough for Gmail to clip, and styles that are not inlined. Each finding says who it affects and how to fix it. Our post on{' '}
-                <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-[#00ffff] hover:underline">why emails look broken in Gmail and Outlook</Link>{' '}
+                <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-neon-ink hover:underline">why emails look broken in Gmail and Outlook</Link>{' '}
                 goes through them in more detail.
               </p>
             </>

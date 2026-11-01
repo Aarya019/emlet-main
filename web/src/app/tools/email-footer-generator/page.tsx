@@ -24,7 +24,7 @@ export default function EmailFooterGeneratorPage() {
               </ul>
               <p>
                 Gmail and Yahoo also expect one-click unsubscribe for bulk senders. We explain what that means, and how to set it up, in{' '}
-                <Link href="/blog/one-click-unsubscribe-what-it-is-and-how-to-set-it-up" className="text-[#00ffff] hover:underline">our guide to one-click unsubscribe</Link>.
+                <Link href="/blog/one-click-unsubscribe-what-it-is-and-how-to-set-it-up" className="text-neon-ink hover:underline">our guide to one-click unsubscribe</Link>.
               </p>
             </>
           ),

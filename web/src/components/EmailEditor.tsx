@@ -31,6 +31,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface EmailEditorProps {
   emailId: string;
@@ -100,7 +101,7 @@ function LayoutSelect<T extends string>({ label, value, options, onChange }: {
 function LayoutToggle({ label, value, onChange }: { label: string; value: boolean | undefined; onChange: (v: boolean | undefined) => void }) {
   return (
     <label className="flex items-center gap-2 text-[11px] text-white/50 cursor-pointer col-span-2">
-      <input type="checkbox" checked={value !== false} onChange={e => onChange(e.target.checked ? undefined : false)} className="accent-[#00ffff]" />
+      <input type="checkbox" checked={value !== false} onChange={e => onChange(e.target.checked ? undefined : false)} className="accent-neon-ink" />
       {label}
     </label>
   );
@@ -1123,6 +1124,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <ThemeToggle size="sm" />
               <div className="flex items-center gap-1 mr-1">
                 <button
                   onClick={undo}
@@ -1154,12 +1156,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 <span className="text-red-400 text-xs">{saveError}</span>
               )}
               <div className="relative">
-                <span className="absolute -top-2 -right-2 z-10 px-2 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-extrabold tracking-wide shadow-sm">
+                <span className="absolute -top-2 -right-2 z-10 px-2 py-0.5 rounded-full bg-amber-400 text-pure-black text-[10px] font-extrabold tracking-wide shadow-sm">
                   Beta
                 </span>
                 <button
                   onClick={() => { setShowVerifyModal(false); setShowSendModal(false); setSendResult(null); setAiChatOpen(true); }}
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-sm font-bold flex items-center gap-2 whitespace-nowrap hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-pure-black text-sm font-bold flex items-center gap-2 whitespace-nowrap hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
@@ -1188,7 +1190,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 disabled={!isDirty || saving}
                 className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
                   isDirty
-                    ? 'bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black hover:shadow-lg hover:shadow-[#00ffff]/30'
+                    ? 'bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-pure-black hover:shadow-lg hover:shadow-[#00ffff]/30'
                     : 'border border-white/10 text-white/30 cursor-not-allowed'
                 }`}
               >
@@ -1216,7 +1218,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 </svg>
                 Verify
                 {verifyIssueCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-pure-white text-[10px] font-bold flex items-center justify-center">
                     {verifyIssueCount}
                   </span>
                 )}
@@ -1326,7 +1328,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       className="w-full px-0 py-1 bg-transparent border-0 text-white focus:outline-none focus:ring-0"
                     >
                       {['promotional', 'newsletter', 'educational', 'transactional', 'other'].map(t => (
-                        <option key={t} value={t} className="bg-[#0a0a0a] capitalize">{t}</option>
+                        <option key={t} value={t} className="bg-surface capitalize">{t}</option>
                       ))}
                     </select>
                   </div>
@@ -1368,11 +1370,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                           {isOpen && (
                             <>
                               <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-                              <div className="absolute left-0 top-full mt-1 w-full max-h-[260px] bg-gradient-to-b from-black via-black to-black/95 border border-white/20 rounded-lg shadow-2xl shadow-black/50 overflow-y-auto z-20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 backdrop-blur-xl">
+                              <div className="absolute left-0 top-full mt-1 w-full max-h-[260px] bg-gradient-to-b from-black via-black to-black/95 border border-white/20 rounded-lg shadow-2xl shadow-pure-black/50 overflow-y-auto z-20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 backdrop-blur-xl">
                                 <button
                                   type="button"
                                   onClick={() => { onSelect(''); setIsOpen(false); }}
-                                  className={`w-full px-3 py-2 text-left text-xs hover:bg-white/10 transition-colors border-b border-white/5 ${value === '' ? 'text-[#00ffff] bg-[#00ffff]/10' : 'text-white/50'}`}
+                                  className={`w-full px-3 py-2 text-left text-xs hover:bg-white/10 transition-colors border-b border-white/5 ${value === '' ? 'text-neon-ink bg-[#00ffff]/10' : 'text-white/50'}`}
                                 >
                                   — style default —
                                 </button>
@@ -1381,7 +1383,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     key={name}
                                     type="button"
                                     onClick={() => { onSelect(name); setIsOpen(false); }}
-                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${value === name ? 'text-[#00ffff] bg-[#00ffff]/10' : 'text-white'}`}
+                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${value === name ? 'text-neon-ink bg-[#00ffff]/10' : 'text-white'}`}
                                     style={{ fontFamily: fontFamilyCSS(name) }}
                                   >
                                     {name}
@@ -1431,7 +1433,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     <summary className="cursor-pointer select-none px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider list-none flex items-center gap-1.5">
                       <span className="inline-block transition-transform group-open:rotate-90">▸</span>
                       Email frame
-                      {editedEmail.frame && <span className="normal-case text-[#00ffff]/60 font-normal">· customised</span>}
+                      {editedEmail.frame && <span className="normal-case text-neon-ink/60 font-normal">· customised</span>}
                     </summary>
                     <div className="px-4 pb-4">
                       <div className="grid grid-cols-2 gap-3 mb-4">
@@ -1526,10 +1528,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     onClick={() => setAiOpenSection(prev => prev === index ? null : index)}
                                     className={`p-1.5 rounded transition-all ${
                                       regeneratingSection === index
-                                        ? 'text-[#00ffff] cursor-wait'
+                                        ? 'text-neon-ink cursor-wait'
                                         : aiOpenSection === index || section.sectionPrompt
-                                          ? 'text-[#00ffff] bg-[#00ffff]/10'
-                                          : 'text-white/25 hover:text-[#00ffff] hover:bg-[#00ffff]/10 opacity-0 group-hover:opacity-100'
+                                          ? 'text-neon-ink bg-[#00ffff]/10'
+                                          : 'text-white/25 hover:text-neon-ink hover:bg-[#00ffff]/10 opacity-0 group-hover:opacity-100'
                                     }`}
                                     title="Rewrite with AI"
                                   >
@@ -1551,7 +1553,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                               )}
                               <button
                                 onClick={() => duplicateSection(index)}
-                                className="p-1.5 rounded text-white/20 hover:text-[#00ffff] hover:bg-[#00ffff]/10 transition-all opacity-0 group-hover:opacity-100"
+                                className="p-1.5 rounded text-white/20 hover:text-neon-ink hover:bg-[#00ffff]/10 transition-all opacity-0 group-hover:opacity-100"
                                 title="Duplicate section"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1651,7 +1653,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         setRegeneratingSection(null);
                                       }
                                     }}
-                                    className="px-2.5 py-1.5 rounded-lg bg-[#00ffff]/15 border border-[#00ffff]/30 text-[#00ffff] hover:bg-[#00ffff]/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap"
+                                    className="px-2.5 py-1.5 rounded-lg bg-[#00ffff]/15 border border-[#00ffff]/30 text-neon-ink hover:bg-[#00ffff]/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap"
                                   >
                                     {regeneratingSection === index ? (
                                       <div className="w-3 h-3 border-2 border-[#00ffff]/30 border-t-[#00ffff] rounded-full animate-spin" />
@@ -1822,7 +1824,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <div className="flex gap-2">
                                       {(['left', 'right'] as const).map(pos => (
                                         <button key={pos} onClick={() => updateSection(index, { imagePosition: pos })}
-                                          className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${section.imagePosition === pos ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                          className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${section.imagePosition === pos ? 'border-[#00ffff] text-neon-ink bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
                                           {pos.charAt(0).toUpperCase() + pos.slice(1)}
                                         </button>
                                       ))}
@@ -1850,7 +1852,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <select value={section.language || 'javascript'} onChange={e => updateSection(index, { language: e.target.value })}
                                     className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors">
                                     {['javascript','typescript','python','bash','json','html','css','sql','yaml','rust','go'].map(lang => (
-                                      <option key={lang} value={lang} className="bg-[#0a0a0a]">{lang}</option>
+                                      <option key={lang} value={lang} className="bg-surface">{lang}</option>
                                     ))}
                                   </select>
                                 </div>
@@ -1881,7 +1883,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       <label className="block text-xs text-white/40 uppercase tracking-wider">Nav Links</label>
                                       <button
                                         onClick={() => updateSection(index, { columns: [...(section.columns || []), { heading: 'Link', buttonUrl: 'https://' }] })}
-                                        className="text-[11px] text-[#00ffff]/70 hover:text-[#00ffff] transition-colors"
+                                        className="text-[11px] text-neon-ink/70 hover:text-neon-ink transition-colors"
                                       >
                                         + Add link
                                       </button>
@@ -1953,7 +1955,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Quotes</label>
                                     <button onClick={() => updateSection(index, { testimonials: [...(section.testimonials || []), { quote: '', author: '', rating: 5 }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-neon-ink hover:text-neon-ink/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add quote
                                     </button>
@@ -2032,7 +2034,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Stats</label>
                                     <button onClick={() => updateSection(index, { stats: [...(section.stats || []), { value: '', label: '' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-neon-ink hover:text-neon-ink/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add stat
                                     </button>
@@ -2067,7 +2069,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       <div className="flex gap-1.5">
                                         {(['list', 'grid'] as const).map(opt => (
                                           <button key={opt} onClick={() => updateSection(index, { layout: opt })}
-                                            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${(section.layout ?? 'list') === opt ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${(section.layout ?? 'list') === opt ? 'border-[#00ffff] text-neon-ink bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
                                             {opt.charAt(0).toUpperCase() + opt.slice(1)}
                                           </button>
                                         ))}
@@ -2077,11 +2079,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Style</label>
                                       <div className="flex gap-1.5">
                                         <button onClick={() => updateSection(index, { numbered: false })}
-                                          className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${!section.numbered ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                          className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${!section.numbered ? 'border-[#00ffff] text-neon-ink bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
                                           Icons
                                         </button>
                                         <button onClick={() => updateSection(index, { numbered: true })}
-                                          className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${section.numbered ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                          className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${section.numbered ? 'border-[#00ffff] text-neon-ink bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
                                           Numbered
                                         </button>
                                       </div>
@@ -2090,7 +2092,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Features</label>
                                     <button onClick={() => updateSection(index, { features: [...(section.features || []), { title: '', description: '' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-neon-ink hover:text-neon-ink/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add feature
                                     </button>
@@ -2124,7 +2126,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Images</label>
                                     <button onClick={() => updateSection(index, { images: [...(section.images || []), { url: '', alt: '' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-neon-ink hover:text-neon-ink/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add image
                                     </button>
@@ -2168,7 +2170,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Images</label>
                                     {(section.images || []).length < 4 && (
                                       <button onClick={() => updateSection(index, { images: [...(section.images || []), { url: '', alt: '' }] })}
-                                        className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                        className="text-xs text-neon-ink hover:text-neon-ink/70 transition-colors flex items-center gap-1">
                                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                         Add image
                                       </button>
@@ -2213,7 +2215,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Plans</label>
                                     <button onClick={() => updateSection(index, { plans: [...(section.plans || []), { name: 'New Plan', price: '$0', features: [], buttonText: 'Get Started' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-neon-ink hover:text-neon-ink/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add plan
                                     </button>
@@ -2224,7 +2226,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         <span className="text-xs font-bold text-white/60">Plan {pi + 1}</span>
                                         <div className="flex items-center gap-2">
                                           <label className="flex items-center gap-1 text-xs text-white/40 cursor-pointer">
-                                            <input type="checkbox" checked={plan.highlighted || false} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, highlighted: e.target.checked } : x); updateSection(index, { plans: p }); }} className="accent-[#00ffff]" />
+                                            <input type="checkbox" checked={plan.highlighted || false} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, highlighted: e.target.checked } : x); updateSection(index, { plans: p }); }} className="accent-neon-ink" />
                                             Highlighted
                                           </label>
                                           <ReorderButtons index={pi} count={(section.plans || []).length} onMove={d => updateSection(index, { plans: moveArrayItem(section.plans || [], pi, d) })} />
@@ -2255,7 +2257,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         <div className="flex items-center justify-between">
                                           <span className="text-[11px] text-white/30">Features</span>
                                           <button onClick={() => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, features: [...x.features, ''] } : x); updateSection(index, { plans: p }); }}
-                                            className="text-[11px] text-[#00ffff]/60 hover:text-[#00ffff] transition-colors">+ feature</button>
+                                            className="text-[11px] text-neon-ink/60 hover:text-neon-ink transition-colors">+ feature</button>
                                         </div>
                                         {plan.features.map((feat, fii) => (
                                           <div key={fii} className="flex gap-1 items-center">
@@ -2279,7 +2281,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Columns</label>
                                     <button onClick={() => updateSection(index, { columns: [...(section.columns || []), { heading: '', text: '' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-neon-ink hover:text-neon-ink/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add column
                                     </button>
@@ -2338,7 +2340,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Social Links</label>
                                     <button onClick={() => updateSection(index, { socialLinks: [...(section.socialLinks || []), { platform: '', url: '' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-neon-ink hover:text-neon-ink/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add link
                                     </button>
@@ -2644,7 +2646,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 <summary className="cursor-pointer select-none text-xs text-white/40 uppercase tracking-wider list-none flex items-center gap-1.5">
                                   <span className="inline-block transition-transform group-open:rotate-90">▸</span>
                                   Borders &amp; effects
-                                  {section.border && <span className="normal-case text-[#00ffff]/60 font-normal">· customised</span>}
+                                  {section.border && <span className="normal-case text-neon-ink/60 font-normal">· customised</span>}
                                 </summary>
                                 <div className="mt-3">
                                   <BorderControls
@@ -2670,7 +2672,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   {/* Add Block button */}
                   <button
                     onClick={() => setShowAddBlock(true)}
-                    className="w-full py-2.5 rounded-lg border border-dashed border-white/20 text-white/50 hover:border-[#00ffff]/50 hover:text-[#00ffff] transition-all text-sm font-medium flex items-center justify-center gap-2"
+                    className="w-full py-2.5 rounded-lg border border-dashed border-white/20 text-white/50 hover:border-[#00ffff]/50 hover:text-neon-ink transition-all text-sm font-medium flex items-center justify-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -2683,7 +2685,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     <button
                       onClick={handleSave}
                       disabled={saving}
-                      className="w-full py-3 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
+                      className="w-full py-3 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-pure-black font-bold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
                     >
                       {saving ? (
                         <>
@@ -2708,10 +2710,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
             {showAddBlock && (
               <>
                 <div
-                  className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10"
+                  className="absolute inset-0 bg-pure-black/70 backdrop-blur-sm z-10"
                   onClick={() => setShowAddBlock(false)}
                 />
-                <div className="absolute inset-x-0 bottom-0 bg-[#0a0a0a] border border-white/10 rounded-t-2xl z-20 max-h-[80%] flex flex-col">
+                <div className="absolute inset-x-0 bottom-0 bg-surface border border-white/10 rounded-t-2xl z-20 max-h-[80%] flex flex-col">
                   <div className="flex items-center justify-between p-4 border-b border-white/10 flex-shrink-0">
                     <h3 className="text-base font-bold text-white">Add a Block</h3>
                     <button onClick={() => setShowAddBlock(false)} className="text-white/40 hover:text-white transition-colors">
@@ -2728,12 +2730,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                         className="flex items-start gap-3 p-3 rounded-xl border border-white/10 bg-white/5 hover:border-[#00ffff]/40 hover:bg-[#00ffff]/5 transition-all text-left group"
                       >
                         <div className="w-8 h-8 rounded-lg bg-[#00ffff]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#00ffff]/20">
-                          <svg className="w-4 h-4 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-4 h-4 text-neon-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
                           </svg>
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-white group-hover:text-[#00ffff] transition-colors">{label}</p>
+                          <p className="text-xs font-bold text-white group-hover:text-neon-ink transition-colors">{label}</p>
                           <p className="text-[11px] text-white/40 leading-snug mt-0.5">{description}</p>
                         </div>
                       </button>
@@ -2747,11 +2749,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
             {showSendModal && (
               <>
                 <div
-                  className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10 animate-in fade-in duration-200"
+                  className="absolute inset-0 bg-pure-black/70 backdrop-blur-sm z-10 animate-in fade-in duration-200"
                   onClick={() => { setShowSendModal(false); setSendResult(null); }}
                 />
                 <div className="absolute inset-0 z-20 flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl">
+                  <div className="w-full max-w-md bg-surface border border-white/10 rounded-2xl p-6 shadow-2xl">
                     {/* Modal Header */}
                     <div className="flex items-center justify-between mb-5">
                       <h3 className="text-lg font-bold text-white flex items-center gap-2">
@@ -2778,7 +2780,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
                     {/* Result Banner */}
                     {sendResult && (
-                      <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${sendResult.success ? 'bg-[#00ff80]/10 border border-[#00ff80]/30 text-[#00ff80]' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
+                      <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${sendResult.success ? 'bg-[#00ff80]/10 border border-[#00ff80]/30 text-neon-mint-ink' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
                         {sendResult.message}
                         {sendResult.isUpgradeError && (
                           <>
@@ -2817,7 +2819,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       <button
                         onClick={handleSendTestEmail}
                         disabled={sending || !sendToEmail.trim()}
-                        className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff80] text-black font-semibold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff80] text-pure-black font-semibold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {sending ? (
                           <>
@@ -2856,7 +2858,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               <>
                 {/* Backdrop */}
                 <div 
-                  className="absolute inset-0 bg-black/60 backdrop-blur-sm z-10 animate-in fade-in duration-300"
+                  className="absolute inset-0 bg-pure-black/60 backdrop-blur-sm z-10 animate-in fade-in duration-300"
                   onClick={() => { if (!aiLoading) setAiChatOpen(false); }}
                 />
                 
@@ -3036,7 +3038,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                           <button
                             disabled={!aiMessage.trim() || aiLoading}
                             onClick={handleAiEdit}
-                            className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+                            className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-pure-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                           >
                             {aiLoading ? (
                               <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -3136,7 +3138,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 {email.html_code ? (
                   previewMode === 'desktop' ? (
                     // Desktop: browser chrome frame
-                    <div className="rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-[#1c1c1e]">
+                    <div data-theme="dark" className="rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-[#1c1c1e]">
                       {/* Chrome bar */}
                       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.07] bg-[#2a2a2d]">
                         <div className="flex items-center gap-1.5">
@@ -3169,7 +3171,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     </div>
                   ) : (
                     // Mobile: iPhone 15 Pro frame
-                    <div className="mx-auto select-none" style={{ width: '390px' }}>
+                    <div data-theme="dark" className="mx-auto select-none" style={{ width: '390px' }}>
                       {/* Outer shell */}
                       <div className="relative rounded-[3rem] bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_30px_80px_rgba(0,0,0,0.8),inset_0_0_0_1px_rgba(255,255,255,0.05)]" style={{ padding: '14px' }}>
 

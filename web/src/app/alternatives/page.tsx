@@ -19,7 +19,7 @@ export default function AlternativesIndexPage() {
   return (
     <MarketingLayout contentClassName="max-w-4xl">
       <div className="mb-12">
-        <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Comparisons</p>
+        <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-3">Comparisons</p>
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
           How Emlet compares
         </h1>
@@ -44,11 +44,11 @@ export default function AlternativesIndexPage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
               <p className="absolute bottom-3 left-4 text-xs font-bold tracking-widest text-white uppercase">
-                Emlet <span className="text-[#00ffff]">vs</span> {alt.competitor}
+                Emlet <span className="text-neon-ink">vs</span> {alt.competitor}
               </p>
             </div>
             <div className="p-6">
-              <h2 className="text-lg font-bold text-white mb-2 group-hover:text-[#00ffff] transition-colors leading-snug">
+              <h2 className="text-lg font-bold text-white mb-2 group-hover:text-neon-ink transition-colors leading-snug">
                 {alt.title.replace('Emlet vs ', '').replace(/:.*$/, '')}
               </h2>
               <p className="text-sm text-white/50 leading-relaxed">{alt.description}</p>

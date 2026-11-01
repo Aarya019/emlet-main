@@ -35,7 +35,7 @@ export default function BlogSidebar({
           <Link
             href="/blog"
             className={`text-sm rounded-lg px-3 py-1.5 -mx-3 transition-colors ${
-              !activeCategory ? 'text-[#00ffff] bg-white/5 font-semibold' : 'text-white/60 hover:text-white hover:bg-white/5'
+              !activeCategory ? 'text-neon-ink bg-white/5 font-semibold' : 'text-white/60 hover:text-white hover:bg-white/5'
             }`}
           >
             All posts
@@ -46,7 +46,7 @@ export default function BlogSidebar({
               key={category}
               href={`/blog?category=${encodeURIComponent(category)}`}
               className={`text-sm rounded-lg px-3 py-1.5 -mx-3 transition-colors ${
-                activeCategory === category ? 'text-[#00ffff] bg-white/5 font-semibold' : 'text-white/60 hover:text-white hover:bg-white/5'
+                activeCategory === category ? 'text-neon-ink bg-white/5 font-semibold' : 'text-white/60 hover:text-white hover:bg-white/5'
               }`}
             >
               {category}
@@ -62,7 +62,7 @@ export default function BlogSidebar({
           <div className="flex flex-col gap-4">
             {recent.map((post) => (
               <Link key={post.slug} href={`/blog/${post.slug}`} className="group block">
-                <p className="text-sm text-white/80 leading-snug group-hover:text-[#00ffff] transition-colors">
+                <p className="text-sm text-white/80 leading-snug group-hover:text-neon-ink transition-colors">
                   {post.title}
                 </p>
                 <p className="text-xs text-white/35 mt-1">{formatDate(post.date)}</p>
@@ -79,7 +79,7 @@ export default function BlogSidebar({
         </p>
         <Link
           href="/sign-up"
-          className="block text-center rounded-lg bg-[#00ffff] text-black text-sm font-bold py-2 hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
+          className="block text-center rounded-lg bg-[#00ffff] text-pure-black text-sm font-bold py-2 hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
         >
           Get started free
         </Link>

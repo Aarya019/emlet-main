@@ -30,8 +30,8 @@ export default function SubjectLineTesterPage() {
             <>
               <p>
                 No tool can promise your email lands in the inbox or gets opened. That depends mostly on your sender reputation, whether your domain is authenticated, and whether people who know you want to hear from you. Our posts on{' '}
-                <Link href="/blog/spam-trigger-words-outdated-advice" className="text-[#00ffff] hover:underline">spam trigger words</Link> and{' '}
-                <Link href="/blog/email-deliverability-spf-dkim-dmarc-explained" className="text-[#00ffff] hover:underline">SPF, DKIM and DMARC</Link> explain what actually moves the needle.
+                <Link href="/blog/spam-trigger-words-outdated-advice" className="text-neon-ink hover:underline">spam trigger words</Link> and{' '}
+                <Link href="/blog/email-deliverability-spf-dkim-dmarc-explained" className="text-neon-ink hover:underline">SPF, DKIM and DMARC</Link> explain what actually moves the needle.
               </p>
               <p>
                 Use this as a proofreader, not a judge. The only real test of a subject line is how your own list responds to it.

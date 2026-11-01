@@ -20,7 +20,7 @@ function Highlighted({ text }: { text: string }) {
     <>
       {text.split(/(\[[^\]]+\])/g).map((part, i) =>
         i % 2 === 1 ? (
-          <span key={i} className="rounded bg-[#00ffff]/10 px-1 text-[#00ffff]">
+          <span key={i} className="rounded bg-[#00ffff]/10 px-1 text-neon-ink">
             {part}
           </span>
         ) : (
@@ -38,7 +38,7 @@ function PromptCard({ item }: { item: EmailPrompt }) {
 
   return (
     <article className="flex flex-col rounded-2xl border border-white/10 bg-white/[0.04] p-5">
-      <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-[#00ffff]/60">{categoryLabel(item.category)}</p>
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-neon-ink/60">{categoryLabel(item.category)}</p>
       <h3 className="mb-3 text-lg font-bold leading-snug text-white">{item.title}</h3>
 
       {editing ? (

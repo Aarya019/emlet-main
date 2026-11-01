@@ -49,7 +49,7 @@ export default function AuthBackground() {
         className="pointer-events-none fixed inset-0 z-0 opacity-[0.03]"
         style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '48px 48px' }}
       />
-      <div className="pointer-events-none fixed inset-0 z-[1]">
+      <div className="pointer-events-none fixed inset-0 z-[1] theme-stars">
         {STARS.map((s, i) => (
           <div
             key={i}

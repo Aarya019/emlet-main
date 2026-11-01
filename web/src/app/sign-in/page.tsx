@@ -5,6 +5,7 @@ import SubmitButton from '@/components/SubmitButton';
 import PasswordInput from '@/components/PasswordInput';
 import { useState, useEffect, useRef } from 'react';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const TURNSTILE_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -61,6 +62,7 @@ export default function SignInPage() {
 
   return (
     <div className="relative min-h-screen bg-black flex overflow-hidden">
+      <ThemeToggle className="fixed right-4 top-4 z-30" />
       {/* Subtle grid overlay */}
       <div
         className="pointer-events-none fixed inset-0 z-0 opacity-[0.03]"
@@ -68,7 +70,7 @@ export default function SignInPage() {
       />
 
       {/* Twinkling stars */}
-      <div className="pointer-events-none fixed inset-0 z-[1]">
+      <div className="pointer-events-none fixed inset-0 z-[1] theme-stars">
         {[
           { x: 3,  y: 8,  size: 1.5, delay: 0,   dur: 4 },
           { x: 8,  y: 72, size: 1,   delay: 1.5, dur: 6 },
@@ -139,10 +141,10 @@ export default function SignInPage() {
             <h2 className="text-3xl font-bold text-white">Sign in to your account</h2>
             <p className="mt-2 text-sm text-white/60">
               {hasPendingPrompt && (
-                <span className="mb-1 block text-[#00ffff]">Sign in to generate your email</span>
+                <span className="mb-1 block text-neon-ink">Sign in to generate your email</span>
               )}
               Don't have an account?{' '}
-              <a href="/sign-up" className="font-medium text-[#00ffff] hover:text-[#00ffff]/80 transition-colors">
+              <a href="/sign-up" className="font-medium text-neon-ink hover:text-neon-ink/80 transition-colors">
                 Sign up
               </a>
             </p>
@@ -156,7 +158,7 @@ export default function SignInPage() {
                 {error.toLowerCase().includes('confirm') && submittedEmail && (
                   <div className="mt-2">
                     {resendState === 'sent' ? (
-                      <span className="text-[#00ff00]">Confirmation email sent — check your inbox.</span>
+                      <span className="text-neon-lime-ink">Confirmation email sent — check your inbox.</span>
                     ) : (
                       <button
                         type="button"
@@ -247,7 +249,7 @@ export default function SignInPage() {
                     id="remember-me"
                     name="remember-me"
                     type="checkbox"
-                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-[#00ffff] focus:ring-[#00ffff] focus:ring-offset-0"
+                    className="h-4 w-4 rounded border-white/20 bg-white/5 text-neon-ink focus:ring-[#00ffff] focus:ring-offset-0"
                   />
                   <label htmlFor="remember-me" className="ml-2 block text-sm text-white/70">
                     Remember me
@@ -255,7 +257,7 @@ export default function SignInPage() {
                 </div>
 
                 <div className="text-sm">
-                  <a href="/forgot-password" className="font-medium text-[#00ffff] hover:text-[#00ffff]/80 transition-colors">
+                  <a href="/forgot-password" className="font-medium text-neon-ink hover:text-neon-ink/80 transition-colors">
                     Forgot password?
                   </a>
                 </div>

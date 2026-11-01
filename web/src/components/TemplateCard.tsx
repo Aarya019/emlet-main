@@ -36,10 +36,10 @@ export default function TemplateCard({ meta, priority = false }: { meta: Templat
           <div className="flex h-full items-center justify-center text-xs text-white/30">Preview coming soon</div>
         )}
       </div>
-      <p className="mt-3 text-[11px] font-semibold uppercase tracking-widest text-[#00ffff]/60">
+      <p className="mt-3 text-[11px] font-semibold uppercase tracking-widest text-neon-ink/60">
         {typeLabel(meta.emailType)}
       </p>
-      <h3 className="mt-1 text-base font-bold leading-snug text-white transition-colors group-hover:text-[#00ffff]">
+      <h3 className="mt-1 text-base font-bold leading-snug text-white transition-colors group-hover:text-neon-ink">
         {meta.title}
       </h3>
       <p className="mt-1 text-xs text-white/40">

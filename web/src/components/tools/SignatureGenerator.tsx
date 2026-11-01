@@ -133,7 +133,7 @@ export default function SignatureGenerator() {
 
       <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
         <Panel title="Preview">
-          <iframe title="Signature preview" sandbox="" srcDoc={previewDoc} className="h-72 w-full rounded-lg bg-white" />
+          <iframe title="Signature preview" sandbox="" srcDoc={previewDoc} className="h-72 w-full rounded-lg bg-pure-white" />
           {output.warnings.length > 0 && (
             <ul className="mt-3 space-y-1 text-sm text-amber-300">
               {output.warnings.map((w) => (

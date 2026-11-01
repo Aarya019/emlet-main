@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import AuthBackground from '@/components/AuthBackground';
+import ThemeToggle from '@/components/ThemeToggle';
 
 function describeError(errorCode: string | null, description: string | null): string {
   if (errorCode === 'otp_expired') {
@@ -26,6 +27,7 @@ export default function AuthCodeErrorPage() {
 
   return (
     <div className="relative min-h-screen bg-black flex items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8">
+      <ThemeToggle className="fixed right-4 top-4 z-30" />
       <AuthBackground />
 
       <div className="relative z-10 w-full max-w-md space-y-8 text-center">

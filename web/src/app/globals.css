@@ -5,9 +5,7 @@
   --color-neon-lime: #00ff00;
   --color-neon-cyan: #00ffff;
   --color-neon-magenta: #ff00ff;
-  --color-black: #000000;
-  --color-white: #ffffff;
-  
+
   /* Typography Scale */
   --font-size-xs: 0.75rem;      /* 12px */
   --font-size-sm: 0.875rem;     /* 14px */
@@ -41,12 +39,121 @@
   --radius-full: 9999px;
 }
 
+/*
+ * THEMES: read this before touching colours.
+ *
+ * The whole site was written for a dark page: surfaces are `black`, text is `white`, and every subtle
+ * layer is `white/5`, `border-white/10`, `text-white/60`, and so on. Instead of rewriting ~2,000 classes
+ * with dark: variants, `black` and `white` are theme variables:
+ *
+ *   dark theme  (data-theme="dark")   black = #000,    white = #fff      → exactly the original look
+ *   light theme (the default)         black = the page background (off-white), white = the ink colour
+ *
+ * So `bg-black` always means "the page", `text-white` means "the text colour", and `border-white/10` means
+ * "a faint line", in either theme. The theme is set before first paint by the script in app/layout.tsx and
+ * toggled by components/ThemeToggle.tsx (the choice is remembered in localStorage as "emlet_theme").
+ * A device mock-up that should stay dark on a light page (the editor's browser and phone frames) just gets data-theme="dark".
+ *
+ * Colours that must NOT flip (white text on a coloured button, a mock inbox, an email preview) use
+ * `pure-white` / `pure-black`: text-pure-white, bg-pure-white, text-pure-black, bg-pure-black.
+ * Neon text uses `neon-ink` (cyan), `neon-mint-ink`, `neon-lime-ink` and `neon-magenta-ink`: the full neon in dark, a deeper
+ * shade in light, because bright neon is unreadable on white.
+ * Panels and modals that sit above the page use `surface` / `surface-raised` (near-black in dark, white in light).
+ */
+:root {
+  /* light (default) */
+  --color-black: #fafafa;
+  --color-white: #0b0b10;
+  --neon-ink: #007f8c;
+  --neon-mint-ink: #0b8a4a;
+  --neon-lime-ink: #1a7f2e;
+  --neon-magenta-ink: #a8009e;
+  --surface: #ffffff;
+  --surface-raised: #f3f3f5;
+  color-scheme: light;
+}
+
+/* Any element marked data-theme="dark" (the page itself, or a device mock-up inside a light page) gets the dark colours for everything inside it. */
+[data-theme='dark'] {
+  --color-black: #000000;
+  --color-white: #ffffff;
+  --neon-ink: #00ffff;
+  --neon-mint-ink: #00ff80;
+  --neon-lime-ink: #00ff00;
+  --neon-magenta-ink: #ff00ff;
+  --surface: #0a0a0a;
+  --surface-raised: #1a1a1a;
+  color-scheme: dark;
+}
+
 @theme inline {
   --color-background: var(--color-black);
   --color-foreground: var(--color-white);
+  --color-pure-white: #ffffff;
+  --color-pure-black: #000000;
+  --color-neon-ink: var(--neon-ink);
+  --color-neon-mint-ink: var(--neon-mint-ink);
+  --color-neon-lime-ink: var(--neon-lime-ink);
+  --color-neon-magenta-ink: var(--neon-magenta-ink);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
+
+/*
+ * Light theme only. Low-opacity ink looks fainter on a light page than low-opacity white does on a dark one,
+ * so the faintest text levels are nudged up to stay readable. Status colours move to darker shades for the
+ * same reason (a pale red on white is hard to read).
+ */
+:root:not([data-theme='dark']) {
+  --color-red-200: #fecaca;
+  --color-red-300: #b91c1c;
+  --color-red-400: #dc2626;
+  --color-red-500: #dc2626;
+  --color-red-600: #b91c1c;
+  --color-yellow-400: #a16207;
+  --color-yellow-500: #a16207;
+  --color-amber-300: #b45309;
+  --color-amber-400: #b45309;
+  --color-green-400: #15803d;
+  --color-green-500: #15803d;
+  --color-emerald-300: #047857;
+  --color-emerald-400: #047857;
+  --color-cyan-400: #0e7490;
+}
+
+:root:not([data-theme='dark']) .text-white\/20 { color: color-mix(in oklab, var(--color-white) 36%, transparent); }
+:root:not([data-theme='dark']) .text-white\/25 { color: color-mix(in oklab, var(--color-white) 40%, transparent); }
+:root:not([data-theme='dark']) .text-white\/30 { color: color-mix(in oklab, var(--color-white) 46%, transparent); }
+:root:not([data-theme='dark']) .text-white\/35 { color: color-mix(in oklab, var(--color-white) 52%, transparent); }
+:root:not([data-theme='dark']) .text-white\/40 { color: color-mix(in oklab, var(--color-white) 58%, transparent); }
+:root:not([data-theme='dark']) .text-white\/45 { color: color-mix(in oklab, var(--color-white) 62%, transparent); }
+:root:not([data-theme='dark']) .text-white\/50 { color: color-mix(in oklab, var(--color-white) 66%, transparent); }
+:root:not([data-theme='dark']) .text-white\/55 { color: color-mix(in oklab, var(--color-white) 70%, transparent); }
+:root:not([data-theme='dark']) .text-neon-ink\/50 { color: color-mix(in oklab, var(--color-neon-ink) 80%, transparent); }
+:root:not([data-theme='dark']) .text-neon-ink\/60 { color: color-mix(in oklab, var(--color-neon-ink) 86%, transparent); }
+:root:not([data-theme='dark']) .text-neon-ink\/70 { color: color-mix(in oklab, var(--color-neon-ink) 92%, transparent); }
+:root:not([data-theme='dark']) .text-neon-ink\/80 { color: color-mix(in oklab, var(--color-neon-ink) 96%, transparent); }
+:root:not([data-theme='dark']) .placeholder-white\/30::placeholder,
+:root:not([data-theme='dark']) .placeholder\:text-white\/30::placeholder { color: color-mix(in oklab, var(--color-white) 50%, transparent); }
+:root:not([data-theme='dark']) .placeholder-white\/40::placeholder,
+:root:not([data-theme='dark']) .placeholder\:text-white\/40::placeholder { color: color-mix(in oklab, var(--color-white) 55%, transparent); }
+
+/* Light theme: the twinkling star specks are a dark-sky effect, so they are hidden on the light page. */
+:root:not([data-theme='dark']) .theme-stars { display: none; }
+
+/* Light theme: the neon gradient headline words are very bright on a light page; deepen them a little so they stay legible. */
+:root:not([data-theme='dark']) .bg-clip-text { filter: brightness(0.8) saturate(1.2); }
+
+/* Light theme: modal scrims and drop shadows stay dark, just lighter, since a dark scrim at the dark theme's strength is heavy on a white page. */
+:root:not([data-theme='dark']) .bg-pure-black\/80 { background-color: rgba(10, 10, 16, 0.5); }
+:root:not([data-theme='dark']) .bg-pure-black\/70 { background-color: rgba(10, 10, 16, 0.45); }
+:root:not([data-theme='dark']) .bg-pure-black\/60 { background-color: rgba(10, 10, 16, 0.4); }
+:root:not([data-theme='dark']) .bg-pure-black\/50 { background-color: rgba(10, 10, 16, 0.35); }
+:root:not([data-theme='dark']) .shadow-pure-black\/60 { --tw-shadow-color: rgba(10, 10, 16, 0.22); }
+:root:not([data-theme='dark']) .shadow-pure-black\/50 { --tw-shadow-color: rgba(10, 10, 16, 0.18); }
+
 
 /* Hide scrollbar for Chrome, Safari and Opera */
 ::-webkit-scrollbar {
@@ -63,7 +170,7 @@
    Scoped via :has() so the dashboard/editor keep their hidden scrollbars. */
 html:has(.landing-page) {
   scrollbar-width: thin; /* Firefox */
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  scrollbar-color: color-mix(in srgb, var(--color-white) 25%, transparent) transparent;
 }
 html:has(.landing-page)::-webkit-scrollbar {
   display: block;
@@ -73,11 +180,11 @@ html:has(.landing-page)::-webkit-scrollbar-track {
   background: transparent;
 }
 html:has(.landing-page)::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.25);
+  background-color: color-mix(in srgb, var(--color-white) 25%, transparent);
   border-radius: 9999px;
 }
 html:has(.landing-page)::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(255, 255, 255, 0.4);
+  background-color: color-mix(in srgb, var(--color-white) 40%, transparent);
 }
 
 body {

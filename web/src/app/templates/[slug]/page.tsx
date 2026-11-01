@@ -84,8 +84,8 @@ export default async function TemplatePage({ params }: { params: Promise<{ slug:
 
       <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:gap-14">
         <div className="min-w-0">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#00ffff]/60">
-            <Link href={`/templates/type/${meta.emailType}`} className="hover:text-[#00ffff]">{typeLabel(meta.emailType)}</Link>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-neon-ink/60">
+            <Link href={`/templates/type/${meta.emailType}`} className="hover:text-neon-ink">{typeLabel(meta.emailType)}</Link>
           </p>
           <h1 className="mb-4 text-3xl font-black leading-tight tracking-tight sm:text-4xl">{meta.title}</h1>
           <p className="mb-6 max-w-2xl text-lg text-white/50">{meta.description}</p>

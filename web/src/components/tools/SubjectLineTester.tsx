@@ -30,7 +30,7 @@ function InboxRows({ sender, subject, preview }: { sender: string; subject: stri
     <div className="space-y-6">
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/40">Desktop inbox</p>
-        <div className="overflow-hidden rounded-lg bg-white text-[13px] text-gray-900">
+        <div className="overflow-hidden rounded-lg bg-pure-white text-[13px] text-gray-900">
           <div className="flex items-center gap-3 px-3 py-2.5">
             <span aria-hidden className="h-3.5 w-3.5 shrink-0 rounded-sm border border-gray-300" />
             <span className="w-32 shrink-0 truncate font-bold sm:w-44">{from}</span>
@@ -46,9 +46,9 @@ function InboxRows({ sender, subject, preview }: { sender: string; subject: stri
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/40">Android-style phone</p>
-          <div className="mx-auto w-full max-w-[340px] rounded-xl bg-white p-3 text-gray-900">
+          <div className="mx-auto w-full max-w-[340px] rounded-xl bg-pure-white p-3 text-gray-900">
             <div className="flex gap-3">
-              <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white">{initial}</span>
+              <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-pure-white">{initial}</span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="truncate text-sm font-bold">{from}</span>
@@ -63,7 +63,7 @@ function InboxRows({ sender, subject, preview }: { sender: string; subject: stri
 
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-white/40">iPhone-style mail</p>
-          <div className="mx-auto w-full max-w-[340px] rounded-xl bg-white p-3 text-gray-900">
+          <div className="mx-auto w-full max-w-[340px] rounded-xl bg-pure-white p-3 text-gray-900">
             <div className="flex gap-2">
               <span aria-hidden className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-blue-500" />
               <div className="min-w-0 flex-1">
@@ -194,7 +194,7 @@ export default function SubjectLineTester() {
                       <td className="py-2.5 pr-3 tabular-nums text-white/60">{row.chars}</td>
                       <td className="py-2.5 pr-3 text-white/50">{row.flags.length > 0 ? row.flags.join('; ') : 'Nothing flagged'}</td>
                       <td className="py-2.5 text-right">
-                        <button type="button" onClick={() => setSubject(row.subject)} className="text-xs font-semibold text-[#00ffff] hover:underline">
+                        <button type="button" onClick={() => setSubject(row.subject)} className="text-xs font-semibold text-neon-ink hover:underline">
                           Use
                         </button>
                       </td>

@@ -77,7 +77,7 @@ export default function TocSidebar({ toc }: { toc: TocItem[] }) {
                 href={`#${id}`}
                 className={`block text-sm leading-snug px-3 py-1.5 transition-all hover:text-white/90 border-l-2 -ml-px ${
                   activeId === id
-                    ? 'text-[#00ffff] border-[#00ffff]'
+                    ? 'text-neon-ink border-[#00ffff]'
                     : 'text-white/40 border-transparent hover:border-white/25'
                 }`}
               >

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect } from 'react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Error({
   error,
@@ -16,6 +17,7 @@ export default function Error({
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <ThemeToggle className="fixed right-4 top-4 z-30" />
       <div className="max-w-md w-full p-8 rounded-xl border border-red-500/30 bg-red-500/10 text-center">
         <h2 className="text-xl font-bold text-red-400 mb-2">Something went wrong</h2>
         <p className="text-red-300 mb-6">
@@ -24,7 +26,7 @@ export default function Error({
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={reset}
-            className="px-6 py-3 rounded-full bg-[#00ffff] text-black font-semibold hover:bg-[#00ffff]/80 transition-all"
+            className="px-6 py-3 rounded-full bg-[#00ffff] text-pure-black font-semibold hover:bg-[#00ffff]/80 transition-all"
           >
             Try again
           </button>

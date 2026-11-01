@@ -5,6 +5,7 @@ import SubmitButton from '@/components/SubmitButton';
 import { useState, useRef } from 'react';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 import AuthBackground from '@/components/AuthBackground';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const TURNSTILE_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -32,6 +33,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="relative min-h-screen bg-black flex items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8">
+      <ThemeToggle className="fixed right-4 top-4 z-30" />
       <AuthBackground />
 
       <div className="relative z-10 w-full max-w-md space-y-8">
@@ -54,7 +56,7 @@ export default function ForgotPasswordPage() {
           )}
 
           {message ? (
-            <div className="p-3 rounded-lg bg-[#00ff00]/10 border border-[#00ff00]/20 text-[#00ff00] text-sm">
+            <div className="p-3 rounded-lg bg-[#00ff00]/10 border border-[#00ff00]/20 text-neon-lime-ink text-sm">
               {message}
             </div>
           ) : (
@@ -88,7 +90,7 @@ export default function ForgotPasswordPage() {
 
           <p className="text-sm text-white/60 text-center">
             Remembered it after all?{' '}
-            <a href="/sign-in" className="font-medium text-[#00ffff] hover:text-[#00ffff]/80 transition-colors">
+            <a href="/sign-in" className="font-medium text-neon-ink hover:text-neon-ink/80 transition-colors">
               Back to sign in
             </a>
           </p>

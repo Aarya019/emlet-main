@@ -37,7 +37,7 @@ function Segmented<T extends string>({
           type="button"
           onClick={() => onChange(o.value)}
           className={`px-2.5 py-1 text-[11px] transition-colors ${
-            value === o.value ? 'bg-[#00ffff]/15 text-[#00ffff]' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+            value === o.value ? 'bg-[#00ffff]/15 text-neon-ink' : 'text-white/50 hover:text-white/80 hover:bg-white/5'
           }`}
         >
           {o.label}
@@ -160,7 +160,7 @@ export default function BorderControls({ value, onChange, allowOutline, allowAcc
               type="checkbox"
               checked={!!v.outline}
               onChange={e => set({ outline: e.target.checked || undefined })}
-              className="accent-[#00ffff]"
+              className="accent-neon-ink"
             />
             Also draw it around the whole block
           </label>
@@ -182,7 +182,7 @@ export default function BorderControls({ value, onChange, allowOutline, allowAcc
             max={48}
             value={v.radius ?? 0}
             onChange={e => set({ radius: Number(e.target.value) })}
-            className="flex-1 accent-[#00ffff]"
+            className="flex-1 accent-neon-ink"
           />
         </div>
       </div>
@@ -257,7 +257,7 @@ export default function BorderControls({ value, onChange, allowOutline, allowAcc
           <button
             type="button"
             onClick={onApplyToAll}
-            className="text-[11px] text-white/40 hover:text-[#00ffff] transition-colors"
+            className="text-[11px] text-white/40 hover:text-neon-ink transition-colors"
           >
             Apply to all blocks
           </button>

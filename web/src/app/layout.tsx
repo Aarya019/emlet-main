@@ -4,6 +4,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import AuthErrorRedirect from '@/components/AuthErrorRedirect';
 import ConsentManager from '@/components/ConsentManager';
+import { THEME_INIT_SCRIPT } from '@/lib/theme';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -61,8 +62,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: the theme script below sets data-theme on <html> before React hydrates it.
+    <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Applies the saved theme (light by default) before first paint, so there is no flash. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}

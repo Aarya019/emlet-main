@@ -10,7 +10,7 @@ export const buttonClass =
   'inline-flex items-center justify-center rounded-lg border border-white/20 px-3.5 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 disabled:opacity-50';
 
 export const primaryButtonClass =
-  'inline-flex items-center justify-center rounded-lg bg-[#00ffff] px-4 py-2 text-sm font-bold text-black transition-all hover:-translate-y-px hover:shadow-lg hover:shadow-[#00ffff]/30 disabled:opacity-50';
+  'inline-flex items-center justify-center rounded-lg bg-[#00ffff] px-4 py-2 text-sm font-bold text-pure-black transition-all hover:-translate-y-px hover:shadow-lg hover:shadow-[#00ffff]/30 disabled:opacity-50';
 
 export function Panel({ title, children, className = '' }: { title?: string; children: ReactNode; className?: string }) {
   return (

@@ -6,7 +6,7 @@ export interface WinCard {
 function CheckBadge() {
   return (
     <div className="w-8 h-8 rounded-full bg-[#00ffff]/15 border border-[#00ffff]/40 flex items-center justify-center flex-shrink-0">
-      <svg className="w-4 h-4 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+      <svg className="w-4 h-4 text-neon-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
       </svg>
     </div>

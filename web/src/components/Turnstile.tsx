@@ -1,7 +1,8 @@
 'use client';
 
 import Script from 'next/script';
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useSyncExternalStore } from 'react';
+import { readTheme, subscribeToTheme, type Theme } from '@/lib/theme';
 
 declare global {
   interface Window {
@@ -32,6 +33,8 @@ const Turnstile = forwardRef<TurnstileHandle, {
   const widgetIdRef = useRef<string | null>(null);
   const [scriptReady, setScriptReady] = useState(false);
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+  // The widget has its own colour scheme, so it is drawn in the site's current theme (and redrawn if the visitor switches).
+  const theme = useSyncExternalStore(subscribeToTheme, readTheme, (): Theme => 'light');
 
   useImperativeHandle(ref, () => ({
     reset: () => {
@@ -46,7 +49,7 @@ const Turnstile = forwardRef<TurnstileHandle, {
 
     widgetIdRef.current = window.turnstile.render(containerRef.current, {
       sitekey: siteKey,
-      theme: 'dark',
+      theme,
       callback: (token: string) => onVerify(token),
       'expired-callback': () => onExpire?.(),
     });
@@ -58,7 +61,7 @@ const Turnstile = forwardRef<TurnstileHandle, {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scriptReady, siteKey]);
+  }, [scriptReady, siteKey, theme]);
 
   if (!siteKey) return null;
 

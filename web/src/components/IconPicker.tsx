@@ -82,7 +82,7 @@ export default function IconPicker({ iconName, icon, onChange }: IconPickerProps
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full mt-1.5 z-20 w-60 max-h-64 overflow-y-auto bg-black border border-white/20 rounded-lg shadow-2xl shadow-black/50 p-2">
+          <div className="absolute left-0 top-full mt-1.5 z-20 w-60 max-h-64 overflow-y-auto bg-black border border-white/20 rounded-lg shadow-2xl shadow-pure-black/50 p-2">
             <button
               type="button"
               onClick={() => { onChange({ iconName: undefined, icon: undefined }); setOpen(false); }}

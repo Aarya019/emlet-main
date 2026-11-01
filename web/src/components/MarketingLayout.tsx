@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import CookieSettingsLink from '@/components/CookieSettingsLink';
+import ThemeToggle from '@/components/ThemeToggle';
 import { SHOW_TEMPLATES_IN_NAV } from '@/lib/content/templates';
 
 export default function MarketingLayout({
@@ -25,6 +26,7 @@ export default function MarketingLayout({
           <Link href="/blog" className="hidden sm:inline hover:text-white transition-colors">Blog</Link>
           <Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link>
           <Link href="/sign-in" className="hover:text-white transition-colors">Sign in</Link>
+          <ThemeToggle size="sm" />
         </div>
       </header>
 

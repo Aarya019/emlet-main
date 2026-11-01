@@ -34,7 +34,7 @@ export default async function BlogIndexPage({
   return (
     <MarketingLayout sidebar={<BlogSidebar posts={allPosts} activeCategory={category} />}>
       <div className="mb-12">
-        <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Blog</p>
+        <p className="text-xs font-semibold tracking-widest text-neon-ink/60 uppercase mb-3">Blog</p>
         <h1 className="text-4xl sm:text-5xl font-black tracking-tight mb-4">
           Writing on email that doesn&apos;t suck
         </h1>
@@ -63,13 +63,13 @@ export default async function BlogIndexPage({
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-3 text-xs text-white/40 mb-2">
-                  <span className="text-[#00ffff]/70 font-semibold uppercase tracking-wide">{post.category}</span>
+                  <span className="text-neon-ink/70 font-semibold uppercase tracking-wide">{post.category}</span>
                   <span>·</span>
                   <span>{formatDate(post.date)}</span>
                   <span>·</span>
                   <span>{post.readTime}</span>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-[#00ffff] transition-colors">
+                <h2 className="text-xl sm:text-2xl font-bold text-white mb-2 group-hover:text-neon-ink transition-colors">
                   {post.title}
                 </h2>
                 <p className="text-white/50 leading-relaxed max-w-2xl">{post.description}</p>
@@ -82,7 +82,7 @@ export default async function BlogIndexPage({
       <div className="mt-16 pt-8 border-t border-white/10">
         <p className="text-sm text-white/40">
           Comparing tools?{' '}
-          <Link href="/alternatives" className="text-[#00ffff] hover:underline">
+          <Link href="/alternatives" className="text-neon-ink hover:underline">
             See how Emlet stacks up against Mailchimp, Canva, and ChatGPT →
           </Link>
         </p>

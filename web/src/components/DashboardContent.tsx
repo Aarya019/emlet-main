@@ -7,6 +7,7 @@ import type { BrandProfile, BrandVoice, EmailGeneration, DesignStyle, PlanType }
 import EmailGeneratingOverlay from '@/components/EmailGeneratingOverlay';
 import StarField from '@/components/StarField';
 import UpgradeModal from '@/components/UpgradeModal';
+import ThemeToggle from '@/components/ThemeToggle';
 
 /** Mirrors each design style's signature look (from renderer.tsx styleConfigs) for the picker swatches. */
 const STYLE_SWATCHES: Record<DesignStyle, { style: React.CSSProperties; dot?: string }> = {
@@ -747,12 +748,12 @@ export default function DashboardContent() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           {/* Backdrop */}
           <div 
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-pure-black/80 backdrop-blur-sm"
             onClick={closeDeleteModal}
           />
           
           {/* Modal */}
-          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-black/60 max-w-md w-full p-8 transform transition-all">
+          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-pure-black/60 max-w-md w-full p-8 transform transition-all">
             {/* Warning Icon */}
             <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
               <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -781,7 +782,7 @@ export default function DashboardContent() {
               </button>
               <button
                 onClick={() => brandToDelete && deleteBrand(brandToDelete.id)}
-                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all"
+                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-pure-white font-bold hover:bg-red-600 transition-all"
               >
                 Delete
               </button>
@@ -793,8 +794,8 @@ export default function DashboardContent() {
       {/* Email Delete Confirmation Modal */}
       {emailToDelete && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setEmailToDelete(null)} />
-          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-black/60 max-w-md w-full p-8">
+          <div className="absolute inset-0 bg-pure-black/80 backdrop-blur-sm" onClick={() => setEmailToDelete(null)} />
+          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-pure-black/60 max-w-md w-full p-8">
             <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
               <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -815,7 +816,7 @@ export default function DashboardContent() {
               <button
                 onClick={() => handleDeleteEmail(emailToDelete)}
                 disabled={deletingEmailId === emailToDelete.id}
-                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-pure-white font-bold hover:bg-red-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {deletingEmailId === emailToDelete.id ? 'Deleting...' : 'Delete'}
               </button>
@@ -827,8 +828,8 @@ export default function DashboardContent() {
       {/* Bulk Email Delete Confirmation Modal */}
       {bulkDeleteConfirmOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => !bulkDeleting && setBulkDeleteConfirmOpen(false)} />
-          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-black/60 max-w-md w-full p-8">
+          <div className="absolute inset-0 bg-pure-black/80 backdrop-blur-sm" onClick={() => !bulkDeleting && setBulkDeleteConfirmOpen(false)} />
+          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-pure-black/60 max-w-md w-full p-8">
             <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
               <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -849,7 +850,7 @@ export default function DashboardContent() {
               <button
                 onClick={handleBulkDeleteEmails}
                 disabled={bulkDeleting}
-                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-pure-white font-bold hover:bg-red-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {bulkDeleting ? 'Deleting...' : 'Delete'}
               </button>
@@ -866,10 +867,10 @@ export default function DashboardContent() {
       {cancelModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            className="absolute inset-0 bg-pure-black/80 backdrop-blur-sm"
             onClick={() => { setCancelModalOpen(false); setCancelError(null); }}
           />
-          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-black/60 max-w-md w-full p-8">
+          <div className="relative bg-black border border-red-500/30 rounded-2xl shadow-xl shadow-pure-black/60 max-w-md w-full p-8">
             <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
               <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -893,7 +894,7 @@ export default function DashboardContent() {
               <button
                 onClick={handleCancelSubscription}
                 disabled={cancelingSubscription}
-                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 rounded-xl bg-red-500 text-pure-white font-bold hover:bg-red-600 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {cancelingSubscription ? 'Canceling...' : 'Cancel Subscription'}
               </button>
@@ -905,7 +906,7 @@ export default function DashboardContent() {
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-pure-black/50 z-40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -942,7 +943,7 @@ export default function DashboardContent() {
               onClick={() => handleTabChange('new-email')}
               className={`w-full flex items-center gap-3 lg:justify-start lg:group-hover:justify-start justify-start py-3 lg:px-2 lg:group-hover:px-4 px-4 rounded-lg transition-all relative cursor-pointer ${
                 activeTab === 'new-email'
-                  ? 'lg:bg-transparent lg:group-hover:bg-white bg-white lg:text-[#00ffff] lg:group-hover:text-black text-black font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-[#00ffff] before:rounded-r lg:before:block before:hidden lg:group-hover:before:hidden before:shadow-lg before:shadow-[#00ffff]/50'
+                  ? 'lg:bg-transparent lg:group-hover:bg-white bg-white lg:text-neon-ink lg:group-hover:text-black text-black font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-[#00ffff] before:rounded-r lg:before:block before:hidden lg:group-hover:before:hidden before:shadow-lg before:shadow-[#00ffff]/50'
                   : 'text-white/70 hover:bg-white/5 hover:text-white'
               }`}
               title="New Email"
@@ -958,7 +959,7 @@ export default function DashboardContent() {
               onClick={() => handleTabChange('brand')}
               className={`w-full flex items-center gap-3 lg:justify-start lg:group-hover:justify-start justify-start py-3 lg:px-2 lg:group-hover:px-4 px-4 rounded-lg transition-all relative cursor-pointer ${
                 activeTab === 'brand'
-                  ? 'lg:bg-transparent lg:group-hover:bg-white bg-white lg:text-[#00ffff] lg:group-hover:text-black text-black font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-[#00ffff] before:rounded-r lg:before:block before:hidden lg:group-hover:before:hidden before:shadow-lg before:shadow-[#00ffff]/50'
+                  ? 'lg:bg-transparent lg:group-hover:bg-white bg-white lg:text-neon-ink lg:group-hover:text-black text-black font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-[#00ffff] before:rounded-r lg:before:block before:hidden lg:group-hover:before:hidden before:shadow-lg before:shadow-[#00ffff]/50'
                   : 'text-white/70 hover:bg-white/5 hover:text-white'
               }`}
               title="Brand"
@@ -974,7 +975,7 @@ export default function DashboardContent() {
               onClick={() => handleTabChange('history')}
               className={`w-full flex items-center gap-3 lg:justify-start lg:group-hover:justify-start justify-start py-3 lg:px-2 lg:group-hover:px-4 px-4 rounded-lg transition-all relative cursor-pointer ${
                 activeTab === 'history'
-                  ? 'lg:bg-transparent lg:group-hover:bg-white bg-white lg:text-[#00ffff] lg:group-hover:text-black text-black font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-[#00ffff] before:rounded-r lg:before:block before:hidden lg:group-hover:before:hidden before:shadow-lg before:shadow-[#00ffff]/50'
+                  ? 'lg:bg-transparent lg:group-hover:bg-white bg-white lg:text-neon-ink lg:group-hover:text-black text-black font-medium before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-8 before:bg-[#00ffff] before:rounded-r lg:before:block before:hidden lg:group-hover:before:hidden before:shadow-lg before:shadow-[#00ffff]/50'
                   : 'text-white/70 hover:bg-white/5 hover:text-white'
               }`}
               title="History"
@@ -993,7 +994,7 @@ export default function DashboardContent() {
             title={planType === 'pro' ? 'Unlimited credits' : `${creditsRemaining ?? '—'} credits left`}
           >
             <div className="w-8 h-8 flex-shrink-0 lg:mx-auto lg:group-hover:mx-0 transition-all duration-500 ease-in-out rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 flex items-center justify-center">
-              <span className="text-[10px] font-black text-[#00ffff]">
+              <span className="text-[10px] font-black text-neon-ink">
                 {planType === 'pro' ? '∞' : creditsRemaining ?? '–'}
               </span>
             </div>
@@ -1004,18 +1005,24 @@ export default function DashboardContent() {
             </div>
           </button>
 
+          {/* Theme (light by default) */}
+          <div className="flex items-center gap-3 px-4 pb-3 lg:justify-center lg:group-hover:justify-start">
+            <ThemeToggle size="sm" />
+            <span className="text-xs text-white/50 whitespace-nowrap lg:max-w-0 lg:group-hover:max-w-xs overflow-hidden transition-all duration-500 ease-in-out">Light / dark</span>
+          </div>
+
           {/* User section at bottom */}
           <div className="border-t border-white/10">
             <button
               onClick={() => handleTabChange('user')}
               className={`w-full flex items-center gap-3 lg:justify-start lg:group-hover:justify-start justify-start py-4 lg:px-2 lg:group-hover:px-4 px-4 transition-all relative ${
                 activeTab === 'user'
-                  ? 'lg:bg-transparent lg:group-hover:bg-white/10 bg-white/10 lg:text-[#00ffff] text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-10 before:bg-[#00ffff] before:rounded-r lg:before:block before:hidden lg:group-hover:before:hidden before:shadow-lg before:shadow-[#00ffff]/50'
+                  ? 'lg:bg-transparent lg:group-hover:bg-white/10 bg-white/10 lg:text-neon-ink text-white before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:w-1 before:h-10 before:bg-[#00ffff] before:rounded-r lg:before:block before:hidden lg:group-hover:before:hidden before:shadow-lg before:shadow-[#00ffff]/50'
                   : 'text-white/70 hover:bg-white/5 hover:text-white'
               }`}
               title="Settings"
             >
-              <div className="w-8 h-8 flex-shrink-0 lg:mx-auto lg:group-hover:mx-0 transition-all duration-500 ease-in-out rounded-full bg-gradient-to-br from-[#00ff00] via-[#00ffff] to-[#ff00ff] flex items-center justify-center text-black font-semibold text-sm">
+              <div className="w-8 h-8 flex-shrink-0 lg:mx-auto lg:group-hover:mx-0 transition-all duration-500 ease-in-out rounded-full bg-gradient-to-br from-[#00ff00] via-[#00ffff] to-[#ff00ff] flex items-center justify-center text-pure-black font-semibold text-sm">
                 {userEmail ? userEmail[0].toUpperCase() : 'U'}
               </div>
               <div className="flex-1 text-left lg:max-w-0 lg:group-hover:max-w-xs overflow-hidden transition-all duration-500 ease-in-out">
@@ -1049,9 +1056,10 @@ export default function DashboardContent() {
             {activeTab === 'history' && 'History'}
             {activeTab === 'user' && 'Settings'}
           </span>
+          <ThemeToggle size="sm" className="ml-auto mr-2" />
           <button
             onClick={() => handleTabChange('user')}
-            className="text-xs font-semibold text-[#00ffff] px-2.5 py-1.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 whitespace-nowrap"
+            className="text-xs font-semibold text-neon-ink px-2.5 py-1.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 whitespace-nowrap"
             title="Credits remaining"
           >
             {planType === 'pro' ? '∞' : creditsRemaining ?? '—'}
@@ -1125,7 +1133,7 @@ export default function DashboardContent() {
                   <div className="mb-6">
                     <div className="relative rounded-xl sm:rounded-2xl border border-[#00ffff]/30 bg-gradient-to-r from-[#00ffff]/10 to-[#00ff00]/10 backdrop-blur-sm p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                       <div className="w-10 h-10 rounded-full bg-[#00ffff]/20 flex items-center justify-center flex-shrink-0">
-                        <svg className="w-5 h-5 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-5 h-5 text-neon-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
                         </svg>
                       </div>
@@ -1136,7 +1144,7 @@ export default function DashboardContent() {
                       <button
                         type="button"
                         onClick={createNewBrand}
-                        className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#00ffff] text-black text-sm font-bold hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all whitespace-nowrap"
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-full bg-[#00ffff] text-pure-black text-sm font-bold hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all whitespace-nowrap"
                       >
                         Set up my brand
                       </button>
@@ -1162,10 +1170,10 @@ export default function DashboardContent() {
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 px-3 py-2.5 sm:px-4 sm:py-3.5">
                       <div className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-white/60 justify-center sm:justify-start flex-wrap">
                         <span className="hidden sm:inline-flex items-center gap-1.5">
-                          <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-neon-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                           </svg>
-                          <span className="text-[#00ffff]">AI-powered</span>
+                          <span className="text-neon-ink">AI-powered</span>
                         </span>
                         <span className="hidden sm:inline text-white/30">·</span>
                         <div className="flex items-center gap-2">
@@ -1197,7 +1205,7 @@ export default function DashboardContent() {
                                 className="fixed inset-0 z-10" 
                                 onClick={() => setStyleDropdownOpen(false)}
                               />
-                              <div className="absolute left-0 top-full mt-2 w-48 max-h-[240px] bg-gradient-to-b from-black via-black to-black/95 border-2 border-white/20 rounded-lg shadow-2xl shadow-black/50 overflow-y-auto z-20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 backdrop-blur-xl">
+                              <div className="absolute left-0 top-full mt-2 w-48 max-h-[240px] bg-gradient-to-b from-black via-black to-black/95 border-2 border-white/20 rounded-lg shadow-2xl shadow-pure-black/50 overflow-y-auto z-20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 backdrop-blur-xl">
                                 {DESIGN_STYLE_OPTIONS.map((style) => (
                                   <button
                                     key={style.value}
@@ -1207,7 +1215,7 @@ export default function DashboardContent() {
                                       setStyleDropdownOpen(false);
                                     }}
                                     className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 flex items-center gap-3 ${
-                                      designStyle === style.value ? 'bg-[#00ffff]/10 text-[#00ffff]' : 'text-white'
+                                      designStyle === style.value ? 'bg-[#00ffff]/10 text-neon-ink' : 'text-white'
                                     }`}
                                   >
                                     <StyleSwatch styleValue={style.value} size={34} />
@@ -1255,14 +1263,14 @@ export default function DashboardContent() {
                                 className="fixed inset-0 z-10"
                                 onClick={() => setBrandDropdownOpen(false)}
                               />
-                              <div className="absolute left-0 top-full mt-2 w-52 max-h-[220px] bg-gradient-to-b from-black via-black to-black/95 border-2 border-white/20 rounded-lg shadow-2xl shadow-black/50 overflow-y-auto z-20 backdrop-blur-xl">
+                              <div className="absolute left-0 top-full mt-2 w-52 max-h-[220px] bg-gradient-to-b from-black via-black to-black/95 border-2 border-white/20 rounded-lg shadow-2xl shadow-pure-black/50 overflow-y-auto z-20 backdrop-blur-xl">
                                 {brandProfiles.length === 0 ? (
                                   <div className="px-4 py-4 text-center">
                                     <p className="text-xs text-white/40 mb-2">No brand profiles yet</p>
                                     <button
                                       type="button"
                                       onClick={() => { setBrandDropdownOpen(false); createNewBrand(); }}
-                                      className="text-xs text-[#00ffff] underline"
+                                      className="text-xs text-neon-ink underline"
                                     >
                                       Create one →
                                     </button>
@@ -1273,7 +1281,7 @@ export default function DashboardContent() {
                                       type="button"
                                       onClick={() => { setGenerateBrandId(null); setBrandIdUserSet(true); setBrandDropdownOpen(false); }}
                                       className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 ${
-                                        generateBrandId === null ? 'bg-[#00ffff]/10 text-[#00ffff]' : 'text-white/50'
+                                        generateBrandId === null ? 'bg-[#00ffff]/10 text-neon-ink' : 'text-white/50'
                                       }`}
                                     >
                                       <div className="text-xs font-medium">No brand</div>
@@ -1285,7 +1293,7 @@ export default function DashboardContent() {
                                         type="button"
                                         onClick={() => { setGenerateBrandId(brand.id); setBrandIdUserSet(true); setBrandDropdownOpen(false); }}
                                         className={`w-full px-4 py-3 text-left hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${
-                                          generateBrandId === brand.id ? 'bg-[#00ffff]/10 text-[#00ffff]' : 'text-white'
+                                          generateBrandId === brand.id ? 'bg-[#00ffff]/10 text-neon-ink' : 'text-white'
                                         }`}
                                       >
                                         <div className="flex items-center gap-2">
@@ -1295,7 +1303,7 @@ export default function DashboardContent() {
                                           />
                                           <span className="font-medium text-sm truncate">{brand.brand_name}</span>
                                           {brand.is_default && (
-                                            <span className="text-[10px] text-[#00ffff]/70 border border-[#00ffff]/30 rounded px-1 ml-auto flex-shrink-0">default</span>
+                                            <span className="text-[10px] text-neon-ink/70 border border-[#00ffff]/30 rounded px-1 ml-auto flex-shrink-0">default</span>
                                           )}
                                         </div>
                                         {brand.industry && (
@@ -1306,7 +1314,7 @@ export default function DashboardContent() {
                                     <button
                                       type="button"
                                       onClick={() => { setBrandDropdownOpen(false); createNewBrand(); }}
-                                      className="w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center gap-2 text-[#00ffff] text-xs font-medium"
+                                      className="w-full px-4 py-3 text-left hover:bg-white/10 transition-colors flex items-center gap-2 text-neon-ink text-xs font-medium"
                                     >
                                       <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -1348,7 +1356,7 @@ export default function DashboardContent() {
               <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto mt-8">
                 <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-black/60 backdrop-blur-sm flex items-center gap-4">
                   <div className="w-11 h-11 flex-shrink-0 rounded-xl bg-[#00ffff]/10 border border-[#00ffff]/25 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 text-neon-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </div>
@@ -1360,7 +1368,7 @@ export default function DashboardContent() {
 
                 <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-black/60 backdrop-blur-sm flex items-center gap-4">
                   <div className="w-11 h-11 flex-shrink-0 rounded-xl bg-[#00ff00]/10 border border-[#00ff00]/25 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-[#00ff00]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 text-neon-lime-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                   </div>
@@ -1372,7 +1380,7 @@ export default function DashboardContent() {
 
                 <div className="p-4 sm:p-6 rounded-xl border border-white/10 bg-black/60 backdrop-blur-sm flex items-center gap-4">
                   <div className="w-11 h-11 flex-shrink-0 rounded-xl bg-[#ff00ff]/10 border border-[#ff00ff]/25 flex items-center justify-center">
-                    <svg className="w-5 h-5 text-[#ff00ff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 text-neon-magenta-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-5 5a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 9V4a1 1 0 011-1z" />
                     </svg>
                   </div>
@@ -1435,7 +1443,7 @@ export default function DashboardContent() {
                       }}
                       className="p-4 rounded-lg border border-white/10 bg-black/60 backdrop-blur-sm hover:bg-black/70 hover:border-white/20 transition-all text-left group"
                     >
-                      <h4 className="text-sm font-semibold text-white mb-1 group-hover:text-[#00ffff] transition-colors">{template.title}</h4>
+                      <h4 className="text-sm font-semibold text-white mb-1 group-hover:text-neon-ink transition-colors">{template.title}</h4>
                       <p className="text-xs text-white/60">{template.desc}</p>
                     </button>
                   ))}
@@ -1470,7 +1478,7 @@ export default function DashboardContent() {
                     ) : (
                       <button
                         onClick={createNewBrand}
-                        className="px-6 py-3 rounded-lg bg-[#00ffff] text-black font-bold hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex items-center gap-2 self-start sm:self-auto"
+                        className="px-6 py-3 rounded-lg bg-[#00ffff] text-pure-black font-bold hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex items-center gap-2 self-start sm:self-auto"
                       >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -1499,7 +1507,7 @@ export default function DashboardContent() {
                     brandProfiles.length === 0 ? (
                       <div className="p-12 rounded-xl border-2 border-dashed border-white/20 bg-white/5 text-center">
                       <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-[#00ffff]/20 to-[#00ff00]/20 flex items-center justify-center">
-                        <svg className="w-10 h-10 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-10 h-10 text-neon-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                         </svg>
                       </div>
@@ -1510,7 +1518,7 @@ export default function DashboardContent() {
                       </p>
                       <button
                         onClick={createNewBrand}
-                        className="px-8 py-4 rounded-full bg-[#00ffff] text-black font-bold hover:shadow-xl hover:shadow-[#00ffff]/50 transition-all text-lg"
+                        className="px-8 py-4 rounded-full bg-[#00ffff] text-pure-black font-bold hover:shadow-xl hover:shadow-[#00ffff]/50 transition-all text-lg"
                       >
                         Get Started
                       </button>
@@ -1527,7 +1535,7 @@ export default function DashboardContent() {
                           
                           {/* Default Badge */}
                           {brand.is_default && (
-                            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-[#00ffff] text-black text-[10px] font-black tracking-wider z-10">
+                            <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-[#00ffff] text-pure-black text-[10px] font-black tracking-wider z-10">
                               DEFAULT
                             </div>
                           )}
@@ -1716,7 +1724,7 @@ export default function DashboardContent() {
                         type="button"
                         onClick={analyzeBrandWebsite}
                         disabled={analyzingWebsite || !brandForm.website_url.trim()}
-                        className="px-4 py-3 rounded-lg bg-[#00ffff] text-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
+                        className="px-4 py-3 rounded-lg bg-[#00ffff] text-pure-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap flex items-center gap-2"
                       >
                         {analyzingWebsite ? (
                           <>
@@ -2050,7 +2058,7 @@ export default function DashboardContent() {
                           <button
                             onClick={() => setBulkDeleteConfirmOpen(true)}
                             disabled={selectedEmailIds.size === 0}
-                            className="px-4 py-2 rounded-lg bg-red-500/90 hover:bg-red-500 text-white text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="px-4 py-2 rounded-lg bg-red-500/90 hover:bg-red-500 text-pure-white text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             Delete Selected
                           </button>
@@ -2189,9 +2197,9 @@ export default function DashboardContent() {
                         <div className="absolute top-2 right-2 z-10">
                           <span className={`px-2 py-1 rounded text-xs font-medium ${
                             email.status === 'completed'
-                              ? 'bg-green-500/90 text-white'
+                              ? 'bg-green-500/90 text-pure-white'
                               : email.status === 'failed'
-                              ? 'bg-red-500/90 text-white'
+                              ? 'bg-red-500/90 text-pure-white'
                               : 'bg-yellow-500/90 text-white'
                           }`}>
                             {email.status}
@@ -2199,7 +2207,7 @@ export default function DashboardContent() {
                         </div>
 
                         {/* Scaled HTML preview thumbnail */}
-                        <div className="relative w-full overflow-hidden bg-white" style={{ height: 220 }}>
+                        <div className="relative w-full overflow-hidden bg-pure-white" style={{ height: 220 }}>
                           {email.html_code ? (
                             <iframe
                               srcDoc={email.html_code}
@@ -2227,7 +2235,7 @@ export default function DashboardContent() {
 
                         {/* Email info */}
                         <div className="p-3">
-                          <h3 className="text-white font-semibold mb-0.5 truncate text-sm group-hover:text-[#00ffff] transition-colors">
+                          <h3 className="text-white font-semibold mb-0.5 truncate text-sm group-hover:text-neon-ink transition-colors">
                             {email.subject_line || 'Untitled Email'}
                           </h3>
                           <div className="flex items-center justify-between text-xs text-white/40">
@@ -2256,7 +2264,7 @@ export default function DashboardContent() {
 
               {/* ── Profile card ─────────────────────────────────────── */}
               <div className="rounded-2xl border border-white/10 bg-white/5 px-6 py-5 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00ffff] to-[#00ff00] flex items-center justify-center text-black font-bold text-xl flex-shrink-0">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#00ffff] to-[#00ff00] flex items-center justify-center text-pure-black font-bold text-xl flex-shrink-0">
                   {userEmail ? userEmail[0].toUpperCase() : 'U'}
                 </div>
                 <div className="min-w-0">
@@ -2288,7 +2296,7 @@ export default function DashboardContent() {
                   <h3 className="text-base font-semibold text-white">Plan &amp; Billing</h3>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold tracking-wide ${
                     planType === 'pro'
-                      ? 'bg-[#00ffff]/20 text-[#00ffff] border border-[#00ffff]/30'
+                      ? 'bg-[#00ffff]/20 text-neon-ink border border-[#00ffff]/30'
                       : 'bg-white/10 text-white/60 border border-white/10'
                   }`}>
                     {planType === 'pro' ? 'PROFESSIONAL' : 'FREE TRIAL'}
@@ -2318,7 +2326,7 @@ export default function DashboardContent() {
                           <span className={`w-1.5 h-1.5 rounded-full ${creditsRemaining !== null && creditsRemaining < 1 ? 'bg-white/30' : 'bg-[#00ff80]'}`} />
                           AI actions
                         </span>
-                        <span className={creditsRemaining !== null && creditsRemaining < 1 ? 'text-white/40' : 'text-[#00ff80]'}>
+                        <span className={creditsRemaining !== null && creditsRemaining < 1 ? 'text-white/40' : 'text-neon-mint-ink'}>
                           {creditsRemaining !== null ? `${creditsRemaining}/5 this month` : '—'}
                         </span>
                       </div>
@@ -2327,7 +2335,7 @@ export default function DashboardContent() {
                           <span className={`w-1.5 h-1.5 rounded-full ${testSendCreditsRemaining !== null && testSendCreditsRemaining < 1 ? 'bg-white/30' : 'bg-[#00ff80]'}`} />
                           Test send
                         </span>
-                        <span className={testSendCreditsRemaining !== null && testSendCreditsRemaining < 1 ? 'text-white/40' : 'text-[#00ff80]'}>
+                        <span className={testSendCreditsRemaining !== null && testSendCreditsRemaining < 1 ? 'text-white/40' : 'text-neon-mint-ink'}>
                           {testSendCreditsRemaining !== null ? `${testSendCreditsRemaining}/3 this month` : '—'}
                         </span>
                       </div>
@@ -2336,7 +2344,7 @@ export default function DashboardContent() {
                           <span className={`w-1.5 h-1.5 rounded-full ${trialFlags?.brand ? 'bg-white/30' : 'bg-[#00ff80]'}`} />
                           Brand profile
                         </span>
-                        <span className={trialFlags?.brand ? 'text-white/40' : 'text-[#00ff80]'}>
+                        <span className={trialFlags?.brand ? 'text-white/40' : 'text-neon-mint-ink'}>
                           {trialFlags?.brand === undefined ? '—' : trialFlags.brand ? 'In use' : 'Available'}
                         </span>
                       </div>
@@ -2349,7 +2357,7 @@ export default function DashboardContent() {
                   {planType !== 'pro' && (
                     <a
                       href="/#pricing"
-                      className="px-5 py-2.5 rounded-xl bg-[#00ffff] text-black font-bold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 hover:-translate-y-px transition-all"
+                      className="px-5 py-2.5 rounded-xl bg-[#00ffff] text-pure-black font-bold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 hover:-translate-y-px transition-all"
                     >
                       Upgrade Plan
                     </a>

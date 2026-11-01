@@ -70,12 +70,12 @@ export default function ImageUploadInput({
           className="flex-shrink-0 p-1 rounded border border-white/10 bg-white/5 hover:border-[#00ffff]/50 hover:bg-[#00ffff]/10 transition-all disabled:opacity-40"
         >
           {uploading ? (
-            <svg className="w-3.5 h-3.5 text-[#00ffff] animate-spin" fill="none" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5 text-neon-ink animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
           ) : (
-            <svg className="w-3.5 h-3.5 text-white/40 hover:text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-3.5 h-3.5 text-white/40 hover:text-neon-ink" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
           )}
@@ -117,7 +117,7 @@ export default function ImageUploadInput({
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
           title="Upload image"
-          className="flex-shrink-0 px-2.5 py-1.5 rounded border border-white/10 bg-white/5 hover:border-[#00ffff]/50 hover:bg-[#00ffff]/10 text-white/50 hover:text-[#00ffff] transition-all text-xs flex items-center gap-1.5 disabled:opacity-40"
+          className="flex-shrink-0 px-2.5 py-1.5 rounded border border-white/10 bg-white/5 hover:border-[#00ffff]/50 hover:bg-[#00ffff]/10 text-white/50 hover:text-neon-ink transition-all text-xs flex items-center gap-1.5 disabled:opacity-40"
         >
           {uploading ? (
             <>

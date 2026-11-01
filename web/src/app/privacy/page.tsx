@@ -173,7 +173,7 @@ export default function PrivacyPage() {
           </p>
           <p className="mt-4">
             To exercise any of these rights, contact us at{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-neon-ink hover:underline">
               {CONTACT_EMAIL}
             </a>. We will respond within 30 days.
           </p>
@@ -208,7 +208,7 @@ export default function PrivacyPage() {
           <p>
             Emlet is operated from Hyderabad, Telangana, India. If you have any questions or concerns
             about this Privacy Policy, please contact us at{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-neon-ink hover:underline">
               {CONTACT_EMAIL}
             </a>. This also serves as the contact for privacy inquiries under GDPR, CCPA, or similar law,
             since Emlet does not currently have a separate designated Data Protection Officer.
