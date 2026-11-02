@@ -551,7 +551,7 @@ export default function EmailGeneratingOverlay() {
           border: 1px solid rgba(255,255,255,0.12);
           backdrop-filter: blur(4px);
         }
-        .gen-face-front  { transform: rotateY(  0deg) translateZ(50px); background: linear-gradient(135deg,rgba(0,255,255,0.28),rgba(0,255,255,0.06)); box-shadow: inset 0 0 20px rgba(0,255,255,0.1); }
+        .gen-face-front  { transform: rotateY(  0deg) translateZ(50px); background: linear-gradient(135deg,color-mix(in srgb,var(--primary-bright) 28%,transparent),color-mix(in srgb,var(--primary-bright) 6%,transparent)); box-shadow: inset 0 0 20px color-mix(in srgb,var(--primary-bright) 10%,transparent); }
         .gen-face-back   { transform: rotateY(180deg) translateZ(50px); background: linear-gradient(135deg,rgba(255,0,255,0.28),rgba(255,0,255,0.06)); box-shadow: inset 0 0 20px rgba(255,0,255,0.1); }
         .gen-face-right  { transform: rotateY( 90deg) translateZ(50px); background: linear-gradient(135deg,rgba(0,255,128,0.28),rgba(0,255,128,0.06)); box-shadow: inset 0 0 20px rgba(0,255,128,0.1); }
         .gen-face-left   { transform: rotateY(-90deg) translateZ(50px); background: linear-gradient(135deg,rgba(255,200,0,0.28),rgba(255,200,0,0.06));  box-shadow: inset 0 0 20px rgba(255,200,0,0.1);  }
@@ -564,11 +564,11 @@ export default function EmailGeneratingOverlay() {
           border-radius: 50%;
           margin: -4.5px;
         }
-        .gen-dot-a { background:#00ffff; box-shadow:0 0 10px #00ffff,0 0 20px rgba(0,255,255,0.4); animation:orbitA 3.2s linear infinite; }
+        .gen-dot-a { background:var(--primary-bright); box-shadow:0 0 10px var(--primary-bright),0 0 20px color-mix(in srgb,var(--primary-bright) 40%,transparent); animation:orbitA 3.2s linear infinite; }
         .gen-dot-b { background:#ff00ff; box-shadow:0 0 10px #ff00ff,0 0 20px rgba(255,0,255,0.4); animation:orbitB 3.2s linear infinite; }
         .gen-dot-c { background:#00ff80; box-shadow:0 0 10px #00ff80,0 0 20px rgba(0,255,128,0.4); animation:orbitC 3.2s linear infinite; }
         .gen-progress-fill {
-          background: linear-gradient(90deg, #00ffff, #00ff80, #ff00ff, #00ffff);
+          background: linear-gradient(90deg, var(--primary-bright), #00ff80, #ff00ff, var(--primary-bright));
           background-size: 300% auto;
           animation: progressShimmer 2s linear infinite;
         }
@@ -582,7 +582,7 @@ export default function EmailGeneratingOverlay() {
       `}</style>
 
       {/* Ambient background blobs */}
-      <div className="gen-bg-blob" style={{ width: 400, height: 400, top: '-10%', right: '-5%', background: 'radial-gradient(circle, rgba(0,255,255,1) 0%, transparent 70%)' }} />
+      <div className="gen-bg-blob" style={{ width: 400, height: 400, top: '-10%', right: '-5%', background: 'radial-gradient(circle, var(--primary-bright) 0%, transparent 70%)' }} />
       <div className="gen-bg-blob" style={{ width: 350, height: 350, bottom: '-10%', left: '-5%', background: 'radial-gradient(circle, rgba(255,0,255,1) 0%, transparent 70%)', animationDelay: '2s' }} />
       <div className="gen-bg-blob" style={{ width: 300, height: 300, top: '50%', left: '50%', transform: 'translate(-50%,-50%)', background: 'radial-gradient(circle, rgba(0,255,128,1) 0%, transparent 70%)', animationDelay: '1s' }} />
 
