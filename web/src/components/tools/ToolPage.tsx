@@ -64,7 +64,7 @@ export default async function ToolPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
       <Link href="/tools" className="mb-8 inline-block text-sm text-white/40 transition-colors hover:text-white">
-        ← All free tools
+        ← All tools
       </Link>
 
       <header className="mb-10">
@@ -115,7 +115,7 @@ export default async function ToolPage({
       </div>
 
       <section className="mb-12">
-        <h2 className="mb-5 text-lg font-bold">More free tools</h2>
+        <h2 className="mb-5 text-lg font-bold">More tools</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           {otherTools.map((t) => (
             <Link key={t.slug} href={toolUrl(t.slug)} className="group rounded-xl border border-white/10 p-4 transition-colors hover:border-white/30">

@@ -19,7 +19,7 @@ export default function ToolsHubPage() {
   return (
     <MarketingLayout contentClassName="max-w-5xl">
       <div className="mb-12">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary/60">Free tools</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-primary/60">Tools</p>
         <h1 className="mb-4 text-4xl font-black tracking-tight sm:text-5xl">Small tools that make email less annoying</h1>
         <p className="max-w-2xl text-lg text-white/50">
           No signup, no limits. Everything runs in your browser, so what you type stays with you.

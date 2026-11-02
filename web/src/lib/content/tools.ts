@@ -1,6 +1,6 @@
 /**
- * The free tools. One entry per tool: used by the /tools hub, each tool page's "related" blocks, the
- * sitemap and the nav. Every tool runs entirely in the visitor's browser (no account, no AI, no server
+ * The tools. One entry per tool: used by the header's Tools dropdown, the /tools hub, each tool page's "related" blocks and the
+ * sitemap. Every tool runs entirely in the visitor's browser (no account, no AI, no server
  * cost), so there is nothing to abuse and nothing to rate-limit.
  */
 
