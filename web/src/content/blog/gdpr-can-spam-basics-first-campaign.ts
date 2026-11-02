@@ -104,4 +104,8 @@ export const body: ContentBlock[] = [
     type: 'p',
     text: "None of this requires a lawyer for a first small campaign to a list you built yourself with a clear signup form. It starts to matter more as the list grows, as you add EU subscribers, or as you bring on an agency or affiliate sending on your behalf, which is exactly the point to have an actual conversation with someone qualified rather than continuing to work from a blog post.",
   },
+  {
+    type: 'p',
+    text: "For the practical part, see our guide to [what to put in an email footer](/blog/what-to-put-in-an-email-footer), which turns the address and unsubscribe requirements above into examples you can adapt.",
+  },
 ];

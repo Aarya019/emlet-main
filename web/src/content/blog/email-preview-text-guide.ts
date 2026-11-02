@@ -90,6 +90,10 @@ export const body: ContentBlock[] = [
   },
   {
     type: 'p',
+    text: "The subject line shares the same row, and phones cut it off much earlier than desktop inboxes do. Our post on [subject line length](/blog/email-subject-line-length-how-many-characters) shows how much of it survives and how to write a subject and preview text as a pair.",
+  },
+  {
+    type: 'p',
     text: "One caveat worth knowing and not overreacting to: recent versions of Apple Mail can replace preview text entirely with an AI-generated summary of the email's content, and there's no reliable per-email way to opt out of it today. That's a reason to keep the actual opening line of body copy clear and front-loaded too, not just the hidden preheader, since on a growing share of iPhones, the preview text someone wrote might not be what actually shows.",
   },
 ];

@@ -26,7 +26,7 @@ export const body: ContentBlock[] = [
   },
   {
     type: 'p',
-    text: "The most useful work happens in the weeks before the sale. Decide your offer, check that your list is clean (our post on list hygiene covers how), confirm your sending domain is authenticated, and prepare your emails while you still have time to proofread them. Sending volume spikes at this time of year, and a rushed email with a broken link or the wrong price is the most expensive mistake you can make.",
+    text: "The most useful work happens in the weeks before the sale. Decide your offer, check that your list is clean (our post on [list hygiene](/blog/email-list-hygiene-cleaning-stale-list) covers how), confirm your sending domain is authenticated, and prepare your emails while you still have time to proofread them. Sending volume spikes at this time of year, and a rushed email with a broken link or the wrong price is the most expensive mistake you can make.",
   },
   {
     type: 'ul',
@@ -134,7 +134,7 @@ export const body: ContentBlock[] = [
         text: "Watch the numbers during the sale. If complaints or unsubscribes jump, pause and rethink the next send instead of pushing on.",
       },
       {
-        text: "Make unsubscribing easy. Our post on one-click unsubscribe explains why it protects your deliverability when volume is high.",
+        text: "Make unsubscribing easy. Our post on [one-click unsubscribe](/blog/one-click-unsubscribe-what-it-is-and-how-to-set-it-up) explains why it protects your deliverability when volume is high.",
       },
     ],
   },

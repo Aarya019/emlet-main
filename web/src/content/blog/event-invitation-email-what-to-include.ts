@@ -127,10 +127,14 @@ export const body: ContentBlock[] = [
   },
   {
     type: 'p',
-    text: "The event is not the end of the campaign. Within a day or two, send everyone who came a thank-you with a photo or two, a link to anything you promised, and a hint about what is next. Send people who registered but did not come a gentler version, perhaps with a recording or a note about the next date. This is also the best moment to ask a single question about what they would like next time, which ties in with what we covered on inviting replies.",
+    text: "The event is not the end of the campaign. Within a day or two, send everyone who came a thank-you with a photo or two, a link to anything you promised, and a hint about what is next. Send people who registered but did not come a gentler version, perhaps with a recording or a note about the next date. This is also the best moment to ask a single question about what they would like next time, which ties in with what we covered on [inviting replies](/blog/reply-rate-underused-email-metric).",
   },
   {
     type: 'p',
     text: "Finally, keep the email itself accessible and simple: a readable font size, strong contrast, and the key details in actual text, not baked into an image. An invitation that cannot be read in dark mode or by a screen reader is an invitation some of your community never receives.",
+  },
+  {
+    type: 'p',
+    text: "For the wording itself, see our [event invitation email examples](/blog/event-invitation-email-examples), with subject lines, button text and reminder copy for a meetup, a paid workshop, an open house and an online class.",
   },
 ];

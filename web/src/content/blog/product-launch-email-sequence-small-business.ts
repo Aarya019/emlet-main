@@ -128,10 +128,14 @@ export const body: ContentBlock[] = [
   },
   {
     type: 'p',
-    text: "Look at what happened rather than just the sales number. Which email got the most clicks? Which subject line got opened? What did people reply with? Our post on reply rate covers why replies are the most honest signal you will get. Write down what worked while it is fresh. The next launch will start from a better place than this one did.",
+    text: "Look at what happened rather than just the sales number. Which email got the most clicks? Which subject line got opened? What did people reply with? Our post on [reply rate](/blog/reply-rate-underused-email-metric) covers why replies are the most honest signal you will get. Write down what worked while it is fresh. The next launch will start from a better place than this one did.",
   },
   {
     type: 'p',
     text: "A good launch email is not clever. It tells people clearly what exists, why it is worth their attention, and what to do next, and it does that across a few days instead of a single shout.",
+  },
+  {
+    type: 'p',
+    text: "If you would like to see the wording, our post on [product launch email examples](/blog/product-launch-email-examples) writes out a teaser, a launch-day email, a founder's note, a limited run and a follow-up, with subject lines and preview text.",
   },
 ];

@@ -1,5 +1,37 @@
+import type { ReactNode } from 'react';
+import Link from 'next/link';
 import type { ContentBlock } from '@/lib/content/blocks';
 import BlogInlineImage from './BlogInlineImage';
+
+/** `[anchor text](/blog/some-post)` or `[anchor text](https://example.com)` inside a paragraph, list item or quote. */
+const LINK_PATTERN = /\[([^\]]+)\]\((\/[^)\s]*|https?:\/\/[^)\s]+)\)/g;
+const LINK_CLASS =
+  'text-primary underline decoration-primary-bright/40 underline-offset-2 transition-colors hover:decoration-primary';
+
+/** Returns the text with each `[anchor](href)` turned into a link: internal paths use next/link, others open in a new tab. */
+function withLinks(text: string): ReactNode[] {
+  const out: ReactNode[] = [];
+  let last = 0;
+  for (const match of text.matchAll(LINK_PATTERN)) {
+    const start = match.index ?? 0;
+    const [whole, label, href] = match;
+    if (start > last) out.push(text.slice(last, start));
+    out.push(
+      href.startsWith('/') ? (
+        <Link key={start} href={href} className={LINK_CLASS}>
+          {label}
+        </Link>
+      ) : (
+        <a key={start} href={href} target="_blank" rel="noopener noreferrer" className={LINK_CLASS}>
+          {label}
+        </a>
+      ),
+    );
+    last = start + whole.length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
 
 function tableCellTone(cell: string) {
   if (cell.startsWith('✓')) return 'text-emerald-400 font-medium';
@@ -19,7 +51,7 @@ export default function BlogPostBody({ blocks }: { blocks: ContentBlock[] }) {
       {blocks.map((block, i) => {
         switch (block.type) {
           case 'p':
-            return <p key={i}>{block.text}</p>;
+            return <p key={i}>{withLinks(block.text)}</p>;
           case 'h2':
             return (
               <h2 key={i} className="text-2xl font-bold text-white pt-6">
@@ -32,7 +64,7 @@ export default function BlogPostBody({ blocks }: { blocks: ContentBlock[] }) {
                 {block.items.map((item, j) => (
                   <li key={j}>
                     {item.bold && <span className="text-white font-semibold">{item.bold} </span>}
-                    {item.text}
+                    {withLinks(item.text)}
                   </li>
                 ))}
               </ul>
@@ -42,7 +74,7 @@ export default function BlogPostBody({ blocks }: { blocks: ContentBlock[] }) {
           case 'quote':
             return (
               <blockquote key={i} className="border-l-2 border-primary-bright/40 pl-5 py-1 text-white/80 italic">
-                {block.text}
+                {withLinks(block.text)}
                 {block.attribution && (
                   <footer className="mt-2 text-sm text-white/40 not-italic">— {block.attribution}</footer>
                 )}

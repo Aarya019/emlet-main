@@ -4,6 +4,10 @@
  * h2 sections, bulleted lists with an optional bold lead-in phrase, inline
  * images, pull quotes). No markdown parser, no MDX — just an array a new
  * post file exports directly.
+ *
+ * Text in paragraphs, list items and quotes may contain links written as
+ * `[anchor text](/blog/some-slug)` (internal) or `[anchor text](https://…)`
+ * (external, opens in a new tab). Nothing else is parsed.
  */
 export type ContentBlock =
   | { type: 'p'; text: string }

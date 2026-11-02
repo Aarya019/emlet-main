@@ -23,7 +23,9 @@ export const metadata: Metadata = {
   description: "Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send. No design skills needed.",
   keywords: ["AI email generator", "high converting emails", "email marketing", "marketing email generator", "email template builder", "HTML email", "email campaigns"],
   alternates: {
-    canonical: 'https://www.emlet.app',
+    // './' resolves to each page's own URL (without the query string), so pages that do not set a canonical
+    // are not all declared duplicates of the homepage. A page can still override it.
+    canonical: './',
   },
   openGraph: {
     title: "Emlet - Generate High Converting Marketing Emails in Seconds",

@@ -22,7 +22,7 @@ export const TOOLS: ToolMeta[] = [
     tagline: 'See how your subject line and preview text look in an inbox, and what might get them cut off or flagged.',
     description:
       'Free email subject line tester. Preview your subject and preview text in desktop and phone inboxes, check length, spam-sounding words, caps and punctuation, and compare alternatives.',
-    blogSlugs: ['email-preview-text-guide', 'subject-line-hacks-mythbusting', 'spam-trigger-words-outdated-advice', 'from-name-matters-more-than-subject-line'],
+    blogSlugs: ['email-subject-line-length-how-many-characters', 'email-preview-text-guide', 'subject-line-hacks-mythbusting', 'spam-trigger-words-outdated-advice', 'from-name-matters-more-than-subject-line'],
   },
   {
     slug: 'email-prompt-library',
@@ -30,7 +30,7 @@ export const TOOLS: ToolMeta[] = [
     tagline: 'Ready-to-edit prompts for welcome emails, launches, events, win-backs and more. Copy one or turn it into an email.',
     description:
       'Free library of prompts for writing emails with AI: welcome emails, product launches, event invitations, abandoned carts, newsletters and more. Edit a prompt, copy it, or generate the email.',
-    blogSlugs: ['write-like-a-person-not-a-brand', 'ai-written-emails-all-sound-the-same', 'copywriting-frameworks-aida-pas-bab', 'welcome-email-sequence-what-to-send'],
+    blogSlugs: ['product-launch-email-examples', 'event-invitation-email-examples', 'write-like-a-person-not-a-brand', 'ai-written-emails-all-sound-the-same', 'copywriting-frameworks-aida-pas-bab', 'welcome-email-sequence-what-to-send'],
   },
   {
     slug: 'email-footer-generator',
@@ -38,7 +38,7 @@ export const TOOLS: ToolMeta[] = [
     tagline: 'Build a compliant email footer with your address and an unsubscribe link, as HTML and plain text.',
     description:
       'Free email footer generator for CAN-SPAM, GDPR and CASL basics. Add your business name, postal address and unsubscribe link, then copy the HTML and plain-text footer.',
-    blogSlugs: ['gdpr-can-spam-basics-first-campaign', 'one-click-unsubscribe-what-it-is-and-how-to-set-it-up', 'gmail-yahoo-microsoft-bulk-sender-rules-small-list', 'email-deliverability-spf-dkim-dmarc-explained'],
+    blogSlugs: ['what-to-put-in-an-email-footer', 'gdpr-can-spam-basics-first-campaign', 'one-click-unsubscribe-what-it-is-and-how-to-set-it-up', 'gmail-yahoo-microsoft-bulk-sender-rules-small-list', 'email-deliverability-spf-dkim-dmarc-explained'],
   },
   {
     slug: 'email-signature-generator',
