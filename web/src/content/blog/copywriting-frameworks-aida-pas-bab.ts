@@ -3,9 +3,9 @@ import type { ContentBlock } from '@/lib/content/blocks';
 
 export const meta: BlogPostMeta = {
   slug: 'copywriting-frameworks-aida-pas-bab',
-  title: 'AIDA, PAS, and BAB: Do Copywriting Frameworks Actually Help, or Are They Crutches?',
+  title: 'AIDA, PAS and BAB: Copywriting Formulas Explained for Email',
   description:
-    "Every marketing blog teaches these three formulas like settled wisdom. The more useful question is when each one actually fits, and when it just makes your copy sound like a template.",
+    "What AIDA, PAS and BAB stand for, when each one fits an email, and when a formula just makes your copy sound like a template.",
   date: '2026-09-02',
   readTime: '7 min read',
   category: 'Copywriting',

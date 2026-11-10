@@ -211,4 +211,8 @@ export const body: ContentBlock[] = [
     type: 'p',
     text: "When the event is over, send a thank-you with a photo or two and a hint about what is next. The free [Email Prompt Library](/tools/email-prompt-library) has event prompts, including one for the thank-you, that you can edit and turn into a full email.",
   },
+  {
+    type: 'p',
+    text: "Planning something for February? Our [Valentine's Day email ideas](/blog/valentines-day-email-ideas-small-business) include a send plan and a Galentine's invitation subject line.",
+  },
 ];

@@ -30,7 +30,7 @@ export const TOOLS: ToolMeta[] = [
     tagline: 'Ready-to-edit prompts for welcome emails, launches, events, win-backs and more. Copy one or turn it into an email.',
     description:
       'Free library of prompts for writing emails with AI: welcome emails, product launches, event invitations, abandoned carts, newsletters and more. Edit a prompt, copy it, or generate the email.',
-    blogSlugs: ['product-launch-email-examples', 'event-invitation-email-examples', 'write-like-a-person-not-a-brand', 'ai-written-emails-all-sound-the-same', 'copywriting-frameworks-aida-pas-bab', 'welcome-email-sequence-what-to-send'],
+    blogSlugs: ['product-launch-email-examples', 'event-invitation-email-examples', 'valentines-day-email-ideas-small-business', 'email-marketing-calendar-2027', 'write-like-a-person-not-a-brand', 'ai-written-emails-all-sound-the-same', 'copywriting-frameworks-aida-pas-bab', 'welcome-email-sequence-what-to-send'],
   },
   {
     slug: 'email-footer-generator',

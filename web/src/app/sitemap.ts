@@ -53,6 +53,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     };
     addCategories('type', templates.map((t) => t.emailType));
     addCategories('industry', templates.map((t) => t.industry));
+    addCategories('occasion', templates.map((t) => t.occasion).filter((o): o is string => Boolean(o)));
   }
 
   return [...staticRoutes, ...blogRoutes, ...alternativeRoutes, ...templateRoutes];

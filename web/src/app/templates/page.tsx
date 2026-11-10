@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import MarketingLayout from '@/components/MarketingLayout';
 import TemplateGrid from '@/components/TemplateGrid';
 import { getAllTemplatesMeta } from '@/lib/content/templates-registry';
-import { SITE_URL, industryLabel, typeLabel } from '@/lib/content/templates';
+import { SITE_URL, industryLabel, occasionLabel, typeLabel } from '@/lib/content/templates';
 
 const TITLE = 'Free Email Templates You Can Edit and Send | Emlet';
 const DESCRIPTION =
@@ -31,6 +31,7 @@ export default async function TemplatesIndexPage() {
   const templates = await getAllTemplatesMeta();
   const types = counts(templates.map((t) => t.emailType));
   const industries = counts(templates.map((t) => t.industry));
+  const occasions = counts(templates.map((t) => t.occasion).filter((o): o is string => Boolean(o)));
 
   return (
     <MarketingLayout contentClassName="max-w-6xl">
@@ -50,6 +51,11 @@ export default async function TemplatesIndexPage() {
       ) : (
         <>
           <nav aria-label="Browse templates" className="mb-10 flex flex-wrap gap-2 text-sm">
+            {occasions.map(([key, n]) => (
+              <Link key={`o-${key}`} href={`/templates/occasion/${key}`} className="rounded-full border border-primary-bright/40 px-3.5 py-1.5 text-primary transition-colors hover:border-primary-bright hover:bg-primary-bright/10">
+                {occasionLabel(key)} <span className="text-white/30">{n}</span>
+              </Link>
+            ))}
             {types.map(([key, n]) => (
               <Link key={`t-${key}`} href={`/templates/type/${key}`} className="rounded-full border border-white/15 px-3.5 py-1.5 text-white/70 transition-colors hover:border-white/40 hover:text-white">
                 {typeLabel(key)} <span className="text-white/30">{n}</span>

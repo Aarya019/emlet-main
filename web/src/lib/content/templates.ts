@@ -17,6 +17,8 @@ export interface TemplateMeta {
   emailType: string;
   /** Key into TEMPLATE_INDUSTRIES. */
   industry: string;
+  /** Key into TEMPLATE_OCCASIONS, for templates tied to a date or season (Black Friday, Valentine's Day...). Leave out for evergreen ones. */
+  occasion?: string;
   style: DesignStyle;
   /** ISO date of the last meaningful change (sitemap lastModified). */
   date: string;
@@ -43,6 +45,7 @@ export const TEMPLATE_TYPES: Record<string, TaxonomyEntry & { group: EmailType }
   'product-launch': { label: 'Product launch emails', group: 'promotional', blurb: 'Announce something new: what it is, who it is for, the price and where to get it.' },
   newsletter: { label: 'Newsletter templates', group: 'newsletter', blurb: 'A regular update people look forward to, built around a few strong stories rather than a wall of links.' },
   announcement: { label: 'Announcement emails', group: 'other', blurb: 'News that is not a sale: new opening hours, a move, a milestone, a change you want people to hear from you first.' },
+  'sale-promotion': { label: 'Sale and promotion emails', group: 'promotional', blurb: 'An offer people can understand in five seconds: what it is, how long it lasts and where to click.' },
   'abandoned-cart': { label: 'Abandoned cart emails', group: 'promotional', blurb: 'A friendly nudge for someone who left something behind, without the guilt trip.' },
   'order-confirmation': { label: 'Order confirmation emails', group: 'transactional', blurb: 'Clear receipts and confirmations that answer "did it work?" and "when does it arrive?" at a glance.' },
   'password-reset': { label: 'Password reset emails', group: 'transactional', blurb: 'The one email nobody wants to wait for. Short, obvious, and safe.' },
@@ -56,6 +59,23 @@ export const TEMPLATE_INDUSTRIES: Record<string, TaxonomyEntry> = {
   'creators-and-newsletters': { label: 'Creators and newsletters', blurb: 'Writers, educators and solo businesses with an audience of their own.' },
 };
 
+/**
+ * Dates and seasons. Keep the keys free of the year (valentines-day, not valentines-2027) so one page can be refreshed
+ * every season and keep its history. Add an entry when the first template for an occasion arrives.
+ */
+export const TEMPLATE_OCCASIONS: Record<string, TaxonomyEntry> = {
+  'black-friday': { label: 'Black Friday and Cyber Monday emails', blurb: 'Offer emails for the biggest sale weekend of the year: one clear deal, a deadline that is real, and a button that does not hide.' },
+  'holiday-season': { label: 'Holiday season emails', blurb: 'Gift guides, last-order dates, thank-yous and greetings for the weeks around the winter holidays.' },
+  'year-in-review': { label: 'Year in review emails', blurb: 'A short, honest look back at the year, with thanks and a hint of what is next.' },
+  'new-year': { label: 'New Year emails', blurb: 'Fresh-start emails for January: what is new, what is changing and why it is worth opening.' },
+  'valentines-day': { label: "Valentine's Day emails", blurb: "Offers, gift guides and event invitations for Valentine's Day and Galentine's, for shops, makers and venues that would rather not be cheesy." },
+  'super-bowl': { label: 'Super Bowl emails', blurb: 'Watch-party invitations and game-day offers for bars, cafes, shops and communities.' },
+  'womens-day': { label: "International Women's Day emails", blurb: 'Thoughtful emails for 8 March: celebrating customers, makers and the people behind the business.' },
+  easter: { label: 'Easter emails', blurb: 'Spring offers, bakes and gift ideas for Easter weekend.' },
+  'mothers-day': { label: "Mother's Day emails", blurb: "Gift ideas, order-by dates and kind messages for Mother's Day." },
+  'record-store-day': { label: 'Record Store Day emails', blurb: 'Announcements and pre-day hype for record shops and labels taking part in Record Store Day.' },
+};
+
 export function humanize(key: string): string {
   const spaced = key.replace(/-/g, ' ');
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
@@ -67,6 +87,9 @@ export const typeBlurb = (key: string) =>
   TEMPLATE_TYPES[key]?.blurb ?? 'Ready-made, editable email templates you can adapt to your brand.';
 export const industryBlurb = (key: string) =>
   TEMPLATE_INDUSTRIES[key]?.blurb ?? 'Ready-made, editable email templates you can adapt to your brand.';
+export const occasionLabel = (key: string) => TEMPLATE_OCCASIONS[key]?.label ?? humanize(key);
+export const occasionBlurb = (key: string) =>
+  TEMPLATE_OCCASIONS[key]?.blurb ?? 'Ready-made, editable email templates you can adapt to your brand.';
 
 /** A category page with fewer templates than this is "thin": kept out of search results and the sitemap. */
 export const MIN_INDEXABLE_CATEGORY = 3;

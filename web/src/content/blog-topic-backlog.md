@@ -64,3 +64,23 @@ marketing) rather than clustering on one theme for many posts in a row.
 - queued: How to add an email signature in Gmail and Outlook (feeds the Signature Generator; high volume but crowded, so lower priority)
 - queued: PAS copywriting formula with email examples (ranks 2 to 4 for definition queries with no clicks, so write it only if it adds examples, not another definition)
 - skipped (covered): another email fonts post. The fonts cluster is the best performer and has three posts plus the guide; strengthen it with links and titles instead
+
+<!-- 2026-11-10: seasonal plan in reference/marketing/plan-2026-11-to-2027-02.md. Decided NOT to cover Lunar New Year or Ramadan/Eid. Publish 8 to 12 weeks before an event where possible. -->
+
+- published (email-marketing-calendar-2027): Email marketing calendar 2027: key dates and what to send (computed dates; link magnet)
+- published (valentines-day-email-ideas-small-business): Valentine's Day email ideas for small businesses (2027 send plan, subject lines, examples)
+- queued (week 2): Holiday email ideas that are not just a discount
+- queued (week 2): January email ideas: Dry January, Blue Monday and a fresh start
+- queued (week 3): Year-in-review emails: how to write a recap customers read
+- queued (week 3): Happy holidays email examples that include everyone (keep Hanukkah and Kwanzaa generic)
+- queued (week 3): update black-friday-holiday-email-calendar-small-business with 2026 dates, Small Business Saturday and a Cyber Monday follow-up
+- queued (week 4): Super Bowl Sunday meets Valentine's Day: how to email around both
+- queued (week 4): Post-holiday winback and returns emails
+- queued (week 5): New Year email ideas and examples
+- queued (week 5): International Women's Day email ideas (8 Mar)
+- queued (week 6): Easter email ideas (28 Mar)
+- queued (week 6): Mother's Day email ideas (9 May)
+- queued (week 8): Welcome email examples
+- queued (week 8): Record Store Day email ideas (verify the 2027 date)
+- queued (week 9): Abandoned cart email examples
+- skipped (decision): Lunar New Year and Ramadan/Eid emails
