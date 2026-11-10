@@ -3,9 +3,9 @@ import type { ContentBlock } from '@/lib/content/blocks';
 
 export const meta: BlogPostMeta = {
   slug: 'email-preview-text-guide',
-  title: 'Preview Text: The 40 Characters Most Senders Leave to Chance',
+  title: 'Email Preview Text: Character Limits and How to Set It',
   description:
-    "The line of text sitting next to your subject line in the inbox is either doing work or leaking your logo's alt text. How preview text actually gets pulled, the character limits by client, and the hidden-preheader trick that fixes it.",
+    "How many characters of preview text Gmail, Apple Mail, Outlook and Yahoo show, where the text comes from, and the hidden-preheader fix.",
   date: '2026-09-09',
   readTime: '6 min read',
   category: 'Copywriting',

@@ -10,6 +10,7 @@ import {
   SITE_URL,
   humanize,
   industryLabel,
+  occasionLabel,
   previewImage,
   typeLabel,
   type PreviewSize,
@@ -54,7 +55,11 @@ export default async function TemplatePage({ params }: { params: Promise<{ slug:
   const size = previewSizes[slug];
 
   const related = (await getAllTemplatesMeta())
-    .filter((t) => t.slug !== slug && (t.emailType === meta.emailType || t.industry === meta.industry))
+    .filter(
+      (t) =>
+        t.slug !== slug &&
+        (t.emailType === meta.emailType || t.industry === meta.industry || (meta.occasion && t.occasion === meta.occasion)),
+    )
     .slice(0, 4);
 
   const jsonLd = {
@@ -71,6 +76,7 @@ export default async function TemplatePage({ params }: { params: Promise<{ slug:
   const details: [string, string][] = [
     ['Email type', typeLabel(meta.emailType)],
     ['Suits', industryLabel(meta.industry)],
+    ...(meta.occasion ? ([['Occasion', occasionLabel(meta.occasion)]] as [string, string][]) : []),
     ['Design style', humanize(meta.style)],
   ];
 

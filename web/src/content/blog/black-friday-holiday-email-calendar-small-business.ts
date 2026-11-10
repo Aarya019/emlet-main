@@ -146,4 +146,8 @@ export const body: ContentBlock[] = [
     type: 'p',
     text: "The weeks after are the most valuable. Send a thank-you, ask what people thought, and welcome the new customers properly. Then look at what worked: which email earned the most, which subject line was opened, and which offer was ignored. Write it down now. Next year's plan should start from this year's notes, not from a blank page.",
   },
+  {
+    type: 'p',
+    text: "For the rest of the year, our [email marketing calendar for 2027](/blog/email-marketing-calendar-2027) lists the dates worth planning around, with an email idea for each and when to start.",
+  },
 ];
