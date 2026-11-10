@@ -5,6 +5,7 @@ import SubmitButton from '@/components/SubmitButton';
 import PasswordInput from '@/components/PasswordInput';
 import { useState, useEffect, useRef } from 'react';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const TURNSTILE_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -13,6 +14,7 @@ export default function SignUpPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasPendingPrompt, setHasPendingPrompt] = useState(false);
+  const [hasPendingTemplate, setHasPendingTemplate] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileHandle>(null);
 
@@ -21,6 +23,16 @@ export default function SignUpPage() {
     const pendingPrompt = localStorage.getItem('pendingEmailPrompt');
     if (pendingPrompt) {
       setHasPendingPrompt(true);
+    }
+
+    // A template picked in the public library (/sign-up?template=slug). Remember it in localStorage:
+    // confirming the email leaves this page, and the dashboard opens the template once they're in.
+    const template = new URLSearchParams(window.location.search).get('template');
+    if (template && /^[a-z0-9-]{1,100}$/.test(template)) {
+      localStorage.setItem('pendingTemplate', template);
+    }
+    if (localStorage.getItem('pendingTemplate')) {
+      setHasPendingTemplate(true);
     }
   }, []);
 
@@ -64,6 +76,7 @@ export default function SignUpPage() {
 
   return (
     <div className="relative min-h-screen bg-black flex overflow-hidden">
+      <ThemeToggle className="fixed right-4 top-4 z-30" />
       {/* Subtle grid overlay */}
       <div
         className="pointer-events-none fixed inset-0 z-0 opacity-[0.03]"
@@ -71,7 +84,7 @@ export default function SignUpPage() {
       />
 
       {/* Twinkling stars */}
-      <div className="pointer-events-none fixed inset-0 z-[1]">
+      <div className="pointer-events-none fixed inset-0 z-[1] theme-stars">
         {[
           { x: 3,  y: 8,  size: 1.5, delay: 0,   dur: 4 },
           { x: 8,  y: 72, size: 1,   delay: 1.5, dur: 6 },
@@ -141,16 +154,16 @@ export default function SignUpPage() {
           <div>
             <h2 className="text-3xl font-bold text-white">Create your account</h2>
             <p className="mt-2 text-sm text-white/60">
-              {hasPendingPrompt ? (
-                <span className="text-[#00ffff]">Sign up to generate your email</span>
-              ) : (
-                <>
-                  Already have an account?{' '}
-                  <a href="/sign-in" className="font-medium text-[#00ffff] hover:text-[#00ffff]/80 transition-colors">
-                    Sign in
-                  </a>
-                </>
+              {hasPendingPrompt && (
+                <span className="mb-1 block text-primary">Sign up to generate your email</span>
               )}
+              {hasPendingTemplate && !hasPendingPrompt && (
+                <span className="mb-1 block text-primary">Create a free account to open the template you picked.</span>
+              )}
+              Already have an account?{' '}
+              <a href="/sign-in" className="font-medium text-primary hover:text-primary/80 transition-colors">
+                Sign in
+              </a>
             </p>
           </div>
 
@@ -219,7 +232,7 @@ export default function SignUpPage() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="you@example.com"
                 />
               </div>
@@ -234,7 +247,7 @@ export default function SignUpPage() {
                   autoComplete="new-password"
                   required
                   minLength={6}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />
                 <p className="mt-1 text-xs text-white/50">Must be at least 6 characters</p>
@@ -250,7 +263,7 @@ export default function SignUpPage() {
                   autoComplete="new-password"
                   required
                   minLength={6}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />
               </div>
@@ -267,11 +280,11 @@ export default function SignUpPage() {
 
               <p className="text-xs text-white/50 text-center">
                 By signing up, you agree to our{' '}
-                <a href="/terms" className="text-[#00ffff] hover:text-[#00ffff]/80">
+                <a href="/terms" className="text-primary hover:text-primary/80">
                   Terms of Service
                 </a>{' '}
                 and{' '}
-                <a href="/privacy" className="text-[#00ffff] hover:text-[#00ffff]/80">
+                <a href="/privacy" className="text-primary hover:text-primary/80">
                   Privacy Policy
                 </a>
               </p>

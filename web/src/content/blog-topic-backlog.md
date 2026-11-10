@@ -51,3 +51,16 @@ marketing) rather than clustering on one theme for many posts in a row.
 - published (event-invitation-email-what-to-include): Event invitation emails: what to include, when to send, and how to fill the room
 - published (black-friday-holiday-email-calendar-small-business): A Black Friday and holiday email plan for small businesses, without burning out your list
 - published (how-long-should-a-marketing-email-be): How long should a marketing email be? A practical answer
+
+<!-- 2026-11-02: picked from the Search Console export for Aug 2026 to Oct 2026 (see reference/seo/search-console-2026-10-baseline.md). Posts can now contain inline links: [anchor](/blog/slug). Link every new post to 3+ related posts or tools, and add an inbound link from the closest existing post. -->
+
+- published (product-launch-email-examples): Product launch email examples: five patterns with subject lines and copy (about 10 "product launch email sample/template" queries sat at positions 20 to 43)
+- published (event-invitation-email-examples): Event invitation email examples and subject lines (about 10 "event invite email" query variants at positions 30 to 60)
+- published (email-subject-line-length-how-many-characters): Email subject line length: how many characters show, with subject and preview pairs (sibling of the preview-text query cluster; feeds the Subject Line Tester)
+- published (what-to-put-in-an-email-footer): What to put in an email footer, with examples (compliance queries had impressions; feeds the Footer Generator)
+- queued: Welcome email examples (the welcome sequence post ranks around 6.7 with few clicks; an examples post is the "show me" version)
+- queued: Abandoned cart email examples (sibling of the cart abandonment post)
+- queued: React Email vs MJML vs hand-written HTML (the "react html email" queries sit around position 34; the existing React post is around 13)
+- queued: How to add an email signature in Gmail and Outlook (feeds the Signature Generator; high volume but crowded, so lower priority)
+- queued: PAS copywriting formula with email examples (ranks 2 to 4 for definition queries with no clicks, so write it only if it adds examples, not another definition)
+- skipped (covered): another email fonts post. The fonts cluster is the best performer and has three posts plus the guide; strengthen it with links and titles instead

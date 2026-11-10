@@ -112,4 +112,8 @@ export const body: ContentBlock[] = [
     type: 'p',
     text: "None of this is exciting, but it is one of the few deliverability tasks you can finish in an afternoon. Turn it on, check the headers once, and keep your footer link honest. You will lose the people who wanted to leave a little faster, and your complaint rate will thank you.",
   },
+  {
+    type: 'p',
+    text: "The visible half of the job is the footer link itself. Our guide to [what to put in an email footer](/blog/what-to-put-in-an-email-footer) covers the rest of it, with examples.",
+  },
 ];

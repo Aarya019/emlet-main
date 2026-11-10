@@ -1,0 +1,7 @@
+# Reference images stay on your machine by default: they may be other brands' photos, which should not
+# end up in a git repository. Delete this file if you want to commit images you are free to use.
+*
+!*/
+!.gitignore
+!.gitkeep
+!README.md

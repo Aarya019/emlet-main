@@ -9,6 +9,10 @@ import StarField from '@/components/StarField';
 import StepVideo from '@/components/StepVideo';
 import type { User } from '@supabase/supabase-js';
 import type { PlanType } from '@/lib/db/types';
+import { SHOW_TEMPLATES_IN_NAV } from '@/lib/content/templates';
+import CookieSettingsLink from '@/components/CookieSettingsLink';
+import ThemeToggle from '@/components/ThemeToggle';
+import ToolsMenu, { MobileToolsMenu } from '@/components/ToolsMenu';
 
 // ── How-it-works steps ───────────────────────────────────────────────────────
 // `video` is the path of a short silent clip WITHOUT extension. Put the files in
@@ -284,42 +288,46 @@ export default function Home() {
       />
       <StarField />
       {/* ── Try for free announcement pill ──────────────────────────────────── */}
-      <div className="relative z-50 flex items-center justify-center gap-3 bg-gradient-to-r from-[#00ffff]/10 via-[#00ff00]/10 to-[#ff00ff]/10 border-b border-white/5 px-4 py-2 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 px-3 py-0.5 text-xs font-semibold text-[#00ffff] tracking-wide uppercase">Free</span>
+      <div className="relative z-50 flex items-center justify-center gap-3 bg-gradient-to-r from-primary-bright/10 via-brand-lime-bright/10 to-brand-magenta-bright/10 border-b border-white/5 px-4 py-2 text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-bright/10 border border-primary-bright/30 px-3 py-0.5 text-xs font-semibold text-primary tracking-wide uppercase">Free</span>
         <span className="text-xs text-white/60">Try for free, no credit card required.</span>
-        <a href="/sign-up" className="text-xs font-semibold text-white underline underline-offset-2 hover:text-[#00ffff] transition-colors whitespace-nowrap">Start free →</a>
+        <a href="/sign-up" className="text-xs font-semibold text-white underline underline-offset-2 hover:text-primary transition-colors whitespace-nowrap">Start free →</a>
       </div>
       {/* Animated gradient blobs with magnetic effect (desktop only — see effect above) */}
       <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
         <div
           ref={blob1Ref}
-          className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-br from-[#00ff00]/20 via-[#00ffff]/20 to-[#ff00ff]/20 rounded-full blur-3xl"
+          className="absolute -top-20 -right-20 w-96 h-96 bg-gradient-to-br from-brand-lime-bright/20 via-primary-bright/20 to-brand-magenta-bright/20 rounded-full blur-3xl"
         />
         <div
           ref={blob2Ref}
-          className="absolute top-1/2 -left-32 w-80 h-80 bg-gradient-to-br from-[#ff00ff]/20 via-[#00ffff]/20 to-[#00ff00]/20 rounded-full blur-3xl"
+          className="absolute top-1/2 -left-32 w-80 h-80 bg-gradient-to-br from-brand-magenta-bright/20 via-primary-bright/20 to-brand-lime-bright/20 rounded-full blur-3xl"
         />
         <div
           ref={blob3Ref}
-          className="absolute -bottom-32 right-1/3 w-96 h-96 bg-gradient-to-br from-[#00ffff]/20 via-[#ff00ff]/20 to-[#00ff00]/20 rounded-full blur-3xl"
+          className="absolute -bottom-32 right-1/3 w-96 h-96 bg-gradient-to-br from-primary-bright/20 via-brand-magenta-bright/20 to-brand-lime-bright/20 rounded-full blur-3xl"
         />
       </div>
 
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 backdrop-blur-xl border-b border-white/5">
-        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center px-4 py-3 md:grid-cols-3 md:px-6 md:py-4">
+        <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto] items-center gap-4 px-4 py-3 md:grid-cols-[auto_1fr_auto] md:px-6 md:py-4">
           <a href="/" className="flex items-center gap-2 group">
             <Image src="/logo.png" alt="Emlet" width={532} height={532} priority className="h-7 w-auto md:h-8" />
           </a>
-          <nav className="hidden items-center justify-center gap-8 text-sm text-white/70 md:flex">
+          <nav className="hidden items-center justify-center gap-6 whitespace-nowrap text-sm text-white/70 md:flex lg:gap-8">
             <a href="#how-it-works" className="transition-colors hover:text-white">How it works</a>
             <a href="#features" className="transition-colors hover:text-white">Features</a>
             <a href="#pricing" className="transition-colors hover:text-white">Pricing</a>
             <a href="#faq" className="transition-colors hover:text-white">FAQ</a>
+            {/* Templates and Tools are in the mobile menu and the footer; they join this bar from lg up, where it has room. */}
+            {SHOW_TEMPLATES_IN_NAV && <a href="/templates" className="hidden transition-colors hover:text-white lg:inline">Templates</a>}
+            <ToolsMenu className="hidden lg:block" />
             <a href="/blog" className="transition-colors hover:text-white">Blog</a>
           </nav>
           {/* Desktop auth buttons */}
-          <div className="hidden items-center justify-end gap-3 md:flex">
+          <div className="hidden items-center justify-end gap-3 whitespace-nowrap md:flex">
+            <ThemeToggle />
             {user ? (
               <>
                 {isPaidUser && (
@@ -337,7 +345,7 @@ export default function Home() {
               </>
             ) : (
               <>
-                <a href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
+                <a href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-primary hover:text-primary">
                   Sign in
                 </a>
                 <a href="/sign-up" className="rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
@@ -348,6 +356,7 @@ export default function Home() {
           </div>
           {/* Mobile: sign-in/dashboard link + hamburger */}
           <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle size="sm" />
             {user ? (
               <a href="/dashboard" className="rounded-full border border-white/20 px-3 py-1 text-xs text-white">
                 Dashboard
@@ -383,17 +392,23 @@ export default function Home() {
                 { href: '#features', label: 'Features' },
                 { href: '#pricing', label: 'Pricing' },
                 { href: '#faq', label: 'FAQ' },
+                ...(SHOW_TEMPLATES_IN_NAV ? [{ href: '/templates', label: 'Templates' }] : []),
+                { href: '/tools', label: 'Tools', menu: true },
                 { href: '/blog', label: 'Blog' },
-              ].map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors"
-                >
-                  {link.label}
-                </a>
-              ))}
+              ].map((link) =>
+                link.menu ? (
+                  <MobileToolsMenu key={link.href} onNavigate={() => setMobileMenuOpen(false)} />
+                ) : (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="rounded-lg px-3 py-2.5 text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ),
+              )}
             </nav>
             <div className="mt-4 pt-4 border-t border-white/8 flex flex-col gap-2">
               {user ? (
@@ -425,7 +440,7 @@ export default function Home() {
               <br />
               marketing emails
               <br />
-              <span className="bg-gradient-to-r from-[#00ffff] via-[#00ff00] to-[#ff00ff] bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-grad-1 via-grad-2 to-grad-3 bg-clip-text text-transparent">
                 in seconds.
               </span>
             </h1>
@@ -437,7 +452,7 @@ export default function Home() {
 
           {/* Generator input */}
           <div className="relative group text-left">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-[#00ff00] via-[#00ffff] to-[#ff00ff] rounded-2xl opacity-70 group-hover:opacity-100 blur transition duration-500 animate-gradient bg-[length:200%_auto]" />
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-brand-lime-bright via-primary-bright to-brand-magenta-bright rounded-2xl opacity-70 group-hover:opacity-100 blur transition duration-500 animate-gradient bg-[length:200%_auto]" />
             <div className="relative rounded-2xl border border-white/10 bg-black/90 p-1.5 shadow-2xl backdrop-blur-sm">
               <textarea
                 aria-label="Describe the email you want to create"
@@ -445,14 +460,14 @@ export default function Home() {
                 placeholder={isUserTyping ? 'Describe the email you want to create...' : ''}
                 onFocus={() => { setIsUserTyping(true); setStreamingText(''); }}
                 onChange={(e) => { setIsUserTyping(true); setUserInput(e.target.value); setStreamingText(e.target.value); }}
-                className="w-full resize-none rounded-xl border-0 bg-black/60 px-5 py-3 text-base text-white/60 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:text-white min-h-[100px] max-h-[120px]"
+                className="w-full resize-none rounded-xl border-0 bg-black/60 px-5 py-3 text-base text-white/60 placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary focus:text-white min-h-[100px] max-h-[120px]"
               />
               <div className="flex flex-col gap-2 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-4">
                 <div className="flex items-center gap-2 text-xs text-white/60">
-                  <svg className="h-3.5 w-3.5 flex-shrink-0 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-3.5 w-3.5 flex-shrink-0 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                   </svg>
-                  <span className="text-[#00ffff]">AI-powered</span>
+                  <span className="text-primary">AI-powered</span>
                   <span className="hidden sm:inline text-white/60">·</span>
                   <span className="hidden sm:inline">HTML export</span>
                 </div>
@@ -473,7 +488,7 @@ export default function Home() {
               <button
                 key={prompt}
                 onClick={() => { setIsUserTyping(true); setUserInput(prompt); setStreamingText(prompt); }}
-                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/50 transition-all hover:border-[#00ffff]/50 hover:text-white hover:bg-white/10"
+                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/50 transition-all hover:border-primary-bright/50 hover:text-white hover:bg-white/10"
                 style={{ animationDelay: `${i * 80}ms` }}
               >
                 {prompt}
@@ -489,9 +504,9 @@ export default function Home() {
 
       {/* ── Hero image (email editor screenshot) ──────────────────────────── */}
       <section className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 pb-24">
-        <div className="relative rounded-2xl border border-white/10 overflow-hidden shadow-2xl shadow-black/60">
+        <div className="relative rounded-2xl border border-white/10 overflow-hidden shadow-2xl shadow-pure-black/60">
           {/* Glow behind the image */}
-          <div className="absolute -inset-1 bg-gradient-to-r from-[#00ffff]/20 via-[#00ff00]/10 to-[#ff00ff]/20 blur-2xl pointer-events-none" />
+          <div className="absolute -inset-1 bg-gradient-to-r from-primary-bright/20 via-brand-lime-bright/10 to-brand-magenta-bright/20 blur-2xl pointer-events-none" />
           <div className="relative aspect-[16/9] w-full bg-white/5 flex items-center justify-center">
             {/* ↓ Replace src with your actual screenshot/GIF */}
             <Image
@@ -522,7 +537,7 @@ export default function Home() {
       {/* ── How it works ───────────────────────────────────────────────────── */}
       <section id="how-it-works" className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-20 md:py-28 scroll-mt-24">
         <div className="text-center mb-16">
-          <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">How it works</p>
+          <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-3">How it works</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
             From idea to inbox in 3 steps
           </h2>
@@ -570,7 +585,7 @@ export default function Home() {
       {/* ── Features grid ──────────────────────────────────────────────────── */}
       <section id="features" className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-20 md:py-28 scroll-mt-24">
         <div className="text-center mb-14">
-          <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Features</p>
+          <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-3">Features</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
             Everything you need to convert
           </h2>
@@ -583,7 +598,7 @@ export default function Home() {
           {FEATURES.map((f) => (
             <div key={f.title} className="rounded-2xl border border-white/8 bg-white/[0.02] p-6 hover:border-white/15 hover:bg-white/[0.04] transition-all group">
 
-              <h3 className="text-base font-bold text-white mb-1 group-hover:text-[#00ffff] transition-colors">{f.title}</h3>
+              <h3 className="text-base font-bold text-white mb-1 group-hover:text-primary transition-colors">{f.title}</h3>
               <p className="text-sm text-white/50 leading-relaxed">{f.desc}</p>
             </div>
           ))}
@@ -593,10 +608,10 @@ export default function Home() {
       {/* ── Pricing ─────────────────────────────────────────────────────────── */}
       <section id="pricing" className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-20 md:py-28 scroll-mt-36">
         <div className="text-center mb-14">
-          <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Pricing</p>
+          <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-3">Pricing</p>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
             Try it free. Then go{' '}
-            <span className="bg-gradient-to-r from-[#00ffff] via-[#00ff00] to-[#ff00ff] bg-clip-text text-transparent">unlimited</span>.
+            <span className="bg-gradient-to-r from-grad-1 via-grad-2 to-grad-3 bg-clip-text text-transparent">unlimited</span>.
           </h2>
           <p className="text-base text-white/50 max-w-xl mx-auto">
             Start with a real, no-card-required trial. When you're ready for more, Professional removes
@@ -640,8 +655,8 @@ export default function Home() {
           </div>
 
           {/* Professional card — the centerpiece */}
-          <div className="relative rounded-2xl border border-[#00ffff]/40 bg-gradient-to-b from-[#00ffff]/[0.07] to-transparent shadow-lg shadow-[#00ffff]/10 p-7 sm:p-8 flex flex-col gap-6">
-            <div className="absolute -top-3 left-7 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-xs font-black uppercase tracking-wide">
+          <div className="relative rounded-2xl border border-primary-bright/40 bg-gradient-to-b from-primary-bright/[0.07] to-transparent shadow-lg shadow-primary-bright/10 p-7 sm:p-8 flex flex-col gap-6">
+            <div className="absolute -top-3 left-7 px-3 py-0.5 rounded-full bg-gradient-to-r from-primary to-brand-lime text-on-primary text-xs font-black uppercase tracking-wide">
               {isPaidUser ? 'Your plan' : BETA_DISCOUNT_CODE ? 'Beta pricing - locked in forever' : 'Unlock everything'}
             </div>
 
@@ -664,7 +679,7 @@ export default function Home() {
             <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 flex-1">
               {PROFESSIONAL_FEATURES.map((feature) => (
                 <li key={feature} className="flex items-center gap-2.5 text-sm text-white/85">
-                  <CheckIcon className="w-4 h-4 shrink-0 text-[#00ff00]" />
+                  <CheckIcon className="w-4 h-4 shrink-0 text-brand-lime" />
                   {feature}
                 </li>
               ))}
@@ -678,7 +693,7 @@ export default function Home() {
               <button
                 onClick={handleUpgrade}
                 disabled={checkoutLoading}
-                className="w-full py-3 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black hover:shadow-lg hover:shadow-[#00ffff]/30 hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                className="w-full py-3 rounded-xl text-sm font-bold transition-all bg-gradient-to-r from-primary to-brand-lime text-on-primary hover:shadow-lg hover:shadow-primary-bright/30 hover:-translate-y-px disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
                 {checkoutLoading ? 'Opening checkout…' : user ? 'Upgrade to Professional' : 'Sign up & upgrade'}
               </button>
@@ -702,7 +717,7 @@ export default function Home() {
 
           {/* About / founder note */}
           <div>
-            <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-6">About</p>
+            <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-6">About</p>
             <div className="flex items-center gap-4 mb-6">
               {/* Photo — replace src with the real headshot at /public/images/founder-aarya.jpg */}
               <div className="relative flex-shrink-0 w-14 h-14">
@@ -715,7 +730,7 @@ export default function Home() {
                     (e.target as HTMLImageElement).parentElement!.querySelector('.founder-placeholder')!.classList.remove('hidden');
                   }}
                 />
-                <div className="founder-placeholder hidden absolute inset-0 flex items-center justify-center rounded-full border-2 border-white/10 bg-gradient-to-br from-[#00ffff]/20 via-[#00ff00]/10 to-[#ff00ff]/20 text-lg font-black text-white">
+                <div className="founder-placeholder hidden absolute inset-0 flex items-center justify-center rounded-full border-2 border-white/10 bg-gradient-to-br from-primary-bright/20 via-brand-lime-bright/10 to-brand-magenta-bright/20 text-lg font-black text-white">
                   A
                 </div>
               </div>
@@ -738,7 +753,7 @@ export default function Home() {
 
           {/* FAQ */}
           <div id="faq" className="scroll-mt-24">
-            <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-6">FAQ</p>
+            <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-6">FAQ</p>
             <div className="divide-y divide-white/8">
               {FAQS.map((faq, i) => (
                 <div key={i}>
@@ -746,8 +761,8 @@ export default function Home() {
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
                     className="flex w-full items-center justify-between py-4 text-left gap-6 group"
                   >
-                    <span className="text-sm sm:text-base font-semibold text-white group-hover:text-[#00ffff] transition-colors">{faq.q}</span>
-                    <span className={`flex-shrink-0 text-[#00ffff]/60 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>
+                    <span className="text-sm sm:text-base font-semibold text-white group-hover:text-primary transition-colors">{faq.q}</span>
+                    <span className={`flex-shrink-0 text-primary/60 transition-transform duration-200 ${openFaq === i ? 'rotate-45' : ''}`}>
                       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
@@ -767,10 +782,10 @@ export default function Home() {
       {/* ── CTA ────────────────────────────────────────────────────────────── */}
       <section className="relative z-10 mx-auto max-w-3xl px-4 sm:px-6 py-20 text-center">
         <div className="rounded-3xl border border-white/10 bg-white/[0.02] px-8 py-16 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-[#00ffff]/5 via-transparent to-[#00ff00]/5 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-bright/5 via-transparent to-brand-lime-bright/5 pointer-events-none" />
           <h2 className="relative text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white mb-4">
             Start generating high converting<br />
-            <span className="bg-gradient-to-r from-[#00ffff] to-[#00ff00] bg-clip-text text-transparent">marketing emails today</span>
+            <span className="bg-gradient-to-r from-grad-1 to-grad-2 bg-clip-text text-transparent">marketing emails today</span>
           </h2>
           <p className="relative text-base text-white/50 mb-8 max-w-lg mx-auto">
             Try it free - 5 AI actions every month, no credit card. Get your first high-converting email in under 60 seconds.
@@ -810,6 +825,8 @@ export default function Home() {
                 <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
                 <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
                 <li><a href="/dashboard" className="hover:text-white transition-colors">Dashboard</a></li>
+                {SHOW_TEMPLATES_IN_NAV && <li><a href="/templates" className="hover:text-white transition-colors">Templates</a></li>}
+                <li><a href="/tools" className="hover:text-white transition-colors">Tools</a></li>
                 <li><a href="/blog" className="hover:text-white transition-colors">Blog</a></li>
                 <li><a href="/alternatives" className="hover:text-white transition-colors">Alternatives</a></li>
               </ul>
@@ -839,6 +856,7 @@ export default function Home() {
                 <li><a href="/terms" className="hover:text-white transition-colors">Terms of Service</a></li>
                 <li><a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
                 <li><a href="/refunds" className="hover:text-white transition-colors">Refund Policy</a></li>
+                <li><CookieSettingsLink className="hover:text-white transition-colors" /></li>
               </ul>
             </div>
           </div>

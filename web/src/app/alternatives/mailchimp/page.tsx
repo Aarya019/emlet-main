@@ -43,7 +43,7 @@ export default function MailchimpAlternativePage() {
       </Link>
 
       <div className="mb-8">
-        <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Emlet vs Mailchimp</p>
+        <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-3">Emlet vs Mailchimp</p>
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 leading-tight">{alt.title}</h1>
       </div>
 

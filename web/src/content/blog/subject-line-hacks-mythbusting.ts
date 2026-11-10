@@ -86,4 +86,8 @@ export const body: ContentBlock[] = [
     type: 'p',
     text: "The pattern underneath all of this: the tactics that hold up across studies are the ones tied to something real, an actual question with an actual answer, an actual deadline, a name you actually have permission to use. The tactics that don't hold up, a fixed character count, a banned word list, are the ones that got treated as universal rules despite being observations from one specific dataset. Test what you can on your own list. For everything else, the honest answer from the research is \"it depends,\" and that's a more useful answer than a confident rule that half the studies disagree with.",
   },
+  {
+    type: 'p',
+    text: "If you want the practical version of the length question, our post on [how many characters of a subject line actually show](/blog/email-subject-line-length-how-many-characters) explains why putting the point first matters more than hitting a number.",
+  },
 ];

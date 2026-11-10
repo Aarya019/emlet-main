@@ -8,7 +8,7 @@ export interface ComparisonRow {
 
 function Check() {
   return (
-    <svg className="w-4 h-4 text-[#00ffff] inline-block mr-1.5 -mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+    <svg className="w-4 h-4 text-primary inline-block mr-1.5 -mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
     </svg>
   );
@@ -21,7 +21,7 @@ export default function ComparisonTable({ competitor, rows }: { competitor: stri
         <thead>
           <tr className="border-b border-white/10">
             <th className="text-left py-3 px-4 text-white/40 font-medium bg-white/[0.03]">Feature</th>
-            <th className="text-left py-3 px-4 text-[#00ffff] font-bold bg-[#00ffff]/[0.08]">Emlet</th>
+            <th className="text-left py-3 px-4 text-primary font-bold bg-primary-bright/[0.08]">Emlet</th>
             <th className="text-left py-3 px-4 text-white/60 font-bold bg-white/[0.03]">{competitor}</th>
           </tr>
         </thead>
@@ -29,7 +29,7 @@ export default function ComparisonTable({ competitor, rows }: { competitor: stri
           {rows.map((row) => (
             <tr key={row.feature} className="border-b border-white/5 last:border-0">
               <td className="py-3 px-4 text-white/50 align-top">{row.feature}</td>
-              <td className={`py-3 px-4 align-top bg-[#00ffff]/[0.04] ${row.emletWins ? 'text-white font-semibold' : 'text-white'}`}>
+              <td className={`py-3 px-4 align-top bg-primary-bright/[0.04] ${row.emletWins ? 'text-white font-semibold' : 'text-white'}`}>
                 {row.emletWins && <Check />}
                 {row.emlet}
               </td>

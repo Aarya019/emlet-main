@@ -17,8 +17,10 @@ export const config = {
      *   the extra Supabase auth round-trip this middleware does on every
      *   request was pure overhead here, and was eating into the Paddle
      *   webhook's 5-second signature timestamp tolerance)
+     * - templates, tools, template-previews (public, static library pages: they never need the session,
+     *   so skipping the middleware lets the CDN serve them as-is with no Supabase round-trip)
      * Feel free to modify this pattern to include more paths.
      */
-    '/((?!_next/static|_next/image|favicon.ico|api|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|api|templates(?:/|$)|tools(?:/|$)|template-previews/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

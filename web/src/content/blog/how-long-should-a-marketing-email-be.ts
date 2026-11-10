@@ -55,7 +55,7 @@ export const body: ContentBlock[] = [
   },
   {
     type: 'p',
-    text: "Most emails are read quickly and on a phone, so a message that is easy to scan has an advantage. Our post on writing for skimmers covers how people actually read. But a short email that leaves the important question unanswered does not save the reader time, it just moves the work to a click, or to a decision not to bother. A long email that is clearly structured, with short paragraphs and a button near the top, can still be quick to skim and complete when someone wants detail.",
+    text: "Most emails are read quickly and on a phone, so a message that is easy to scan has an advantage. Our post on [writing for skimmers](/blog/writing-for-skimmers-how-people-read-email) covers how people actually read. But a short email that leaves the important question unanswered does not save the reader time, it just moves the work to a click, or to a decision not to bother. A long email that is clearly structured, with short paragraphs and a button near the top, can still be quick to skim and complete when someone wants detail.",
   },
   {
     type: 'h2',
@@ -110,6 +110,6 @@ export const body: ContentBlock[] = [
   },
   {
     type: 'p',
-    text: "The most reliable answer is the one your own audience gives. Send a short and a longer version of the same message to two halves of your list and compare clicks and replies, not just opens. With a small list, run the test a few times before drawing a conclusion, which our post on testing with small lists explains. Over time, you will learn whether your readers prefer a quick note or a fuller story, and you can stop guessing.",
+    text: "The most reliable answer is the one your own audience gives. Send a short and a longer version of the same message to two halves of your list and compare clicks and replies, not just opens. With a small list, run the test a few times before drawing a conclusion, which our post on [testing with small lists](/blog/ab-testing-small-list-statistical-significance) explains. Over time, you will learn whether your readers prefer a quick note or a fuller story, and you can stop guessing.",
   },
 ];

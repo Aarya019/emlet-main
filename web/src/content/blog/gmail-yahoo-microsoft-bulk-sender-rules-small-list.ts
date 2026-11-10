@@ -76,7 +76,7 @@ export const body: ContentBlock[] = [
       },
       {
         bold: 'Add a DMARC record.',
-        text: "Even a monitoring-only policy (p=none) is better than none. It is a single DNS text record, and our earlier piece on SPF, DKIM and DMARC walks through it.",
+        text: "Even a monitoring-only policy (p=none) is better than none. It is a single DNS text record, and our earlier piece on [SPF, DKIM and DMARC](/blog/email-deliverability-spf-dkim-dmarc-explained) walks through it.",
       },
       {
         bold: 'Send from an address on your own domain.',

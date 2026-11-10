@@ -43,7 +43,7 @@ export default function CanvaAlternativePage() {
       </Link>
 
       <div className="mb-8">
-        <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">Emlet vs Canva</p>
+        <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-3">Emlet vs Canva</p>
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 leading-tight">{alt.title}</h1>
       </div>
 
@@ -68,7 +68,7 @@ export default function CanvaAlternativePage() {
         </p>
         <p>
           I've written a more detailed breakdown of exactly what breaks and why, including the Outlook rendering quirks and dark mode issues, in{' '}
-          <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-[#00ffff] hover:underline">
+          <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-primary hover:underline">
             this post
           </Link>
           .

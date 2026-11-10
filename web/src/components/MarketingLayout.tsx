@@ -1,5 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import CookieSettingsLink from '@/components/CookieSettingsLink';
+import ThemeToggle from '@/components/ThemeToggle';
+import ToolsMenu from '@/components/ToolsMenu';
+import { SHOW_TEMPLATES_IN_NAV } from '@/lib/content/templates';
 
 export default function MarketingLayout({
   children,
@@ -18,9 +22,12 @@ export default function MarketingLayout({
           <Image src="/logo.png" alt="Emlet" width={532} height={532} className="h-7 w-auto" />
         </Link>
         <div className="flex items-center gap-4 sm:gap-6 text-sm text-white/60">
+          {SHOW_TEMPLATES_IN_NAV && <Link href="/templates" className="hidden sm:inline hover:text-white transition-colors">Templates</Link>}
+          <ToolsMenu className="hidden sm:block" />
           <Link href="/blog" className="hidden sm:inline hover:text-white transition-colors">Blog</Link>
           <Link href="/#pricing" className="hover:text-white transition-colors">Pricing</Link>
           <Link href="/sign-in" className="hover:text-white transition-colors">Sign in</Link>
+          <ThemeToggle size="sm" />
         </div>
       </header>
 
@@ -36,13 +43,16 @@ export default function MarketingLayout({
       </main>
 
       <footer className="border-t border-white/10 px-6 py-8 mt-8">
-        <div className="max-w-3xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-white/60">
-          <span>© {new Date().getFullYear()} Emlet. All rights reserved.</span>
-          <div className="flex items-center gap-6">
+        <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-4 text-sm text-white/60">
+          <span className="whitespace-nowrap">© {new Date().getFullYear()} Emlet. All rights reserved.</span>
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 whitespace-nowrap">
+            {SHOW_TEMPLATES_IN_NAV && <Link href="/templates" className="hover:text-white/60 transition-colors">Templates</Link>}
+            <Link href="/tools" className="hover:text-white/60 transition-colors">Tools</Link>
             <Link href="/blog" className="hover:text-white/60 transition-colors">Blog</Link>
             <Link href="/terms" className="hover:text-white/60 transition-colors">Terms</Link>
             <Link href="/privacy" className="hover:text-white/60 transition-colors">Privacy</Link>
             <Link href="/refunds" className="hover:text-white/60 transition-colors">Refunds</Link>
+            <CookieSettingsLink className="hover:text-white/60 transition-colors" />
             <Link href="/#pricing" className="hover:text-white/60 transition-colors">Pricing</Link>
             <a href="mailto:support@emlet.app" className="hover:text-white/60 transition-colors">Support</a>
           </div>

@@ -2,10 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import Script from 'next/script';
-import { Suspense } from 'react';
-import GoogleAnalytics from '@/components/GoogleAnalytics';
 import AuthErrorRedirect from '@/components/AuthErrorRedirect';
+import ConsentManager from '@/components/ConsentManager';
+import { DEFAULT_THEME, THEME_INIT_SCRIPT } from '@/lib/theme';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,7 +23,9 @@ export const metadata: Metadata = {
   description: "Generate high converting marketing emails in seconds with AI. Just describe your campaign and get beautiful, brand-matched HTML emails ready to send. No design skills needed.",
   keywords: ["AI email generator", "high converting emails", "email marketing", "marketing email generator", "email template builder", "HTML email", "email campaigns"],
   alternates: {
-    canonical: 'https://www.emlet.app',
+    // './' resolves to each page's own URL (without the query string), so pages that do not set a canonical
+    // are not all declared duplicates of the homepage. A page can still override it.
+    canonical: './',
   },
   openGraph: {
     title: "Emlet - Generate High Converting Marketing Emails in Seconds",
@@ -63,29 +64,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // suppressHydrationWarning: the theme script below sets data-theme on <html> before React hydrates it.
+    // data-theme is only written here for a dark default, so the very first HTML is already dark; light is the CSS default.
+    <html lang="en" data-theme={DEFAULT_THEME === 'dark' ? 'dark' : undefined} suppressHydrationWarning>
       <head>
+        {/* Applies the saved theme (light by default) before first paint, so there is no flash. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
         />
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-79R1XR82LB"
-          strategy="lazyOnload"
-        />
-        <Script id="gtag-init" strategy="lazyOnload">{`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'G-79R1XR82LB');
-        `}</Script>
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
         <AuthErrorRedirect />
-        <Suspense fallback={null}><GoogleAnalytics /></Suspense>
+        {/* Google Analytics + the attribution cookie, behind cookie consent where the law requires it. */}
+        <ConsentManager />
         <Analytics />
         <SpeedInsights />
       </body>

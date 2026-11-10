@@ -43,7 +43,7 @@ export default function TermsPage() {
           <p>
             You are responsible for maintaining the confidentiality of your account credentials and for
             all activity that occurs under your account. Notify us immediately at{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">{CONTACT_EMAIL}</a>{' '}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">{CONTACT_EMAIL}</a>{' '}
             if you suspect any unauthorized use.
           </p>
           <p className="mt-3">
@@ -64,7 +64,7 @@ export default function TermsPage() {
               'Use the Service to send unsolicited bulk email without recipient consent',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-bright/50 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -77,7 +77,7 @@ export default function TermsPage() {
             AI-assisted editing, and block regeneration all draw from this same pool), 3 test email sends,
             and 1 active brand profile. Free-tier allowances reset at the start of each billing month and
             do not carry over. The paid Professional plan removes these limits, as described on the{' '}
-            <Link href="/#pricing" className="text-[#00ffff] hover:underline">pricing page</Link>. We may
+            <Link href="/#pricing" className="text-primary hover:underline">pricing page</Link>. We may
             adjust free-tier allowances or plan features from time to time; material reductions will be
             posted on the pricing page.
           </p>
@@ -94,10 +94,10 @@ export default function TermsPage() {
           <p className="mt-3">
             Charges are generally final. If you believe you were charged in error, or want to request a
             refund, contact us at{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">{CONTACT_EMAIL}</a>{' '}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">{CONTACT_EMAIL}</a>{' '}
             within 7 days of the charge. Refunds, when granted, are issued at our discretion through
             Paddle and will downgrade your account to the free plan. See our{' '}
-            <Link href="/refunds" className="text-[#00ffff] hover:underline">Refund Policy</Link> for
+            <Link href="/refunds" className="text-primary hover:underline">Refund Policy</Link> for
             the full process, including chargebacks.
           </p>
         </Section>
@@ -140,7 +140,7 @@ export default function TermsPage() {
             The Service relies on third-party providers to operate, including our AI provider,
             authentication and database provider, payment processor, image libraries, and email
             delivery provider. A full list appears in our{' '}
-            <Link href="/privacy" className="text-[#00ffff] hover:underline">Privacy Policy</Link>. We
+            <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>. We
             are not responsible for outages or errors originating from these third parties, though we
             will make reasonable efforts to work around them.
           </p>
@@ -150,7 +150,7 @@ export default function TermsPage() {
           <p>
             If you believe content generated or hosted through the Service infringes your copyright,
             send a notice to{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">{CONTACT_EMAIL}</a>{' '}
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">{CONTACT_EMAIL}</a>{' '}
             identifying the material and your rights in it. We will review and remove infringing
             material where appropriate and may terminate the accounts of repeat infringers.
           </p>
@@ -159,7 +159,7 @@ export default function TermsPage() {
         <Section title="10. Privacy">
           <p>
             Your use of the Service is also governed by our{' '}
-            <Link href="/privacy" className="text-[#00ffff] hover:underline">Privacy Policy</Link>,
+            <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>,
             which is incorporated into these Terms by reference.
           </p>
         </Section>
@@ -233,7 +233,7 @@ export default function TermsPage() {
           <p>
             Emlet is operated from Hyderabad, Telangana, India. If you have any questions about these
             Terms, please contact us at{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">
               {CONTACT_EMAIL}
             </a>.
           </p>

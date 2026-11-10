@@ -5,6 +5,7 @@ import SubmitButton from '@/components/SubmitButton';
 import { useState, useRef } from 'react';
 import Turnstile, { type TurnstileHandle } from '@/components/Turnstile';
 import AuthBackground from '@/components/AuthBackground';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const TURNSTILE_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
@@ -32,6 +33,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="relative min-h-screen bg-black flex items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8">
+      <ThemeToggle className="fixed right-4 top-4 z-30" />
       <AuthBackground />
 
       <div className="relative z-10 w-full max-w-md space-y-8">
@@ -54,7 +56,7 @@ export default function ForgotPasswordPage() {
           )}
 
           {message ? (
-            <div className="p-3 rounded-lg bg-[#00ff00]/10 border border-[#00ff00]/20 text-[#00ff00] text-sm">
+            <div className="p-3 rounded-lg bg-brand-lime-bright/10 border border-brand-lime-bright/20 text-brand-lime text-sm">
               {message}
             </div>
           ) : (
@@ -69,7 +71,7 @@ export default function ForgotPasswordPage() {
                   type="email"
                   autoComplete="email"
                   required
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="you@example.com"
                 />
               </div>
@@ -88,7 +90,7 @@ export default function ForgotPasswordPage() {
 
           <p className="text-sm text-white/60 text-center">
             Remembered it after all?{' '}
-            <a href="/sign-in" className="font-medium text-[#00ffff] hover:text-[#00ffff]/80 transition-colors">
+            <a href="/sign-in" className="font-medium text-primary hover:text-primary/80 transition-colors">
               Back to sign in
             </a>
           </p>

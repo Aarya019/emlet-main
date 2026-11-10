@@ -16,7 +16,7 @@ export default function PasswordInput({ className = '', ...props }: PasswordInpu
         onClick={() => setVisible(v => !v)}
         aria-label={visible ? 'Hide password' : 'Show password'}
         aria-pressed={visible}
-        className="absolute inset-y-0 right-0 flex items-center px-3 text-white/50 hover:text-white transition-colors focus:outline-none focus-visible:text-[#00ffff]"
+        className="absolute inset-y-0 right-0 flex items-center px-3 text-white/50 hover:text-white transition-colors focus:outline-none focus-visible:text-primary"
       >
         {visible ? (
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

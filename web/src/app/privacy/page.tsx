@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   description: 'Privacy Policy for Emlet, the AI email design generator.',
 };
 
-const LAST_UPDATED = 'September 1, 2026';
+const LAST_UPDATED = 'November 1, 2026';
 const CONTACT_EMAIL = 'support@emlet.app';
 
 export default function PrivacyPage() {
@@ -43,7 +43,7 @@ export default function PrivacyPage() {
               'Payment information — handled entirely by Paddle; we never store your card details',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-bright/50 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -56,7 +56,7 @@ export default function PrivacyPage() {
               'Cookies and similar technologies — used to maintain your session and remember preferences',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-bright/50 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -76,7 +76,7 @@ export default function PrivacyPage() {
               'Comply with applicable legal obligations',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-bright/50 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -103,7 +103,7 @@ export default function PrivacyPage() {
               'Google Analytics — provides aggregate analytics on how visitors use our website',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-bright/50 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -139,6 +139,13 @@ export default function PrivacyPage() {
             used. You can disable cookies in your browser settings, but some features of the Service
             may not work correctly without them.
           </p>
+          <p className="mt-3">
+            Google Analytics, and a small first-party cookie that records which link or website brought
+            you to us (for example a campaign tag), are optional. If you are in the European Union, the
+            European Economic Area, the United Kingdom or Switzerland, we only set them after you accept
+            in the cookie banner. You can change your choice at any time with the &quot;Cookie
+            settings&quot; link in the footer. Vercel Analytics does not use cookies.
+          </p>
         </Section>
 
         <Section title="7. Your Rights">
@@ -152,7 +159,7 @@ export default function PrivacyPage() {
               'Objection — object to certain uses of your data, including direct marketing',
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-[#00ffff]/50 flex-shrink-0" />
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary-bright/50 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -166,7 +173,7 @@ export default function PrivacyPage() {
           </p>
           <p className="mt-4">
             To exercise any of these rights, contact us at{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">
               {CONTACT_EMAIL}
             </a>. We will respond within 30 days.
           </p>
@@ -201,7 +208,7 @@ export default function PrivacyPage() {
           <p>
             Emlet is operated from Hyderabad, Telangana, India. If you have any questions or concerns
             about this Privacy Policy, please contact us at{' '}
-            <a href={`mailto:${CONTACT_EMAIL}`} className="text-[#00ffff] hover:underline">
+            <a href={`mailto:${CONTACT_EMAIL}`} className="text-primary hover:underline">
               {CONTACT_EMAIL}
             </a>. This also serves as the contact for privacy inquiries under GDPR, CCPA, or similar law,
             since Emlet does not currently have a separate designated Data Protection Officer.

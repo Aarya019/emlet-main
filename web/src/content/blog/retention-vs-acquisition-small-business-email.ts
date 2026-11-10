@@ -88,7 +88,7 @@ export const body: ContentBlock[] = [
       },
       {
         bold: 'Useful content between offers.',
-        text: "Tips, care instructions, ideas for using what they bought. This keeps your name familiar without asking for money every time. Our post on whether a newsletter should sell something covers how to balance the two.",
+        text: "Tips, care instructions, ideas for using what they bought. This keeps your name familiar without asking for money every time. Our post on [whether a newsletter should sell something](/blog/should-your-newsletter-sell-something) covers how to balance the two.",
       },
       {
         bold: 'A win-back message for people who have gone quiet.',

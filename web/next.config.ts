@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         headers: [{ key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' }],
       },
       {
+        // Template library preview images (made by scripts/render-template-previews.ts): a day in browsers and the CDN, a week stale-while-revalidate.
+        source: '/template-previews/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' }],
+      },
+      {
         source: '/(.*)',
         headers: [
           {

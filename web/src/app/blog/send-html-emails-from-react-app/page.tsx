@@ -53,7 +53,7 @@ export default async function Post() {
       </Link>
 
       <div className="mb-10">
-        <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-3">{post.category}</p>
+        <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-3">{post.category}</p>
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-4 leading-tight">{post.title}</h1>
         <div className="flex items-center gap-3 text-sm text-white/40">
           <span>Aarya, Founder of Emlet</span>
@@ -78,7 +78,7 @@ export default async function Post() {
 
         <h2 className="text-2xl font-bold text-white pt-6">What React Email actually does</h2>
         <p>
-          <a href="https://react.email" target="_blank" rel="noopener noreferrer" className="text-[#00ffff] hover:underline">React Email</a>{' '}
+          <a href="https://react.email" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">React Email</a>{' '}
           is an open source component library that gives you a familiar JSX API, `Section`, `Row`, `Column`, `Text`, `Button`, `Img`, but compiles it down to that same defensive, table-based, inline-styled HTML under the hood. You write something like:
         </p>
         <pre className="bg-white/5 border border-white/10 rounded-xl p-4 overflow-x-auto text-sm text-white/80">
@@ -119,7 +119,7 @@ export default async function Post() {
 
         <p>
           I've written more on the specific rendering failures that show up even with correct-looking HTML in{' '}
-          <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-[#00ffff] hover:underline">
+          <Link href="/blog/why-your-emails-look-broken-in-gmail-outlook" className="text-primary hover:underline">
             this post
           </Link>
           , if you want the client-by-client breakdown.

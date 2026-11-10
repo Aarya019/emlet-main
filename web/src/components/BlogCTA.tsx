@@ -13,7 +13,7 @@ export default function BlogCTA({
       <p className="text-white/60 text-sm mb-6 max-w-md mx-auto leading-relaxed">{body}</p>
       <Link
         href="/sign-up"
-        className="inline-block px-6 py-3 rounded-xl bg-[#00ffff] text-black font-bold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 hover:-translate-y-px transition-all"
+        className="inline-block px-6 py-3 rounded-xl bg-primary text-on-primary font-bold text-sm hover:shadow-lg hover:shadow-primary-bright/30 hover:-translate-y-px transition-all"
       >
         Generate your first email free
       </Link>

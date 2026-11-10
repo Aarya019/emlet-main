@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import TocSidebar from './TocSidebar';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export const metadata: Metadata = {
   title: 'How to Connect Your Email Service Provider to Emlet | Emlet Blog',
@@ -56,7 +57,7 @@ function Ul({ children }: { children: React.ReactNode }) {
 
 function Callout({ type = 'tip', children }: { type?: 'tip' | 'warning' | 'info'; children: React.ReactNode }) {
   const styles = {
-    tip: 'bg-[#00ffff]/5 border-[#00ffff]/30 text-[#00ffff]/80',
+    tip: 'bg-primary-bright/5 border-primary-bright/30 text-primary/80',
     warning: 'bg-yellow-400/5 border-yellow-400/30 text-yellow-400/80',
     info: 'bg-white/5 border-white/15 text-white/60',
   };
@@ -71,7 +72,7 @@ function Callout({ type = 'tip', children }: { type?: 'tip' | 'warning' | 'info'
 
 function Code({ children }: { children: string }) {
   return (
-    <code className="bg-white/8 text-[#00ffff] text-[0.82em] px-1.5 py-0.5 rounded font-mono">
+    <code className="bg-white/8 text-primary text-[0.82em] px-1.5 py-0.5 rounded font-mono">
       {children}
     </code>
   );
@@ -94,7 +95,7 @@ function EspCard({
         <h4 className="text-lg font-bold text-white mb-2">{name}</h4>
         <div className="flex flex-wrap gap-2">
           <span className="text-xs px-2 py-0.5 rounded-full bg-white/8 text-white/50">{authType}</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-[#00ff80]/10 text-[#00ff80]">{freeLabel}</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-brand-mint-bright/10 text-brand-mint">{freeLabel}</span>
         </div>
       </div>
       <div className="text-sm text-white/60 leading-relaxed space-y-2">{children}</div>
@@ -105,7 +106,7 @@ function EspCard({
 function Step({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <div className="flex gap-4 mb-5">
-      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#00ffff]/20 to-[#00ff80]/20 border border-[#00ffff]/30 flex items-center justify-center text-xs font-black text-[#00ffff] flex-shrink-0 mt-0.5">
+      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-bright/20 to-brand-mint-bright/20 border border-primary-bright/30 flex items-center justify-center text-xs font-black text-primary flex-shrink-0 mt-0.5">
         {n}
       </div>
       <div className="flex-1 text-white/65 leading-relaxed text-sm">{children}</div>
@@ -148,7 +149,8 @@ export default function ConnectEspGuide() {
             <Link href="/blog" className="transition-colors hover:text-white">Blog</Link>
           </nav>
           <div className="flex items-center justify-end gap-3">
-            <Link href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-[#00ffff] hover:text-[#00ffff]">
+            <ThemeToggle size="sm" />
+            <Link href="/sign-in" className="rounded-full border border-white/20 px-4 py-1.5 text-sm text-white transition-all hover:border-primary hover:text-primary">
               Sign in
             </Link>
             <Link href="/sign-up" className="hidden sm:block rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-black transition-all hover:shadow-lg hover:shadow-white/20 hover:-translate-y-px">
@@ -169,12 +171,12 @@ export default function ConnectEspGuide() {
           <div className="flex items-center gap-2 text-xs text-white/30 mb-8">
             <Link href="/blog" className="hover:text-white/60 transition-colors">Blog</Link>
             <span>/</span>
-            <span className="text-[#00ffff]/60">Integrations</span>
+            <span className="text-primary/60">Integrations</span>
           </div>
 
           {/* Title block */}
           <div className="mb-10">
-            <p className="text-xs font-semibold tracking-widest text-[#00ffff]/60 uppercase mb-4">
+            <p className="text-xs font-semibold tracking-widest text-primary/60 uppercase mb-4">
               Integrations, 8 min read
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.05] mb-6">
@@ -410,10 +412,10 @@ export default function ConnectEspGuide() {
                   <tr key={i} className="border-t border-white/8 hover:bg-white/3 transition-colors">
                     <td className="px-4 py-3 text-white/65">{label}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={a === '✓' ? 'text-[#00ff80]' : 'text-white/20'}>{a}</span>
+                      <span className={a === '✓' ? 'text-brand-mint' : 'text-white/20'}>{a}</span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={b === '✓' ? 'text-[#00ff80]' : 'text-white/20'}>{b}</span>
+                      <span className={b === '✓' ? 'text-brand-mint' : 'text-white/20'}>{b}</span>
                     </td>
                   </tr>
                 ))}
@@ -510,12 +512,12 @@ export default function ConnectEspGuide() {
           <div className="mt-16 mb-10" />
 
           {/* CTA */}
-          <div className="rounded-2xl bg-gradient-to-br from-[#00ffff]/8 to-[#00ff80]/5 border border-[#00ffff]/20 p-8 text-center">
+          <div className="rounded-2xl bg-gradient-to-br from-primary-bright/8 to-brand-mint-bright/5 border border-primary-bright/20 p-8 text-center">
             <p className="text-2xl font-black text-white mb-2">Ready to connect your ESP?</p>
             <p className="text-white/50 mb-6 text-sm">Generate your first email and push it live in minutes.</p>
             <Link
               href="/sign-up"
-              className="inline-block rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff80] text-black text-sm font-black px-8 py-3 hover:shadow-lg hover:shadow-[#00ffff]/25 transition-all hover:-translate-y-px"
+              className="inline-block rounded-full bg-gradient-to-r from-primary to-brand-mint text-on-primary text-sm font-black px-8 py-3 hover:shadow-lg hover:shadow-primary-bright/25 transition-all hover:-translate-y-px"
             >
               Get started free →
             </Link>

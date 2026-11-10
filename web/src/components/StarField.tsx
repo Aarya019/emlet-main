@@ -42,7 +42,7 @@ export default function StarField({ count = 60 }: { count?: number }) {
   if (stars.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
+    <div className="theme-stars fixed inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
       <style>{`
         @keyframes starTwinkle {
           0%, 100% { opacity: var(--star-opacity); }

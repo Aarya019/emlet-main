@@ -31,6 +31,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import ThemeToggle from '@/components/ThemeToggle';
 
 interface EmailEditorProps {
   emailId: string;
@@ -47,7 +48,7 @@ const FIELD_SUPPORT: Record<'heading' | 'subheading' | 'button' | 'secondaryButt
 const supportsField = (type: EmailSection['type'], field: keyof typeof FIELD_SUPPORT) => FIELD_SUPPORT[field].includes(type);
 
 const layoutInputCls =
-  'w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20';
+  'w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20';
 const layoutLabelCls = 'block text-[10px] text-white/30 mb-1 uppercase tracking-wider';
 
 function LayoutNumber({ label, value, placeholder, min = 0, max = 999, onChange }: {
@@ -100,7 +101,7 @@ function LayoutSelect<T extends string>({ label, value, options, onChange }: {
 function LayoutToggle({ label, value, onChange }: { label: string; value: boolean | undefined; onChange: (v: boolean | undefined) => void }) {
   return (
     <label className="flex items-center gap-2 text-[11px] text-white/50 cursor-pointer col-span-2">
-      <input type="checkbox" checked={value !== false} onChange={e => onChange(e.target.checked ? undefined : false)} className="accent-[#00ffff]" />
+      <input type="checkbox" checked={value !== false} onChange={e => onChange(e.target.checked ? undefined : false)} className="accent-primary" />
       {label}
     </label>
   );
@@ -1028,7 +1029,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
   // Block type → accent color for left border
   const BLOCK_COLORS: Record<string, string> = {
-    hero: '#a855f7', content: '#3b82f6', cta: '#00ffff', announcement: '#f59e0b',
+    hero: '#a855f7', content: '#3b82f6', cta: 'var(--primary)', announcement: '#f59e0b',
     'image-text': '#10b981', 'feature-list': '#6366f1', testimonial: '#ec4899',
     testimonials: '#ec4899', stats: '#f97316', gallery: '#14b8a6', 'image-block': '#2dd4bf',
     'pricing-table': '#8b5cf6', coupon: '#ef4444', columns: '#06b6d4',
@@ -1039,7 +1040,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00ffff]"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -1123,6 +1124,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <ThemeToggle size="sm" />
               <div className="flex items-center gap-1 mr-1">
                 <button
                   onClick={undo}
@@ -1154,12 +1156,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 <span className="text-red-400 text-xs">{saveError}</span>
               )}
               <div className="relative">
-                <span className="absolute -top-2 -right-2 z-10 px-2 py-0.5 rounded-full bg-amber-400 text-black text-[10px] font-extrabold tracking-wide shadow-sm">
+                <span className="absolute -top-2 -right-2 z-10 px-2 py-0.5 rounded-full bg-[#fbbf24] text-pure-black text-[10px] font-extrabold tracking-wide shadow-sm">
                   Beta
                 </span>
                 <button
                   onClick={() => { setShowVerifyModal(false); setShowSendModal(false); setSendResult(null); setAiChatOpen(true); }}
-                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black text-sm font-bold flex items-center gap-2 whitespace-nowrap hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
+                  className="px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-brand-lime text-on-primary text-sm font-bold flex items-center gap-2 whitespace-nowrap hover:shadow-lg hover:shadow-primary-bright/30 transition-all"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
@@ -1188,7 +1190,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 disabled={!isDirty || saving}
                 className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-all ${
                   isDirty
-                    ? 'bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black hover:shadow-lg hover:shadow-[#00ffff]/30'
+                    ? 'bg-gradient-to-r from-primary to-brand-lime text-on-primary hover:shadow-lg hover:shadow-primary-bright/30'
                     : 'border border-white/10 text-white/30 cursor-not-allowed'
                 }`}
               >
@@ -1216,7 +1218,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 </svg>
                 Verify
                 {verifyIssueCount > 0 && (
-                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-pure-white text-[10px] font-bold flex items-center justify-center">
                     {verifyIssueCount}
                   </span>
                 )}
@@ -1326,7 +1328,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       className="w-full px-0 py-1 bg-transparent border-0 text-white focus:outline-none focus:ring-0"
                     >
                       {['promotional', 'newsletter', 'educational', 'transactional', 'other'].map(t => (
-                        <option key={t} value={t} className="bg-[#0a0a0a] capitalize">{t}</option>
+                        <option key={t} value={t} className="bg-surface capitalize">{t}</option>
                       ))}
                     </select>
                   </div>
@@ -1368,11 +1370,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                           {isOpen && (
                             <>
                               <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-                              <div className="absolute left-0 top-full mt-1 w-full max-h-[260px] bg-gradient-to-b from-black via-black to-black/95 border border-white/20 rounded-lg shadow-2xl shadow-black/50 overflow-y-auto z-20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 backdrop-blur-xl">
+                              <div className="absolute left-0 top-full mt-1 w-full max-h-[260px] bg-gradient-to-b from-black via-black to-black/95 border border-white/20 rounded-lg shadow-2xl shadow-pure-black/50 overflow-y-auto z-20 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-white/20 hover:scrollbar-thumb-white/40 backdrop-blur-xl">
                                 <button
                                   type="button"
                                   onClick={() => { onSelect(''); setIsOpen(false); }}
-                                  className={`w-full px-3 py-2 text-left text-xs hover:bg-white/10 transition-colors border-b border-white/5 ${value === '' ? 'text-[#00ffff] bg-[#00ffff]/10' : 'text-white/50'}`}
+                                  className={`w-full px-3 py-2 text-left text-xs hover:bg-white/10 transition-colors border-b border-white/5 ${value === '' ? 'text-primary bg-primary-bright/10' : 'text-white/50'}`}
                                 >
                                   — style default —
                                 </button>
@@ -1381,7 +1383,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     key={name}
                                     type="button"
                                     onClick={() => { onSelect(name); setIsOpen(false); }}
-                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${value === name ? 'text-[#00ffff] bg-[#00ffff]/10' : 'text-white'}`}
+                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-white/10 transition-colors border-b border-white/5 last:border-b-0 ${value === name ? 'text-primary bg-primary-bright/10' : 'text-white'}`}
                                     style={{ fontFamily: fontFamilyCSS(name) }}
                                   >
                                     {name}
@@ -1431,7 +1433,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     <summary className="cursor-pointer select-none px-4 py-3 text-xs font-medium text-white/40 uppercase tracking-wider list-none flex items-center gap-1.5">
                       <span className="inline-block transition-transform group-open:rotate-90">▸</span>
                       Email frame
-                      {editedEmail.frame && <span className="normal-case text-[#00ffff]/60 font-normal">· customised</span>}
+                      {editedEmail.frame && <span className="normal-case text-primary/60 font-normal">· customised</span>}
                     </summary>
                     <div className="px-4 pb-4">
                       <div className="grid grid-cols-2 gap-3 mb-4">
@@ -1526,15 +1528,15 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     onClick={() => setAiOpenSection(prev => prev === index ? null : index)}
                                     className={`p-1.5 rounded transition-all ${
                                       regeneratingSection === index
-                                        ? 'text-[#00ffff] cursor-wait'
+                                        ? 'text-primary cursor-wait'
                                         : aiOpenSection === index || section.sectionPrompt
-                                          ? 'text-[#00ffff] bg-[#00ffff]/10'
-                                          : 'text-white/25 hover:text-[#00ffff] hover:bg-[#00ffff]/10 opacity-0 group-hover:opacity-100'
+                                          ? 'text-primary bg-primary-bright/10'
+                                          : 'text-white/25 hover:text-primary hover:bg-primary-bright/10 opacity-0 group-hover:opacity-100'
                                     }`}
                                     title="Rewrite with AI"
                                   >
                                     {regeneratingSection === index ? (
-                                      <div className="w-3.5 h-3.5 border-2 border-[#00ffff]/30 border-t-[#00ffff] rounded-full animate-spin" />
+                                      <div className="w-3.5 h-3.5 border-2 border-primary-bright/30 border-t-primary-bright rounded-full animate-spin" />
                                     ) : (
                                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
@@ -1543,7 +1545,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   </button>
                                   {/* Hover tooltip */}
                                   <div className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-30 opacity-0 group-hover/ai:opacity-100 transition-opacity duration-150">
-                                    <div className="px-2 py-1 rounded bg-[#1a1a1a] border border-white/10 text-[10px] text-white/70 whitespace-nowrap shadow-lg">
+                                    <div className="px-2 py-1 rounded bg-surface-raised border border-white/10 text-[10px] text-white/70 shadow-md whitespace-nowrap shadow-lg">
                                       {section.sectionPrompt ? 'Edit AI instructions' : 'Rewrite with AI'}
                                     </div>
                                   </div>
@@ -1551,7 +1553,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                               )}
                               <button
                                 onClick={() => duplicateSection(index)}
-                                className="p-1.5 rounded text-white/20 hover:text-[#00ffff] hover:bg-[#00ffff]/10 transition-all opacity-0 group-hover:opacity-100"
+                                className="p-1.5 rounded text-white/20 hover:text-primary hover:bg-primary-bright/10 transition-all opacity-0 group-hover:opacity-100"
                                 title="Duplicate section"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1584,7 +1586,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
                           {/* AI rewrite panel */}
                           {aiOpenSection === index && !['divider', 'header', 'social-links'].includes(section.type) && (
-                            <div className="px-3 py-2.5 border-t border-[#00ffff]/20 bg-[#00ffff]/[0.04]">
+                            <div className="px-3 py-2.5 border-t border-primary-bright/20 bg-primary-bright/[0.04]">
                               <div className="flex gap-2 items-start">
                                 <textarea
                                   autoFocus
@@ -1599,7 +1601,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   }}
                                   rows={2}
                                   placeholder="Instructions… e.g. make it more urgent, write for startup founders, use bullet points"
-                                  className="flex-1 px-2.5 py-1.5 bg-black/30 border border-[#00ffff]/20 rounded-lg text-white text-xs focus:outline-none focus:border-[#00ffff]/60 transition-colors resize-none placeholder-white/20 leading-relaxed"
+                                  className="flex-1 px-2.5 py-1.5 bg-black/30 border border-primary-bright/20 rounded-lg text-white text-xs focus:outline-none focus:border-primary-bright/60 transition-colors resize-none placeholder-white/20 leading-relaxed"
                                 />
                                 <div className="flex flex-col gap-1.5">
                                   <button
@@ -1651,10 +1653,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         setRegeneratingSection(null);
                                       }
                                     }}
-                                    className="px-2.5 py-1.5 rounded-lg bg-[#00ffff]/15 border border-[#00ffff]/30 text-[#00ffff] hover:bg-[#00ffff]/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap"
+                                    className="px-2.5 py-1.5 rounded-lg bg-primary-bright/15 border border-primary-bright/30 text-primary hover:bg-primary-bright/25 transition-all disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1 text-[11px] font-semibold whitespace-nowrap"
                                   >
                                     {regeneratingSection === index ? (
-                                      <div className="w-3 h-3 border-2 border-[#00ffff]/30 border-t-[#00ffff] rounded-full animate-spin" />
+                                      <div className="w-3 h-3 border-2 border-primary-bright/30 border-t-primary-bright rounded-full animate-spin" />
                                     ) : (
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
@@ -1695,35 +1697,35 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Eyebrow <span className="normal-case text-white/20 font-normal">(small label above heading)</span></label>
                                   <input type="text" value={section.eyebrow || ''} onChange={e => updateSection(index, { eyebrow: e.target.value })}
-                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="e.g. New Feature, Announcement…" />
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="e.g. New Feature, Announcement…" />
                                 </div>
                               )}
                               {(section.heading !== undefined || supportsField(section.type, 'heading')) && (
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Heading</label>
                                   <input type="text" value={section.heading || ''} onChange={e => updateSection(index, { heading: e.target.value })}
-                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Enter heading…" />
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white font-bold focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Enter heading…" />
                                 </div>
                               )}
                               {(section.subheading !== undefined || supportsField(section.type, 'subheading')) && (
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Subheading</label>
                                   <input type="text" value={section.subheading || ''} onChange={e => updateSection(index, { subheading: e.target.value })}
-                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Enter subheading…" />
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Enter subheading…" />
                                 </div>
                               )}
                               {['hero','content','cta','announcement'].includes(section.type) && (
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Intro <span className="normal-case text-white/20 font-normal">(large lead paragraph)</span></label>
                                   <textarea value={section.intro || ''} onChange={e => updateSection(index, { intro: e.target.value })} rows={2}
-                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Opening statement or key summary…" />
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors resize-none placeholder-white/20" placeholder="Opening statement or key summary…" />
                                 </div>
                               )}
                               {section.text !== undefined && !['footer', 'divider', 'social-links', 'hero', 'testimonial', 'testimonials', 'feature-list', 'pricing-table', 'stats', 'gallery', 'image-block', 'header', 'columns'].includes(section.type) && (
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Content</label>
                                   <textarea value={section.text || ''} onChange={e => updateSection(index, { text: e.target.value })} rows={3}
-                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Enter content…" />
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors resize-none placeholder-white/20" placeholder="Enter content…" />
                                 </div>
                               )}
                               {(section.buttonText !== undefined || supportsField(section.type, 'button')) && (
@@ -1731,12 +1733,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Button Text</label>
                                     <input type="text" value={section.buttonText || ''} onChange={e => updateSection(index, { buttonText: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Click here" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Click here" />
                                   </div>
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Button URL</label>
                                     <input type="text" value={section.buttonUrl || ''} onChange={e => updateSection(index, { buttonUrl: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="https://…" />
                                     <UrlWarning url={section.buttonUrl} />
                                   </div>
                                 </div>
@@ -1746,12 +1748,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Secondary Button</label>
                                     <input type="text" value={section.secondaryButtonText || ''} onChange={e => updateSection(index, { secondaryButtonText: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Learn more" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Learn more" />
                                   </div>
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Secondary URL</label>
                                     <input type="text" value={section.secondaryButtonUrl || ''} onChange={e => updateSection(index, { secondaryButtonUrl: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="https://…" />
                                     <UrlWarning url={section.secondaryButtonUrl} />
                                   </div>
                                 </div>
@@ -1769,12 +1771,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Image Alt Text</label>
                                     <input type="text" value={section.imageAlt || ''} onChange={e => updateSection(index, { imageAlt: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Describe the image…" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Describe the image…" />
                                   </div>
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Pexels Keyword <span className="normal-case text-white/20 font-normal">(auto-fetch)</span></label>
                                     <input type="text" value={section.imageKeyword || ''} onChange={e => updateSection(index, { imageKeyword: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="e.g. coffee shop, team meeting…" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="e.g. coffee shop, team meeting…" />
                                   </div>
                                 </div>
                               )}
@@ -1792,7 +1794,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <div className="mt-2">
                                       <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Background Keyword <span className="normal-case text-white/20 font-normal">(auto-fetch)</span></label>
                                       <input type="text" value={section.backgroundImageKeyword || ''} onChange={e => updateSection(index, { backgroundImageKeyword: e.target.value || undefined })}
-                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="e.g. mountain sunrise horizon…" />
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="e.g. mountain sunrise horizon…" />
                                       <p className="text-[11px] text-white/25 mt-1">Regenerate to fetch a new photo, or paste a URL above.</p>
                                     </div>
                                   )}
@@ -1800,14 +1802,14 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <div className="mt-2">
                                       <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Overlay <span className="normal-case text-white/20 font-normal">(CSS color/rgba over the photo)</span></label>
                                       <input type="text" value={section.backgroundImageOverlay || ''} onChange={e => updateSection(index, { backgroundImageOverlay: e.target.value || undefined })}
-                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white font-mono text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="default dark gradient — e.g. rgba(0,0,0,0.55)" />
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white font-mono text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="default dark gradient — e.g. rgba(0,0,0,0.55)" />
                                     </div>
                                   )}
                                   {!section.backgroundImageUrl && (
                                     <div className="mt-2">
                                       <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Background Keyword <span className="normal-case text-white/20 font-normal">(auto-fetch)</span></label>
                                       <input type="text" value={section.backgroundImageKeyword || ''} onChange={e => updateSection(index, { backgroundImageKeyword: e.target.value || undefined })}
-                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="e.g. city lights panorama…" />
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="e.g. city lights panorama…" />
                                       <p className="text-[11px] text-white/25 mt-1">A Pexels photo will be used as the full-width background with a dark gradient overlay for readability.</p>
                                     </div>
                                   )}
@@ -1822,7 +1824,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <div className="flex gap-2">
                                       {(['left', 'right'] as const).map(pos => (
                                         <button key={pos} onClick={() => updateSection(index, { imagePosition: pos })}
-                                          className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${section.imagePosition === pos ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                          className={`px-3 py-1.5 rounded text-xs font-medium border transition-colors ${section.imagePosition === pos ? 'border-primary text-primary bg-primary-bright/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
                                           {pos.charAt(0).toUpperCase() + pos.slice(1)}
                                         </button>
                                       ))}
@@ -1832,12 +1834,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <div>
                                       <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Byline <span className="normal-case text-white/20 font-normal">(optional)</span></label>
                                       <input type="text" value={section.author || ''} onChange={e => updateSection(index, { author: e.target.value })}
-                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Name" />
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Name" />
                                     </div>
                                     <div>
                                       <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Byline Title</label>
                                       <input type="text" value={section.authorTitle || ''} onChange={e => updateSection(index, { authorTitle: e.target.value })}
-                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Title, Company" />
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Title, Company" />
                                     </div>
                                   </div>
                                 </>
@@ -1848,9 +1850,9 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Language</label>
                                   <select value={section.language || 'javascript'} onChange={e => updateSection(index, { language: e.target.value })}
-                                    className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors">
+                                    className="w-full px-2 py-1.5 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors">
                                     {['javascript','typescript','python','bash','json','html','css','sql','yaml','rust','go'].map(lang => (
-                                      <option key={lang} value={lang} className="bg-[#0a0a0a]">{lang}</option>
+                                      <option key={lang} value={lang} className="bg-surface">{lang}</option>
                                     ))}
                                   </select>
                                 </div>
@@ -1868,12 +1870,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Logo Alt Text</label>
                                     <input type="text" value={section.logoAlt || ''} onChange={e => updateSection(index, { logoAlt: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Brand name" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Brand name" />
                                   </div>
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Tagline</label>
                                     <input type="text" value={section.tagline || ''} onChange={e => updateSection(index, { tagline: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Optional tagline…" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Optional tagline…" />
                                     <p className="text-[11px] text-white/25 mt-1">Hidden if nav links are added below.</p>
                                   </div>
                                   <div>
@@ -1881,7 +1883,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       <label className="block text-xs text-white/40 uppercase tracking-wider">Nav Links</label>
                                       <button
                                         onClick={() => updateSection(index, { columns: [...(section.columns || []), { heading: 'Link', buttonUrl: 'https://' }] })}
-                                        className="text-[11px] text-[#00ffff]/70 hover:text-[#00ffff] transition-colors"
+                                        className="text-[11px] text-primary/70 hover:text-primary transition-colors"
                                       >
                                         + Add link
                                       </button>
@@ -1893,13 +1895,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                             const next = [...(section.columns || [])];
                                             next[ni] = { ...next[ni], heading: e.target.value };
                                             updateSection(index, { columns: next });
-                                          }} className="w-24 flex-shrink-0 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Label" />
+                                          }} className="w-24 flex-shrink-0 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Label" />
                                           <div className="flex-1 min-w-0">
                                             <input type="text" value={nav.buttonUrl || ''} onChange={e => {
                                               const next = [...(section.columns || [])];
                                               next[ni] = { ...next[ni], buttonUrl: e.target.value };
                                               updateSection(index, { columns: next });
-                                            }} className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                            }} className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="https://…" />
                                             <UrlWarning url={nav.buttonUrl} />
                                           </div>
                                           <ReorderButtons index={ni} count={(section.columns || []).length} onMove={d => updateSection(index, { columns: moveArrayItem(section.columns || [], ni, d) })} />
@@ -1919,18 +1921,18 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Quote</label>
                                     <textarea value={section.quote || ''} onChange={e => updateSection(index, { quote: e.target.value })} rows={3}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Customer quote…" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors resize-none placeholder-white/20" placeholder="Customer quote…" />
                                   </div>
                                   <div className="grid grid-cols-2 gap-3">
                                     <div>
                                       <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Author Name</label>
                                       <input type="text" value={section.author || ''} onChange={e => updateSection(index, { author: e.target.value })}
-                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Jane Doe" />
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Jane Doe" />
                                     </div>
                                     <div>
                                       <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Author Title</label>
                                       <input type="text" value={section.authorTitle || ''} onChange={e => updateSection(index, { authorTitle: e.target.value })}
-                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="CEO, Acme" />
+                                        className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="CEO, Acme" />
                                     </div>
                                   </div>
                                   <ImageUploadInput
@@ -1948,12 +1950,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Subheading</label>
                                     <input type="text" value={section.subheading || ''} onChange={e => updateSection(index, { subheading: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Optional subheading…" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Optional subheading…" />
                                   </div>
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Quotes</label>
                                     <button onClick={() => updateSection(index, { testimonials: [...(section.testimonials || []), { quote: '', author: '', rating: 5 }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-primary hover:text-primary/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add quote
                                     </button>
@@ -1971,17 +1973,17 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         </div>
                                       </div>
                                       <textarea value={t.quote} onChange={e => { const arr = (section.testimonials || []).map((x, i) => i === ti ? { ...x, quote: e.target.value } : x); updateSection(index, { testimonials: arr }); }} rows={2}
-                                        className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Quote…" />
+                                        className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs focus:outline-none focus:border-primary transition-colors resize-none placeholder-white/20" placeholder="Quote…" />
                                       <div className="grid grid-cols-2 gap-1.5">
                                         <input type="text" value={t.author} onChange={e => { const arr = (section.testimonials || []).map((x, i) => i === ti ? { ...x, author: e.target.value } : x); updateSection(index, { testimonials: arr }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Author name" />
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Author name" />
                                         <input type="text" value={t.authorTitle || ''} onChange={e => { const arr = (section.testimonials || []).map((x, i) => i === ti ? { ...x, authorTitle: e.target.value } : x); updateSection(index, { testimonials: arr }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Title, Company" />
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Title, Company" />
                                       </div>
                                       <div className="flex items-center gap-2">
                                         <label className="text-[10px] text-white/30 uppercase tracking-wider flex-shrink-0">Rating</label>
                                         <input type="number" min={1} max={5} value={t.rating ?? 5} onChange={e => { const r = Math.min(5, Math.max(1, parseInt(e.target.value, 10) || 5)); const arr = (section.testimonials || []).map((x, i) => i === ti ? { ...x, rating: r } : x); updateSection(index, { testimonials: arr }); }}
-                                          className="w-14 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors" />
+                                          className="w-14 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors" />
                                       </div>
                                       <ImageUploadInput
                                         label="Author Image URL"
@@ -2000,12 +2002,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Author Name</label>
                                     <input type="text" value={section.author || ''} onChange={e => updateSection(index, { author: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Jane Doe" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Jane Doe" />
                                   </div>
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Author Title</label>
                                     <input type="text" value={section.authorTitle || ''} onChange={e => updateSection(index, { authorTitle: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="CEO, Acme" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="CEO, Acme" />
                                   </div>
                                 </div>
                               )}
@@ -2016,12 +2018,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Promo Code</label>
                                     <input type="text" value={section.code || ''} onChange={e => updateSection(index, { code: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white font-mono focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="SAVE20" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white font-mono focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="SAVE20" />
                                   </div>
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Expiry Text</label>
                                     <input type="text" value={section.expiryText || ''} onChange={e => updateSection(index, { expiryText: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Expires soon" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Expires soon" />
                                   </div>
                                 </div>
                               )}
@@ -2032,7 +2034,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Stats</label>
                                     <button onClick={() => updateSection(index, { stats: [...(section.stats || []), { value: '', label: '' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-primary hover:text-primary/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add stat
                                     </button>
@@ -2045,9 +2047,9 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         onChange={upd => { const s = (section.stats || []).map((x, i) => i === si ? { ...x, ...upd } : x); updateSection(index, { stats: s }); }}
                                       />
                                       <input type="text" value={stat.value} onChange={e => { const s = (section.stats || []).map((x, i) => i === si ? { ...x, value: e.target.value } : x); updateSection(index, { stats: s }); }}
-                                        className="w-1/4 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="99%" />
+                                        className="w-1/4 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="99%" />
                                       <input type="text" value={stat.label} onChange={e => { const s = (section.stats || []).map((x, i) => i === si ? { ...x, label: e.target.value } : x); updateSection(index, { stats: s }); }}
-                                        className="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Label" />
+                                        className="flex-1 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Label" />
                                       <ReorderButtons index={si} count={(section.stats || []).length} onMove={d => updateSection(index, { stats: moveArrayItem(section.stats || [], si, d) })} />
                                       <button onClick={() => updateSection(index, { stats: (section.stats || []).filter((_, i) => i !== si) })}
                                         className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
@@ -2067,7 +2069,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       <div className="flex gap-1.5">
                                         {(['list', 'grid'] as const).map(opt => (
                                           <button key={opt} onClick={() => updateSection(index, { layout: opt })}
-                                            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${(section.layout ?? 'list') === opt ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                            className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${(section.layout ?? 'list') === opt ? 'border-primary text-primary bg-primary-bright/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
                                             {opt.charAt(0).toUpperCase() + opt.slice(1)}
                                           </button>
                                         ))}
@@ -2077,11 +2079,11 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Style</label>
                                       <div className="flex gap-1.5">
                                         <button onClick={() => updateSection(index, { numbered: false })}
-                                          className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${!section.numbered ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                          className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${!section.numbered ? 'border-primary text-primary bg-primary-bright/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
                                           Icons
                                         </button>
                                         <button onClick={() => updateSection(index, { numbered: true })}
-                                          className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${section.numbered ? 'border-[#00ffff] text-[#00ffff] bg-[#00ffff]/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
+                                          className={`px-2.5 py-1 rounded text-xs font-medium border transition-colors ${section.numbered ? 'border-primary text-primary bg-primary-bright/10' : 'border-white/10 text-white/40 hover:text-white'}`}>
                                           Numbered
                                         </button>
                                       </div>
@@ -2090,7 +2092,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Features</label>
                                     <button onClick={() => updateSection(index, { features: [...(section.features || []), { title: '', description: '' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-primary hover:text-primary/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add feature
                                     </button>
@@ -2104,7 +2106,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                           onChange={upd => { const f = (section.features || []).map((x, i) => i === fi ? { ...x, ...upd } : x); updateSection(index, { features: f }); }}
                                         />
                                         <input type="text" value={feat.title} onChange={e => { const f = (section.features || []).map((x, i) => i === fi ? { ...x, title: e.target.value } : x); updateSection(index, { features: f }); }}
-                                          className="flex-1 px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Feature title" />
+                                          className="flex-1 px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs font-bold focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Feature title" />
                                         <ReorderButtons index={fi} count={(section.features || []).length} onMove={d => updateSection(index, { features: moveArrayItem(section.features || [], fi, d) })} />
                                         <button onClick={() => updateSection(index, { features: (section.features || []).filter((_, i) => i !== fi) })}
                                           className="text-white/30 hover:text-red-400 transition-colors flex-shrink-0">
@@ -2112,7 +2114,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         </button>
                                       </div>
                                       <input type="text" value={feat.description} onChange={e => { const f = (section.features || []).map((x, i) => i === fi ? { ...x, description: e.target.value } : x); updateSection(index, { features: f }); }}
-                                        className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white/70 text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Description…" />
+                                        className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white/70 text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Description…" />
                                     </div>
                                   ))}
                                 </div>
@@ -2124,7 +2126,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Images</label>
                                     <button onClick={() => updateSection(index, { images: [...(section.images || []), { url: '', alt: '' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-primary hover:text-primary/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add image
                                     </button>
@@ -2148,14 +2150,14 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       />
                                       <div className="grid grid-cols-2 gap-1.5">
                                         <input type="text" value={img.alt} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, alt: e.target.value } : x); updateSection(index, { images: imgs }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Alt text" />
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Alt text" />
                                         <input type="text" value={img.keyword || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, keyword: e.target.value } : x); updateSection(index, { images: imgs }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Pexels keyword" />
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Pexels keyword" />
                                       </div>
                                       <input type="text" value={img.linkUrl || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, linkUrl: e.target.value || undefined } : x); updateSection(index, { images: imgs }); }}
-                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Links to (optional) https://…" />
+                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Links to (optional) https://…" />
                                       <input type="text" value={img.caption || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, caption: e.target.value } : x); updateSection(index, { images: imgs }); }}
-                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Caption (optional)" />
+                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Caption (optional)" />
                                     </div>
                                   ))}
                                 </div>
@@ -2168,7 +2170,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Images</label>
                                     {(section.images || []).length < 4 && (
                                       <button onClick={() => updateSection(index, { images: [...(section.images || []), { url: '', alt: '' }] })}
-                                        className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                        className="text-xs text-primary hover:text-primary/70 transition-colors flex items-center gap-1">
                                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                         Add image
                                       </button>
@@ -2194,16 +2196,16 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       />
                                       <div className="grid grid-cols-2 gap-1.5">
                                         <input type="text" value={img.alt} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, alt: e.target.value } : x); updateSection(index, { images: imgs }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Alt text" />
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Alt text" />
                                         <input type="text" value={img.keyword || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, keyword: e.target.value } : x); updateSection(index, { images: imgs }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Pexels keyword" />
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Pexels keyword" />
                                       </div>
                                       <input type="text" value={img.linkUrl || ''} onChange={e => { const imgs = (section.images || []).map((x, i) => i === ii ? { ...x, linkUrl: e.target.value || undefined } : x); updateSection(index, { images: imgs }); }}
-                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Links to (optional) https://…" />
+                                        className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Links to (optional) https://…" />
                                     </div>
                                   ))}
                                   <input type="text" value={section.subheading || ''} onChange={e => updateSection(index, { subheading: e.target.value })}
-                                    className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Caption below the block (optional)" />
+                                    className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Caption below the block (optional)" />
                                 </div>
                               )}
 
@@ -2213,7 +2215,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Plans</label>
                                     <button onClick={() => updateSection(index, { plans: [...(section.plans || []), { name: 'New Plan', price: '$0', features: [], buttonText: 'Get Started' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-primary hover:text-primary/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add plan
                                     </button>
@@ -2224,7 +2226,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         <span className="text-xs font-bold text-white/60">Plan {pi + 1}</span>
                                         <div className="flex items-center gap-2">
                                           <label className="flex items-center gap-1 text-xs text-white/40 cursor-pointer">
-                                            <input type="checkbox" checked={plan.highlighted || false} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, highlighted: e.target.checked } : x); updateSection(index, { plans: p }); }} className="accent-[#00ffff]" />
+                                            <input type="checkbox" checked={plan.highlighted || false} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, highlighted: e.target.checked } : x); updateSection(index, { plans: p }); }} className="accent-primary" />
                                             Highlighted
                                           </label>
                                           <ReorderButtons index={pi} count={(section.plans || []).length} onMove={d => updateSection(index, { plans: moveArrayItem(section.plans || [], pi, d) })} />
@@ -2236,18 +2238,18 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       </div>
                                       <div className="grid grid-cols-3 gap-2">
                                         <input type="text" value={plan.name} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, name: e.target.value } : x); updateSection(index, { plans: p }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Name" />
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Name" />
                                         <input type="text" value={plan.price} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, price: e.target.value } : x); updateSection(index, { plans: p }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="$29" />
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="$29" />
                                         <input type="text" value={plan.period || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, period: e.target.value } : x); updateSection(index, { plans: p }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="/mo" />
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="/mo" />
                                       </div>
                                       <div className="grid grid-cols-2 gap-2">
                                         <input type="text" value={plan.buttonText || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, buttonText: e.target.value } : x); updateSection(index, { plans: p }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button text" />
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Button text" />
                                         <div>
                                           <input type="text" value={plan.buttonUrl || ''} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, buttonUrl: e.target.value } : x); updateSection(index, { plans: p }); }}
-                                            className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button URL" />
+                                            className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Button URL" />
                                           <UrlWarning url={plan.buttonUrl} />
                                         </div>
                                       </div>
@@ -2255,12 +2257,12 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                         <div className="flex items-center justify-between">
                                           <span className="text-[11px] text-white/30">Features</span>
                                           <button onClick={() => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, features: [...x.features, ''] } : x); updateSection(index, { plans: p }); }}
-                                            className="text-[11px] text-[#00ffff]/60 hover:text-[#00ffff] transition-colors">+ feature</button>
+                                            className="text-[11px] text-primary/60 hover:text-primary transition-colors">+ feature</button>
                                         </div>
                                         {plan.features.map((feat, fii) => (
                                           <div key={fii} className="flex gap-1 items-center">
                                             <input type="text" value={feat} onChange={e => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, features: x.features.map((f, fi) => fi === fii ? e.target.value : f) } : x); updateSection(index, { plans: p }); }}
-                                              className="flex-1 px-2 py-0.5 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Feature…" />
+                                              className="flex-1 px-2 py-0.5 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Feature…" />
                                             <button onClick={() => { const p = (section.plans || []).map((x, i) => i === pi ? { ...x, features: x.features.filter((_, fi) => fi !== fii) } : x); updateSection(index, { plans: p }); }}
                                               className="text-white/20 hover:text-red-400 transition-colors flex-shrink-0">
                                               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
@@ -2279,7 +2281,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Columns</label>
                                     <button onClick={() => updateSection(index, { columns: [...(section.columns || []), { heading: '', text: '' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-primary hover:text-primary/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add column
                                     </button>
@@ -2303,10 +2305,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                           onChange={upd => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, ...upd } : x); updateSection(index, { columns: c }); }}
                                         />
                                         <input type="text" value={col.heading || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, heading: e.target.value } : x); updateSection(index, { columns: c }); }}
-                                          className="flex-1 px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs font-bold focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Column heading" />
+                                          className="flex-1 px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white text-xs font-bold focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Column heading" />
                                       </div>
                                       <textarea value={col.text || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, text: e.target.value } : x); updateSection(index, { columns: c }); }} rows={2}
-                                        className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white/70 text-xs focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Column text…" />
+                                        className="w-full px-0 py-1 bg-transparent border-0 border-b border-white/10 text-white/70 text-xs focus:outline-none focus:border-primary transition-colors resize-none placeholder-white/20" placeholder="Column text…" />
                                       <ImageUploadInput
                                         label=""
                                         value={col.imageUrl || ''}
@@ -2316,14 +2318,14 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                       />
                                       {col.imageUrl && (
                                         <input type="text" value={col.imageLinkUrl || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, imageLinkUrl: e.target.value || undefined } : x); updateSection(index, { columns: c }); }}
-                                          className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Image links to (optional) https://…" />
+                                          className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Image links to (optional) https://…" />
                                       )}
                                       <div className="grid grid-cols-2 gap-2">
                                         <input type="text" value={col.buttonText || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, buttonText: e.target.value } : x); updateSection(index, { columns: c }); }}
-                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Button text" />
+                                          className="px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Button text" />
                                         <div>
                                           <input type="text" value={col.buttonUrl || ''} onChange={e => { const c = (section.columns || []).map((x, i) => i === ci ? { ...x, buttonUrl: e.target.value } : x); updateSection(index, { columns: c }); }}
-                                            className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                            className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="https://…" />
                                           <UrlWarning url={col.buttonUrl} />
                                         </div>
                                       </div>
@@ -2338,7 +2340,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div className="flex items-center justify-between">
                                     <label className="text-xs text-white/40 uppercase tracking-wider">Social Links</label>
                                     <button onClick={() => updateSection(index, { socialLinks: [...(section.socialLinks || []), { platform: '', url: '' }] })}
-                                      className="text-xs text-[#00ffff] hover:text-[#00ffff]/70 transition-colors flex items-center gap-1">
+                                      className="text-xs text-primary hover:text-primary/70 transition-colors flex items-center gap-1">
                                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                                       Add link
                                     </button>
@@ -2347,10 +2349,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                     <div key={li} className="space-y-1.5 p-2 rounded-lg bg-white/5 border border-white/10">
                                       <div className="flex gap-2 items-center">
                                         <input type="text" value={link.platform} onChange={e => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, platform: e.target.value } : x); updateSection(index, { socialLinks: sl }); }}
-                                          className="w-1/3 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="Twitter" />
+                                          className="w-1/3 px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="Twitter" />
                                         <div className="flex-1">
                                           <input type="text" value={link.url} onChange={e => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, url: e.target.value } : x); updateSection(index, { socialLinks: sl }); }}
-                                            className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://…" />
+                                            className="w-full px-2 py-1 bg-white/5 border border-white/10 rounded text-white text-xs focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="https://…" />
                                           <UrlWarning url={link.url} />
                                         </div>
                                         <ReorderButtons index={li} count={(section.socialLinks || []).length} onMove={d => updateSection(index, { socialLinks: moveArrayItem(section.socialLinks || [], li, d) })} />
@@ -2376,7 +2378,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                             key={emoji}
                                             type="button"
                                             onClick={() => { const sl = (section.socialLinks || []).map((x, i) => i === li ? { ...x, icon: emoji } : x); updateSection(index, { socialLinks: sl }); }}
-                                            className={`w-6 h-6 rounded flex items-center justify-center text-xs hover:bg-white/10 transition-colors ${link.icon === emoji ? 'bg-[#00ffff]/15 border border-[#00ffff]/50' : 'border border-transparent'}`}
+                                            className={`w-6 h-6 rounded flex items-center justify-center text-xs hover:bg-white/10 transition-colors ${link.icon === emoji ? 'bg-primary-bright/15 border border-primary-bright/50' : 'border border-transparent'}`}
                                           >
                                             {emoji}
                                           </button>
@@ -2398,7 +2400,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 <div>
                                   <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Label <span className="normal-case text-white/20 font-normal">(optional, shown centered under the rule)</span></label>
                                   <input type="text" value={section.text || ''} onChange={e => updateSection(index, { text: e.target.value })}
-                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="e.g. OR, AND MORE…" />
+                                    className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="e.g. OR, AND MORE…" />
                                 </div>
                               )}
 
@@ -2414,13 +2416,13 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Footer Text</label>
                                     <textarea value={section.text || ''} onChange={e => updateSection(index, { text: e.target.value })} rows={2}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors resize-none placeholder-white/20" placeholder="Company Name · 123 Street, City" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors resize-none placeholder-white/20" placeholder="Company Name · 123 Street, City" />
                                   </div>
                                   {/* Extra link Button Text/URL fields are rendered by the common block below */}
                                   <div>
                                     <label className="block text-xs text-white/40 mb-1.5 uppercase tracking-wider">Unsubscribe URL</label>
                                     <input type="text" value={section.unsubscribeUrl || ''} onChange={e => updateSection(index, { unsubscribeUrl: e.target.value })}
-                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20" placeholder="https://yourapp.com/unsubscribe" />
+                                      className="w-full px-0 py-1.5 bg-transparent border-0 border-b border-white/10 text-white focus:outline-none focus:border-primary transition-colors placeholder-white/20" placeholder="https://yourapp.com/unsubscribe" />
                                     <UrlWarning url={section.unsubscribeUrl} />
                                     <p className="text-[11px] text-white/25 mt-1">Leave blank to use your ESP's merge tag</p>
                                   </div>
@@ -2552,7 +2554,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                           type="text"
                                           value={section.backgroundColor || ''}
                                           onChange={e => updateSection(index, { backgroundColor: e.target.value || undefined })}
-                                          className="flex-1 min-w-0 px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
+                                          className="flex-1 min-w-0 px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-primary transition-colors placeholder-white/20"
                                           placeholder="default"
                                         />
                                       </div>
@@ -2563,7 +2565,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                             type="button"
                                             onClick={() => updateSection(index, { backgroundGradient: undefined })}
                                             title="None"
-                                            className={`w-7 h-7 rounded border flex items-center justify-center bg-white/5 transition-colors ${!section.backgroundGradient ? 'border-[#00ffff]' : 'border-white/15 hover:border-white/30'}`}
+                                            className={`w-7 h-7 rounded border flex items-center justify-center bg-white/5 transition-colors ${!section.backgroundGradient ? 'border-primary' : 'border-white/15 hover:border-white/30'}`}
                                           >
                                             <svg className="w-3 h-3 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                                           </button>
@@ -2574,7 +2576,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                               onClick={() => updateSection(index, { backgroundGradient: preset.css })}
                                               title={preset.label}
                                               style={{ background: preset.css }}
-                                              className={`w-7 h-7 rounded border transition-transform hover:scale-110 ${section.backgroundGradient === preset.css ? 'border-[#00ffff] ring-1 ring-[#00ffff]' : 'border-white/15'}`}
+                                              className={`w-7 h-7 rounded border transition-transform hover:scale-110 ${section.backgroundGradient === preset.css ? 'border-primary ring-1 ring-primary' : 'border-white/15'}`}
                                             />
                                           ))}
                                         </div>
@@ -2582,7 +2584,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                           type="text"
                                           value={section.backgroundGradient || ''}
                                           onChange={e => updateSection(index, { backgroundGradient: e.target.value || undefined })}
-                                          className="mt-1.5 w-full px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
+                                          className="mt-1.5 w-full px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-primary transition-colors placeholder-white/20"
                                           placeholder="custom CSS, e.g. linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)"
                                         />
                                       </div>
@@ -2600,7 +2602,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                           type="text"
                                           value={section.textColor || ''}
                                           onChange={e => updateSection(index, { textColor: e.target.value || undefined })}
-                                          className="flex-1 min-w-0 px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
+                                          className="flex-1 min-w-0 px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-primary transition-colors placeholder-white/20"
                                           placeholder="default"
                                         />
                                       </div>
@@ -2619,7 +2621,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                             type="text"
                                             value={section.buttonColor || ''}
                                             onChange={e => updateSection(index, { buttonColor: e.target.value || undefined })}
-                                            className="flex-1 min-w-0 px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-[#00ffff] transition-colors placeholder-white/20"
+                                            className="flex-1 min-w-0 px-1.5 py-1 bg-white/5 border border-white/10 rounded text-white text-[11px] font-mono focus:outline-none focus:border-primary transition-colors placeholder-white/20"
                                             placeholder="default"
                                           />
                                         </div>
@@ -2644,7 +2646,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                 <summary className="cursor-pointer select-none text-xs text-white/40 uppercase tracking-wider list-none flex items-center gap-1.5">
                                   <span className="inline-block transition-transform group-open:rotate-90">▸</span>
                                   Borders &amp; effects
-                                  {section.border && <span className="normal-case text-[#00ffff]/60 font-normal">· customised</span>}
+                                  {section.border && <span className="normal-case text-primary/60 font-normal">· customised</span>}
                                 </summary>
                                 <div className="mt-3">
                                   <BorderControls
@@ -2670,7 +2672,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                   {/* Add Block button */}
                   <button
                     onClick={() => setShowAddBlock(true)}
-                    className="w-full py-2.5 rounded-lg border border-dashed border-white/20 text-white/50 hover:border-[#00ffff]/50 hover:text-[#00ffff] transition-all text-sm font-medium flex items-center justify-center gap-2"
+                    className="w-full py-2.5 rounded-lg border border-dashed border-white/20 text-white/50 hover:border-primary-bright/50 hover:text-primary transition-all text-sm font-medium flex items-center justify-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -2683,7 +2685,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     <button
                       onClick={handleSave}
                       disabled={saving}
-                      className="w-full py-3 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-bold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all"
+                      className="w-full py-3 rounded-lg bg-gradient-to-r from-primary to-brand-lime text-on-primary font-bold text-sm flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-primary-bright/30 transition-all"
                     >
                       {saving ? (
                         <>
@@ -2708,10 +2710,10 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
             {showAddBlock && (
               <>
                 <div
-                  className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10"
+                  className="absolute inset-0 bg-pure-black/70 backdrop-blur-sm z-10"
                   onClick={() => setShowAddBlock(false)}
                 />
-                <div className="absolute inset-x-0 bottom-0 bg-[#0a0a0a] border border-white/10 rounded-t-2xl z-20 max-h-[80%] flex flex-col">
+                <div className="absolute inset-x-0 bottom-0 bg-surface border border-white/10 rounded-t-2xl z-20 max-h-[80%] flex flex-col">
                   <div className="flex items-center justify-between p-4 border-b border-white/10 flex-shrink-0">
                     <h3 className="text-base font-bold text-white">Add a Block</h3>
                     <button onClick={() => setShowAddBlock(false)} className="text-white/40 hover:text-white transition-colors">
@@ -2725,15 +2727,15 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       <button
                         key={type}
                         onClick={() => addSection(type)}
-                        className="flex items-start gap-3 p-3 rounded-xl border border-white/10 bg-white/5 hover:border-[#00ffff]/40 hover:bg-[#00ffff]/5 transition-all text-left group"
+                        className="flex items-start gap-3 p-3 rounded-xl border border-white/10 bg-white/5 hover:border-primary-bright/40 hover:bg-primary-bright/5 transition-all text-left group"
                       >
-                        <div className="w-8 h-8 rounded-lg bg-[#00ffff]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#00ffff]/20">
-                          <svg className="w-4 h-4 text-[#00ffff]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-8 h-8 rounded-lg bg-primary-bright/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary-bright/20">
+                          <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={icon} />
                           </svg>
                         </div>
                         <div className="min-w-0">
-                          <p className="text-xs font-bold text-white group-hover:text-[#00ffff] transition-colors">{label}</p>
+                          <p className="text-xs font-bold text-white group-hover:text-primary transition-colors">{label}</p>
                           <p className="text-[11px] text-white/40 leading-snug mt-0.5">{description}</p>
                         </div>
                       </button>
@@ -2747,15 +2749,15 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
             {showSendModal && (
               <>
                 <div
-                  className="absolute inset-0 bg-black/70 backdrop-blur-sm z-10 animate-in fade-in duration-200"
+                  className="absolute inset-0 bg-pure-black/70 backdrop-blur-sm z-10 animate-in fade-in duration-200"
                   onClick={() => { setShowSendModal(false); setSendResult(null); }}
                 />
                 <div className="absolute inset-0 z-20 flex items-center justify-center p-6 animate-in fade-in zoom-in-95 duration-200">
-                  <div className="w-full max-w-md bg-[#0a0a0a] border border-white/10 rounded-2xl p-6 shadow-2xl">
+                  <div className="w-full max-w-md bg-surface border border-white/10 rounded-2xl p-6 shadow-2xl">
                     {/* Modal Header */}
                     <div className="flex items-center justify-between mb-5">
                       <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff80] flex items-center justify-center flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-brand-mint flex items-center justify-center flex-shrink-0">
                           <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                           </svg>
@@ -2778,7 +2780,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
 
                     {/* Result Banner */}
                     {sendResult && (
-                      <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${sendResult.success ? 'bg-[#00ff80]/10 border border-[#00ff80]/30 text-[#00ff80]' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
+                      <div className={`mb-4 px-4 py-3 rounded-lg text-sm font-medium ${sendResult.success ? 'bg-brand-mint-bright/10 border border-brand-mint-bright/30 text-brand-mint' : 'bg-red-500/10 border border-red-500/30 text-red-400'}`}>
                         {sendResult.message}
                         {sendResult.isUpgradeError && (
                           <>
@@ -2800,7 +2802,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                         onChange={(e) => setSendToEmail(e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Enter' && !sending) handleSendTestEmail(); }}
                         placeholder="you@example.com"
-                        className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#00ffff] text-sm"
+                        className="w-full px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                         disabled={sending}
                       />
                     </div>
@@ -2817,7 +2819,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       <button
                         onClick={handleSendTestEmail}
                         disabled={sending || !sendToEmail.trim()}
-                        className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff80] text-black font-semibold text-sm hover:shadow-lg hover:shadow-[#00ffff]/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="flex-1 px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary to-brand-mint text-on-primary font-semibold text-sm hover:shadow-lg hover:shadow-primary-bright/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {sending ? (
                           <>
@@ -2856,7 +2858,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
               <>
                 {/* Backdrop */}
                 <div 
-                  className="absolute inset-0 bg-black/60 backdrop-blur-sm z-10 animate-in fade-in duration-300"
+                  className="absolute inset-0 bg-pure-black/60 backdrop-blur-sm z-10 animate-in fade-in duration-300"
                   onClick={() => { if (!aiLoading) setAiChatOpen(false); }}
                 />
                 
@@ -2867,7 +2869,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     <div className="p-4 border-b border-white/10">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-brand-lime flex items-center justify-center">
                             <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
                               <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
@@ -2900,7 +2902,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       {aiHistory.length === 0 && (
                         <>
                           <div className="flex gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-brand-lime flex items-center justify-center flex-shrink-0">
                               <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
                               <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
@@ -2941,7 +2943,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                                   setAiMessage(suggestion);
                                   setTimeout(() => aiInputRef.current?.focus(), 50);
                                 }}
-                                className="w-full text-left px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-[#00ffff]/50 transition-all text-sm text-white/70 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="w-full text-left px-3 py-2 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-primary-bright/50 transition-all text-sm text-white/70 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
                               >
                                 {suggestion}
                               </button>
@@ -2954,7 +2956,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       {aiHistory.map((msg, i) => (
                         <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                           {msg.role === 'ai' && (
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-brand-lime flex items-center justify-center flex-shrink-0">
                               <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
                               <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
@@ -2967,7 +2969,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                           )}
                           <div className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
                             msg.role === 'user'
-                              ? 'bg-[#00ffff]/10 border border-[#00ffff]/20 text-white ml-auto'
+                              ? 'bg-primary-bright/10 border border-primary-bright/20 text-white ml-auto'
                               : msg.isUpgradeError
                               ? 'bg-red-500/10 border border-red-500/30 text-red-300'
                               : 'bg-white/5 border border-white/10 text-white/90'
@@ -2988,7 +2990,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                       {/* Loading indicator */}
                       {aiLoading && (
                         <div className="flex gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#00ffff] to-[#00ff00] flex items-center justify-center flex-shrink-0 animate-pulse">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-r from-primary to-brand-lime flex items-center justify-center flex-shrink-0 animate-pulse">
                             <svg className="w-4 h-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8V4H8" />
                               <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
@@ -2999,9 +3001,9 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                             </svg>
                           </div>
                           <div className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00ffff] animate-bounce [animation-delay:0ms]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00ffff] animate-bounce [animation-delay:150ms]" />
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00ffff] animate-bounce [animation-delay:300ms]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:150ms]" />
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce [animation-delay:300ms]" />
                           </div>
                         </div>
                       )}
@@ -3026,7 +3028,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                             onChange={(e) => setAiMessage(e.target.value)}
                             placeholder="Describe what to change..."
                             disabled={aiLoading}
-                            className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] text-sm disabled:opacity-50"
+                            className="flex-1 px-4 py-2.5 rounded-lg bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary text-sm disabled:opacity-50"
                             onKeyDown={async (e) => {
                               if (e.key === 'Enter' && aiMessage.trim() && !aiLoading) {
                                 await handleAiEdit();
@@ -3036,7 +3038,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                           <button
                             disabled={!aiMessage.trim() || aiLoading}
                             onClick={handleAiEdit}
-                            className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#00ffff] to-[#00ff00] text-black font-medium hover:shadow-lg hover:shadow-[#00ffff]/50 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+                            className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-primary to-brand-lime text-on-primary font-medium hover:shadow-lg hover:shadow-primary-bright/50 transition-all flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
                           >
                             {aiLoading ? (
                               <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -3136,7 +3138,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                 {email.html_code ? (
                   previewMode === 'desktop' ? (
                     // Desktop: browser chrome frame
-                    <div className="rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-[#1c1c1e]">
+                    <div data-theme="dark" className="rounded-xl overflow-hidden shadow-2xl border border-white/10 bg-[#1c1c1e]">
                       {/* Chrome bar */}
                       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/[0.07] bg-[#2a2a2d]">
                         <div className="flex items-center gap-1.5">
@@ -3169,7 +3171,7 @@ export default function EmailEditor({ emailId }: EmailEditorProps) {
                     </div>
                   ) : (
                     // Mobile: iPhone 15 Pro frame
-                    <div className="mx-auto select-none" style={{ width: '390px' }}>
+                    <div data-theme="dark" className="mx-auto select-none" style={{ width: '390px' }}>
                       {/* Outer shell */}
                       <div className="relative rounded-[3rem] bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_30px_80px_rgba(0,0,0,0.8),inset_0_0_0_1px_rgba(255,255,255,0.05)]" style={{ padding: '14px' }}>
 

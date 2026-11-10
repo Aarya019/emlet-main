@@ -5,6 +5,7 @@ import SubmitButton from '@/components/SubmitButton';
 import PasswordInput from '@/components/PasswordInput';
 import { useState } from 'react';
 import AuthBackground from '@/components/AuthBackground';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function ResetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +41,7 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="relative min-h-screen bg-black flex items-center justify-center overflow-hidden px-4 sm:px-6 lg:px-8">
+      <ThemeToggle className="fixed right-4 top-4 z-30" />
       <AuthBackground />
 
       <div className="relative z-10 w-full max-w-md space-y-8">
@@ -70,7 +72,7 @@ export default function ResetPasswordPage() {
 
           {done ? (
             <div className="space-y-5">
-              <div className="p-3 rounded-lg bg-[#00ff00]/10 border border-[#00ff00]/20 text-[#00ff00] text-sm">
+              <div className="p-3 rounded-lg bg-brand-lime-bright/10 border border-brand-lime-bright/20 text-brand-lime text-sm">
                 Your password has been updated.
               </div>
               <a
@@ -92,7 +94,7 @@ export default function ResetPasswordPage() {
                   autoComplete="new-password"
                   required
                   minLength={8}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />
               </div>
@@ -107,7 +109,7 @@ export default function ResetPasswordPage() {
                   autoComplete="new-password"
                   required
                   minLength={8}
-                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-[#00ffff] focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />
               </div>
