@@ -1,7 +1,7 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
-import { THEME_STORAGE_KEY, applyTheme, readTheme, subscribeToTheme, type Theme } from '@/lib/theme';
+import { DEFAULT_THEME, THEME_STORAGE_KEY, THEME_SWITCHING_ENABLED, applyTheme, readTheme, subscribeToTheme, type Theme } from '@/lib/theme';
 
 function subscribe(onChange: () => void) {
   // The attribute can change from this component or from another tab (via the storage event below).
@@ -16,13 +16,20 @@ function subscribe(onChange: () => void) {
   };
 }
 
-const getServerSnapshot = (): Theme => 'light';
+const getServerSnapshot = (): Theme => DEFAULT_THEME;
+
+type ToggleProps = { size?: 'sm' | 'md'; className?: string };
+
+/** Renders nothing while light mode is parked (see THEME_SWITCHING_ENABLED in lib/theme.ts). */
+export default function ThemeToggle(props: ToggleProps) {
+  return THEME_SWITCHING_ENABLED ? <ThemeToggleButton {...props} /> : null;
+}
 
 /**
  * Sun / moon button that switches between the light (default) and dark theme. It reads the theme from the
  * page itself (set before first paint by the script in the root layout), so it is never out of step with it.
  */
-export default function ThemeToggle({ size = 'md', className = '' }: { size?: 'sm' | 'md'; className?: string }) {
+function ThemeToggleButton({ size = 'md', className = '' }: ToggleProps) {
   const theme = useSyncExternalStore(subscribe, readTheme, getServerSnapshot);
   const next: Theme = theme === 'dark' ? 'light' : 'dark';
 

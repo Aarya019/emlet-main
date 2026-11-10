@@ -4,7 +4,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import AuthErrorRedirect from '@/components/AuthErrorRedirect';
 import ConsentManager from '@/components/ConsentManager';
-import { THEME_INIT_SCRIPT } from '@/lib/theme';
+import { DEFAULT_THEME, THEME_INIT_SCRIPT } from '@/lib/theme';
 import "./globals.css";
 
 const geistSans = Geist({
@@ -65,7 +65,8 @@ export default function RootLayout({
 }>) {
   return (
     // suppressHydrationWarning: the theme script below sets data-theme on <html> before React hydrates it.
-    <html lang="en" suppressHydrationWarning>
+    // data-theme is only written here for a dark default, so the very first HTML is already dark; light is the CSS default.
+    <html lang="en" data-theme={DEFAULT_THEME === 'dark' ? 'dark' : undefined} suppressHydrationWarning>
       <head>
         {/* Applies the saved theme (light by default) before first paint, so there is no flash. */}
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />

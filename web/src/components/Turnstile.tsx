@@ -2,7 +2,7 @@
 
 import Script from 'next/script';
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState, useSyncExternalStore } from 'react';
-import { readTheme, subscribeToTheme, type Theme } from '@/lib/theme';
+import { DEFAULT_THEME, readTheme, subscribeToTheme, type Theme } from '@/lib/theme';
 
 declare global {
   interface Window {
@@ -34,7 +34,7 @@ const Turnstile = forwardRef<TurnstileHandle, {
   const [scriptReady, setScriptReady] = useState(false);
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   // The widget has its own colour scheme, so it is drawn in the site's current theme (and redrawn if the visitor switches).
-  const theme = useSyncExternalStore(subscribeToTheme, readTheme, (): Theme => 'light');
+  const theme = useSyncExternalStore(subscribeToTheme, readTheme, (): Theme => DEFAULT_THEME);
 
   useImperativeHandle(ref, () => ({
     reset: () => {

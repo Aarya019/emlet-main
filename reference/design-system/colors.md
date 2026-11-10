@@ -3,6 +3,11 @@
 The single source of truth is the `EMLET COLOUR SYSTEM` comment and the theme block at the top of
 `web/src/app/globals.css`. This page explains the reasoning and the rules for new UI.
 
+> **Status (2026-11-02): light mode is parked.** The site is dark only and the toggle is hidden. All the light-theme CSS
+> below is still in `globals.css`, untouched. To bring it back, set `THEME_SWITCHING_ENABLED = true` in
+> `web/src/lib/theme.ts`: that restores the light default, the toggle (header, dashboard sidebar and mobile bar) and
+> reading the saved `emlet_theme` choice. Nothing else needs to change.
+
 Two themes share one set of tokens:
 
 - **Light** (default): a designed theme, not an inverted copy of dark. Its brand colour is **orange**.

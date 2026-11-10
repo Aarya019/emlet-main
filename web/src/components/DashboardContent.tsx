@@ -8,6 +8,7 @@ import EmailGeneratingOverlay from '@/components/EmailGeneratingOverlay';
 import StarField from '@/components/StarField';
 import UpgradeModal from '@/components/UpgradeModal';
 import ThemeToggle from '@/components/ThemeToggle';
+import { THEME_SWITCHING_ENABLED } from '@/lib/theme';
 
 /** Mirrors each design style's signature look (from renderer.tsx styleConfigs) for the picker swatches. */
 const STYLE_SWATCHES: Record<DesignStyle, { style: React.CSSProperties; dot?: string }> = {
@@ -1005,11 +1006,13 @@ export default function DashboardContent() {
             </div>
           </button>
 
-          {/* Theme (light by default) */}
-          <div className="flex items-center gap-3 px-4 pb-3 lg:justify-center lg:group-hover:justify-start">
-            <ThemeToggle size="sm" />
-            <span className="text-xs text-white/50 whitespace-nowrap lg:max-w-0 lg:group-hover:max-w-xs overflow-hidden transition-all duration-500 ease-in-out">Light / dark</span>
-          </div>
+          {/* Theme switch (hidden while light mode is parked) */}
+          {THEME_SWITCHING_ENABLED && (
+            <div className="flex items-center gap-3 px-4 pb-3 lg:justify-center lg:group-hover:justify-start">
+              <ThemeToggle size="sm" />
+              <span className="text-xs text-white/50 whitespace-nowrap lg:max-w-0 lg:group-hover:max-w-xs overflow-hidden transition-all duration-500 ease-in-out">Light / dark</span>
+            </div>
+          )}
 
           {/* User section at bottom */}
           <div className="border-t border-white/10">
@@ -1056,7 +1059,8 @@ export default function DashboardContent() {
             {activeTab === 'history' && 'History'}
             {activeTab === 'user' && 'Settings'}
           </span>
-          <ThemeToggle size="sm" className="ml-auto mr-2" />
+          {/* The toggle's ml-auto pushes the credits chip to the right; keep that when the toggle is hidden */}
+          {THEME_SWITCHING_ENABLED ? <ThemeToggle size="sm" className="ml-auto mr-2" /> : <span className="ml-auto" />}
           <button
             onClick={() => handleTabChange('user')}
             className="text-xs font-semibold text-primary px-2.5 py-1.5 rounded-full bg-primary-bright/10 border border-primary-bright/30 whitespace-nowrap"
