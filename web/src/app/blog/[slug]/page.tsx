@@ -18,6 +18,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const post = await getRegisteredPost(slug);
   if (!post) return {};
+  // The post's openGraph replaces the site-wide one, so it has to carry its own share image (the hero),
+  // as an absolute URL. Without it, a link shared on LinkedIn or X has no preview picture.
+  const shareImage = post.meta.image.startsWith('/') ? `https://www.emlet.app${post.meta.image}` : post.meta.image;
   return {
     title: `${post.meta.title} | Emlet Blog`,
     description: post.meta.description,
@@ -27,6 +30,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       url: `https://www.emlet.app/blog/${post.meta.slug}`,
       siteName: 'Emlet',
       type: 'article',
+      images: [{ url: shareImage, alt: post.meta.imageAlt }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.meta.title,
+      description: post.meta.description,
+      images: [shareImage],
     },
   };
 }
@@ -47,7 +57,8 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
     '@type': 'Article',
     headline: meta.title,
     description: meta.description,
-    image: meta.image,
+    // Structured data wants an absolute URL; a post may use an image from this site's own /public folder.
+    image: meta.image.startsWith('/') ? `https://www.emlet.app${meta.image}` : meta.image,
     datePublished: meta.date,
     author: { '@type': 'Person', name: 'Aarya', url: 'https://www.emlet.app' },
     publisher: {
@@ -80,7 +91,7 @@ export default async function Post({ params }: { params: Promise<{ slug: string 
         </div>
       </div>
 
-      <BlogHeroImage src={meta.image} alt={meta.imageAlt} />
+      <BlogHeroImage src={meta.image} alt={meta.imageAlt} caption={meta.imageCaption} natural={meta.imageNatural} />
 
       <BlogPostBody blocks={body} />
 

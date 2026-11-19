@@ -7,6 +7,10 @@ export interface BlogPostMeta {
   category: string;
   image: string;
   imageAlt: string;
+  /** Optional line shown under the hero image. */
+  imageCaption?: string;
+  /** Show the hero at its own shape instead of cropping it to 2:1. Use for a screenshot or graphic that contains text. */
+  imageNatural?: boolean;
 }
 
 /**
