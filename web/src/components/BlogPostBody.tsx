@@ -58,6 +58,12 @@ export default function BlogPostBody({ blocks }: { blocks: ContentBlock[] }) {
                 {block.text}
               </h2>
             );
+          case 'h3':
+            return (
+              <h3 key={i} className="text-xl font-bold text-white pt-2">
+                {block.text}
+              </h3>
+            );
           case 'ul':
             return (
               <ul key={i} className="list-disc list-outside pl-5 space-y-3">
@@ -70,7 +76,7 @@ export default function BlogPostBody({ blocks }: { blocks: ContentBlock[] }) {
               </ul>
             );
           case 'image':
-            return <BlogInlineImage key={i} src={block.src} alt={block.alt} caption={block.caption} />;
+            return <BlogInlineImage key={i} src={block.src} alt={block.alt} caption={block.caption} natural={block.natural} />;
           case 'quote':
             return (
               <blockquote key={i} className="border-l-2 border-primary-bright/40 pl-5 py-1 text-white/80 italic">
